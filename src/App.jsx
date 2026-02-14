@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
@@ -12,25 +12,40 @@ const supabase = {
   }),
   async auth(action, body) {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/${action}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) return { error: data.error || data.msg || data.message || "Auth failed", error_description: data.error_description || `HTTP ${r.status}` };
+    return data;
+  },
+  async updateUser(token, metadata) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, { method: "PUT", headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` }, body: JSON.stringify({ data: metadata }) });
+    if (!r.ok) return null;
     return r.json();
   },
   async from(table, token) {
     return {
       async select(query = "*") {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${query}`, { headers: supabase.headers(token) });
-        return r.json();
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.message || body.error || `Select from ${table} failed (${r.status})`);
+        return body;
       },
       async selectWhere(query = "*", filters = "") {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${query}&${filters}`, { headers: supabase.headers(token) });
-        return r.json();
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.message || body.error || `Query ${table} failed (${r.status})`);
+        return body;
       },
       async insert(data) {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: { ...supabase.headers(token), Prefer: "return=representation" }, body: JSON.stringify(data) });
-        return r.json();
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.message || body.error || `Insert into ${table} failed (${r.status})`);
+        return body;
       },
       async update(data, filters) {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filters}`, { method: "PATCH", headers: { ...supabase.headers(token), Prefer: "return=representation" }, body: JSON.stringify(data) });
-        return r.json();
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.message || body.error || `Update ${table} failed (${r.status})`);
+        return body;
       },
       async delete(filters) {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filters}`, { method: "DELETE", headers: supabase.headers(token) });
@@ -65,6 +80,46 @@ const RISK_DEFINITIONS = [
   { id: "feature_dump", label: "Feature Dumping Detected", icon: "\u{1F4E6}", severity: "low" },
 ];
 
+const PREDEFINED_CLIENTS = ["Factor", "Arc", "11x", "Rapido", "Xepelin", "Planimatik", "Nauta"];
+
+function computeCategoryAverages(calls) {
+  const avgs = {};
+  CATEGORIES.forEach(cat => {
+    let total = 0, count = 0;
+    calls.forEach(c => {
+      const cs = c.category_scores?.[cat.id];
+      if (cs) {
+        const checked = Object.values(cs).filter(v => v === true).length;
+        total += (checked / cat.criteria.length) * 100;
+        count++;
+      }
+    });
+    avgs[cat.id] = count > 0 ? Math.round(total / count) : 0;
+  });
+  return avgs;
+}
+
+function computeWeakAndStrongPoints(calls) {
+  const avgs = computeCategoryAverages(calls);
+  const sorted = CATEGORIES.map(cat => ({ id: cat.id, name: cat.name, avg: avgs[cat.id] })).sort((a, b) => a.avg - b.avg);
+  return { weak: sorted.slice(0, 3), strong: sorted.slice(-3).reverse() };
+}
+
+function groupCallsByClientAndAE(calls) {
+  const groups = {};
+  PREDEFINED_CLIENTS.forEach(c => { groups[c] = {}; });
+  groups["Other"] = {};
+  calls.forEach(call => {
+    const company = (call.prospect_company || "").toLowerCase();
+    let matched = PREDEFINED_CLIENTS.find(c => company.includes(c.toLowerCase()));
+    const bucket = matched || "Other";
+    const ae = call.rep_name || call.category_scores?.rep_name || "Unknown";
+    if (!groups[bucket][ae]) groups[bucket][ae] = [];
+    groups[bucket][ae].push(call);
+  });
+  return groups;
+}
+
 const ANALYSIS_PROMPT = "You are an expert sales call reviewer using the Cuota Revenue Framework. Analyze the following sales call transcript.\n\nSCORING FRAMEWORK (9 categories):\n1. OPENING (8%): Confirmed time | Stated agenda | Asked prospect to add | Set expectations\n2. DISCOVERY (15%): Core pain | Quantified impact | Timeline/urgency | Previous attempts | Why now\n3. QUALIFICATION MEDDPICC (15%): Metrics | Economic Buyer | Decision Criteria | Decision Process | Paper Process | Implicated Pain | Champion | Competition\n4. STORYTELLING (10%): Customer story | Matched situation | Specific metrics | That could be us moment\n5. OBJECTION HANDLING (12%): Acknowledged | Clarifying questions | Reframed | Evidence | Confirmed resolution\n6. DEMO (10%): Tied to pain | No feature dump | Engagement questions | Aha moments\n7. MULTI-THREADING (10%): Other stakeholders | Org structure | Additional contacts | Champion buy-in\n8. NEXT STEPS (12%): Specific step | Calendar commitment | Action items | Summarized | Urgency\n9. CALL CONTROL (8%): Talk ratio | Redirected tangents | Confidence | Silence | Matched energy\n\nRISK FLAGS: single_thread, no_next_steps, no_pain, happy_ears, no_champion, competitor_unhandled, no_timeline, no_budget, low_engagement, feature_dump\n\nALSO EXTRACT from the transcript:\n- rep_name: The sales rep / account executive name\n- prospect_company: The prospect's company name\n- prospect_name: The main prospect/buyer on the call\n- call_type: One of Discovery, Demo, Follow-up, Negotiation, Closing\n- deal_stage: One of Early, Mid-Pipe, Late Stage, Negotiation\n\nRESPOND ONLY WITH VALID JSON:\n{\"metadata\":{\"rep_name\":\"...\",\"prospect_company\":\"...\",\"prospect_name\":\"...\",\"call_type\":\"...\",\"deal_stage\":\"...\"},\"scores\":{\"opening\":{\"criteria_met\":[true,false,...],\"key_moment\":\"...\"},\"discovery\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"qualification\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"storytelling\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"objection\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"demo\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"multithreading\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"nextsteps\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"control\":{\"criteria_met\":[...],\"key_moment\":\"...\"}},\"risks\":{\"single_thread\":false,\"no_next_steps\":false,\"no_pain\":false,\"happy_ears\":false,\"no_champion\":false,\"competitor_unhandled\":false,\"no_timeline\":false,\"no_budget\":false,\"low_engagement\":false,\"feature_dump\":false},\"coaching_notes\":\"...\",\"executive_summary\":\"...\",\"top_3_improvements\":[\"...\",\"...\",\"...\"],\"strongest_moment\":\"...\",\"biggest_miss\":\"...\"}";
 
 function getScoreColor(s) { return s >= 80 ? "#31CE81" : s >= 60 ? "#eab308" : s >= 40 ? "#f97316" : "#ef4444"; }
@@ -98,16 +153,21 @@ function AuthScreen({ onAuth }) {
   const [message, setMessage] = useState("");
 
   const handleSubmit = async () => {
+    if (!email.trim() || !password.trim()) { setError("Email and password are required."); return; }
+    if (mode === "signup" && !fullName.trim()) { setError("Full name is required."); return; }
     setError(""); setMessage(""); setLoading(true);
     try {
       if (mode === "login") {
         const data = await supabase.auth("token?grant_type=password", { email, password });
         if (data.error || data.error_description) throw new Error(data.error_description || data.error?.message || "Login failed");
+        if (!data.access_token || !data.user?.id) throw new Error("Invalid server response. Please try again.");
         onAuth(data);
       } else {
         const data = await supabase.auth("signup", { email, password, data: { full_name: fullName } });
-        if (data.error) throw new Error(data.error?.message || "Signup failed");
-        if (data.access_token) { onAuth(data); } 
+        if (data.error) throw new Error(data.error?.message || data.error || "Signup failed");
+        const token = data.access_token || data.session?.access_token;
+        const user = data.user || data.session?.user;
+        if (token && user?.id) { onAuth({ ...data, access_token: token, user }); }
         else { setMessage("Check your email for a confirmation link!"); }
       }
     } catch (e) { setError(e.message); } finally { setLoading(false); }
@@ -187,21 +247,157 @@ function CategoryBar({ category, scores, aiKeyMoment, onScoreChange }) {
 }
 
 // ==================== SAVED CALLS ====================
-function SavedCallsList({ calls, onSelect, onNewCall }) {
+function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry }) {
+  const grouped = groupCallsByClientAndAE(calls);
+
+  const breadcrumb = (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
+      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#31CE81" : "#f5f3f0", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Saved Calls</span>
+      {folderClient && <>
+        <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+        <span onClick={() => setFolderAE(null)} style={{ color: folderAE ? "#31CE81" : "#f5f3f0", cursor: folderAE ? "pointer" : "default", fontWeight: 600 }}>{folderClient}</span>
+      </>}
+      {folderAE && <>
+        <span style={{ color: "rgba(255,255,255,0.3)" }}>/</span>
+        <span style={{ color: "#f5f3f0", fontWeight: 600 }}>{folderAE}</span>
+      </>}
+    </div>
+  );
+
+  const newReviewBtn = (
+    <button onClick={onNewCall} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
+  );
+
+  // ---- CLIENT FOLDERS VIEW ----
+  if (!folderClient) {
+    const clientOrder = [...PREDEFINED_CLIENTS, "Other"];
+    return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f5f3f0", margin: 0 }}>Saved Calls ({calls.length})</h2>
+          {newReviewBtn}
+        </div>
+        {error && (
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <span style={{ fontSize: 13, color: "#ef4444" }}>{error}</span>
+            {onRetry && <button onClick={onRetry} style={{ padding: "6px 14px", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 8, background: "rgba(239,68,68,0.15)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Retry</button>}
+          </div>
+        )}
+        {calls.length === 0 && !error && <p style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", padding: 40 }}>No calls reviewed yet. Click "+ New Review" to get started.</p>}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+          {clientOrder.map(client => {
+            const aes = grouped[client] || {};
+            const aeCount = Object.keys(aes).length;
+            const clientCalls = Object.values(aes).flat();
+            const callCount = clientCalls.length;
+            const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
+            const isEmpty = callCount === 0;
+            if (client === "Other" && isEmpty) return null;
+            return (
+              <div key={client} onClick={() => !isEmpty && setFolderClient(client)} style={{ background: isEmpty ? "rgba(255,255,255,0.01)" : "rgba(255,255,255,0.03)", border: "1px solid " + (isEmpty ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)"), borderRadius: 12, padding: 20, cursor: isEmpty ? "default" : "pointer", textAlign: "center", opacity: isEmpty ? 0.4 : 1, transition: "all 0.2s" }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>{"\uD83D\uDCC1"}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "#f5f3f0", marginBottom: 8 }}>{client}</div>
+                {callCount > 0 ? (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                      <CircularScore score={avgScore} size={56} strokeWidth={4} />
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{callCount} call{callCount !== 1 ? "s" : ""} &middot; {aeCount} AE{aeCount !== 1 ? "s" : ""}</div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>No calls yet</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ---- AE FOLDERS VIEW ----
+  if (folderClient && !folderAE) {
+    const aes = grouped[folderClient] || {};
+    const aeEntries = Object.entries(aes).map(([name, aeCalls]) => {
+      const avg = aeCalls.length > 0 ? Math.round(aeCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / aeCalls.length) : 0;
+      return { name, calls: aeCalls, avg };
+    }).sort((a, b) => b.avg - a.avg);
+
+    return (
+      <div>
+        {breadcrumb}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f5f3f0", margin: 0 }}>{folderClient} &mdash; Account Executives</h2>
+          {newReviewBtn}
+        </div>
+        {aeEntries.length === 0 && <p style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", padding: 40 }}>No calls for this client.</p>}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {aeEntries.map(ae => (
+            <div key={ae.name} onClick={() => setFolderAE(ae.name)} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
+              <CircularScore score={ae.avg} size={50} strokeWidth={4} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#f5f3f0" }}>{ae.name}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{ae.calls.length} call{ae.calls.length !== 1 ? "s" : ""}</div>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(ae.avg), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(ae.avg)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ---- AE DETAIL VIEW ----
+  const aeCalls = (grouped[folderClient] || {})[folderAE] || [];
+  const aeAvg = aeCalls.length > 0 ? Math.round(aeCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / aeCalls.length) : 0;
+  const { weak, strong } = computeWeakAndStrongPoints(aeCalls);
+
   return (
     <div>
+      {breadcrumb}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f5f3f0", margin: 0 }}>Saved Calls ({calls.length})</h2>
-        <button onClick={onNewCall} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f5f3f0", margin: 0 }}>{folderAE}</h2>
+        {newReviewBtn}
       </div>
-      {calls.length === 0 && <p style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", padding: 40 }}>No calls reviewed yet. Click "+ New Review" to get started.</p>}
+
+      {/* Summary Panel */}
+      <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+          <CircularScore score={aeAvg} size={80} strokeWidth={6} label="avg" />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700, marginBottom: 8 }}>Strong Points</div>
+                {strong.map(p => (
+                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{p.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#31CE81", fontFamily: "'Space Mono', monospace" }}>{p.avg}%</span>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>Weak Points</div>
+                {weak.map(p => (
+                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{p.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>{p.avg}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Individual Call Cards */}
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.5)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Calls ({aeCalls.length})</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {calls.map(call => (
+        {aeCalls.map(call => (
           <div key={call.id} onClick={() => onSelect(call)} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
             <CircularScore score={call.overall_score || 0} size={50} strokeWidth={4} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#f5f3f0" }}>{call.prospect_company || "Unknown Company"}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Rep: {call.rep_name || "Unknown"} | {call.call_type} | {call.call_date}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>{call.call_type} | {call.call_date}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 12, color: getMomentumLabel(call.momentum_score || 0).color }}>{getMomentumLabel(call.momentum_score || 0).icon} {call.momentum_score || 0}</div>
@@ -340,19 +536,7 @@ function AdminDashboard({ allCalls }) {
   const avgMomentum = totalCalls > 0 ? Math.round(allCalls.reduce((s, c) => s + (c.momentum_score || 0), 0) / totalCalls) : 0;
   const avgClose = totalCalls > 0 ? Math.round(allCalls.reduce((s, c) => s + (c.close_probability || 0), 0) / totalCalls) : 0;
 
-  const catAverages = {};
-  CATEGORIES.forEach(cat => {
-    let total = 0, count = 0;
-    allCalls.forEach(c => {
-      const cs = c.category_scores?.[cat.id];
-      if (cs) {
-        const checked = Object.values(cs).filter(v => v === true).length;
-        total += (checked / cat.criteria.length) * 100;
-        count++;
-      }
-    });
-    catAverages[cat.id] = count > 0 ? Math.round(total / count) : 0;
-  });
+  const catAverages = computeCategoryAverages(allCalls);
 
   const riskCounts = {};
   RISK_DEFINITIONS.forEach(r => { riskCounts[r.id] = 0; });
@@ -427,14 +611,47 @@ function AdminDashboard({ allCalls }) {
   );
 }
 
+function loadStored(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } }
+
+async function findOrCreateRep(repName, orgId, token) {
+  if (!repName || !orgId || !token) return null;
+  try {
+    const table = await supabase.from("reps", token);
+    // Step 1: Find existing rep
+    const existing = await table.selectWhere("id", `full_name=eq.${encodeURIComponent(repName)}&org_id=eq.${orgId}`);
+    if (Array.isArray(existing) && existing.length > 0 && existing[0].id) return existing[0].id;
+
+    // Step 2: Insert new rep
+    try {
+      const inserted = await table.insert({ org_id: orgId, full_name: repName });
+      if (Array.isArray(inserted) && inserted.length > 0 && inserted[0].id) return inserted[0].id;
+    } catch (insertErr) {
+      console.warn("findOrCreateRep: insert failed, retrying select:", insertErr.message);
+    }
+
+    // Step 3: Retry select (in case of race condition)
+    try {
+      const retry = await table.selectWhere("id", `full_name=eq.${encodeURIComponent(repName)}&org_id=eq.${orgId}`);
+      if (Array.isArray(retry) && retry.length > 0 && retry[0].id) return retry[0].id;
+    } catch (retryErr) {
+      console.warn("findOrCreateRep: retry select failed:", retryErr.message);
+    }
+  } catch (err) {
+    console.warn("findOrCreateRep: all steps failed, proceeding without rep_id:", err.message);
+  }
+  return null;
+}
+
 export default function CuotaCallReview() {
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [session, setSession] = useState(() => loadStored("cuota_session"));
+  const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
   const [page, setPage] = useState("calls");
   const [savedCalls, setSavedCalls] = useState([]);
   const [selectedCall, setSelectedCall] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
+  const [folderClient, setFolderClient] = useState(null);
+  const [folderAE, setFolderAE] = useState(null);
 
   // Review state
   const [callInfo, setCallInfo] = useState({ repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
@@ -447,45 +664,195 @@ export default function CuotaCallReview() {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [aiKeyMoments, setAiKeyMoments] = useState({});
   const [error, setError] = useState("");
+  const [callsError, setCallsError] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem("cuota_api_key") || "");
 
   const token = session?.access_token;
 
+  // Refresh the session token, returns new access_token or null
+  const refreshSessionToken = useCallback(async () => {
+    const stored = loadStored("cuota_session");
+    const refreshToken = stored?.refresh_token || session?.refresh_token;
+    if (!refreshToken) return null;
+    try {
+      const data = await supabase.auth("token?grant_type=refresh_token", { refresh_token: refreshToken });
+      if (!data.error && data.access_token && data.user?.id) {
+        const refreshed = { access_token: data.access_token, refresh_token: data.refresh_token, user: data.user, expires_at: data.expires_at };
+        setSession(refreshed);
+        localStorage.setItem("cuota_session", JSON.stringify(refreshed));
+        localStorage.setItem("cuota_access_token", data.access_token);
+        if (data.user.user_metadata?.api_key) {
+          localStorage.setItem("cuota_api_key", data.user.user_metadata.api_key);
+          setApiKey(data.user.user_metadata.api_key);
+        }
+        return data.access_token;
+      }
+    } catch (e) { console.error("Token refresh failed:", e); }
+    return null;
+  }, [session?.refresh_token]);
+
+  // Get a valid token — refreshes automatically if expired
+  const getValidToken = useCallback(async () => {
+    const stored = loadStored("cuota_session");
+    const currentToken = session?.access_token || stored?.access_token;
+    if (!currentToken) return null;
+    const expiresAt = session?.expires_at || stored?.expires_at;
+    const now = Math.floor(Date.now() / 1000);
+    if (expiresAt && now >= expiresAt - 60) {
+      const newToken = await refreshSessionToken();
+      return newToken;
+    }
+    return currentToken;
+  }, [session, refreshSessionToken]);
+
   // Load saved calls
   const loadCalls = useCallback(async () => {
-    if (!token) return;
+    const validToken = await getValidToken();
+    if (!validToken) return;
     try {
-      const table = await supabase.from("call_reviews", token);
+      const table = await supabase.from("call_reviews", validToken);
       const data = await table.select("*");
       if (Array.isArray(data)) {
         const sorted = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        // Enrich with rep_name from the stored data
         const enriched = sorted.map(c => ({ ...c, rep_name: c.category_scores?.rep_name || c.prospect_company }));
+        setCallsError("");
         setSavedCalls(enriched);
       }
-    } catch (e) { console.error("Load calls error:", e); }
-  }, [token]);
+    } catch (e) {
+      console.error("Load calls error:", e);
+      setCallsError("Failed to load calls: " + (e.message || "Unknown error"));
+    }
+  }, [getValidToken]);
 
-  useEffect(() => { 
-    if (token) { loadCalls().finally(() => setLoading(false)); } 
+  // Validate stored session on mount
+  const hasValidated = useRef(false);
+  useEffect(() => {
+    if (hasValidated.current) return;
+    hasValidated.current = true;
+
+    const validateSession = async () => {
+      const stored = loadStored("cuota_session");
+      if (!stored?.access_token || !stored?.user?.id) {
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+
+      // Restore profile from localStorage
+      const storedProfile = loadStored("cuota_profile");
+      if (storedProfile) setProfile(storedProfile);
+
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = stored.expires_at && now >= stored.expires_at - 60;
+
+      if (isExpired) {
+        const newToken = await refreshSessionToken();
+        if (!newToken) {
+          // Refresh failed — force re-login
+          setSession(null);
+          setProfile(null);
+          localStorage.removeItem("cuota_session");
+          localStorage.removeItem("cuota_profile");
+          localStorage.removeItem("cuota_access_token");
+          setLoading(false);
+          return;
+        }
+      }
+      // setLoading(false) handled by the token useEffect after loadCalls completes
+    };
+    validateSession();
+  }, [refreshSessionToken]);
+
+  // Load calls whenever token changes
+  useEffect(() => {
+    if (token) { loadCalls().finally(() => setLoading(false)); }
     else { setLoading(false); }
   }, [token, loadCalls]);
 
+  // Auto-refresh token every 50 minutes to prevent expiration during use
+  useEffect(() => {
+    if (!session?.refresh_token) return;
+    const interval = setInterval(() => { refreshSessionToken(); }, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [session?.refresh_token, refreshSessionToken]);
+
   const handleAuth = async (data) => {
-    setSession(data);
-    // Get or create profile
+    const accessToken = data.access_token || data.session?.access_token;
+    const refreshToken = data.refresh_token || data.session?.refresh_token;
+    const user = data.user || data.session?.user;
+    const expiresAt = data.expires_at || data.session?.expires_at;
+    if (!accessToken || !user?.id) {
+      setSession(null);
+      return;
+    }
+    const sessionData = { access_token: accessToken, refresh_token: refreshToken, user, expires_at: expiresAt };
+    setSession(sessionData);
+    localStorage.setItem("cuota_session", JSON.stringify(sessionData));
+    localStorage.setItem("cuota_access_token", accessToken);
+    // Restore API key from user metadata
+    if (user.user_metadata?.api_key) {
+      localStorage.setItem("cuota_api_key", user.user_metadata.api_key);
+      setApiKey(user.user_metadata.api_key);
+    }
+    // Get or create profile in Supabase
     try {
-      const table = await supabase.from("profiles", data.access_token);
-      const profiles = await table.selectWhere("*", "id=eq." + data.user.id);
+      const table = await supabase.from("profiles", accessToken);
+      const profiles = await table.selectWhere("*", "id=eq." + user.id);
       if (Array.isArray(profiles) && profiles.length > 0) {
         setProfile(profiles[0]);
+        localStorage.setItem("cuota_profile", JSON.stringify(profiles[0]));
+      } else {
+        // No profile exists — check for invitation to determine org
+        let orgId = "00000000-0000-0000-0000-000000000001";
+        let role = "admin";
+        try {
+          const invTable = await supabase.from("invitations", accessToken);
+          const invites = await invTable.selectWhere("*", "email=eq." + encodeURIComponent(user.email) + "&accepted=eq.false");
+          if (Array.isArray(invites) && invites.length > 0) {
+            orgId = invites[0].org_id;
+            role = invites[0].role || "rep";
+            // Mark invitation as accepted
+            try { await invTable.update({ accepted: true }, "id=eq." + invites[0].id); } catch (e) { console.error("Invitation accept failed:", e.message); }
+          }
+        } catch (e) { console.error("Invitation lookup failed:", e.message); }
+        // Create the profile in Supabase
+        const newProfile = { id: user.id, org_id: orgId, role, full_name: user.user_metadata?.full_name || user.email };
+        try {
+          const created = await table.insert(newProfile);
+          const profileData = Array.isArray(created) && created[0] ? created[0] : newProfile;
+          setProfile(profileData);
+          localStorage.setItem("cuota_profile", JSON.stringify(profileData));
+        } catch (insertErr) {
+          console.error("Profile insert error:", insertErr);
+          // Use local fallback if insert fails
+          setProfile(newProfile);
+          localStorage.setItem("cuota_profile", JSON.stringify(newProfile));
+        }
       }
-    } catch (e) { console.error("Profile error:", e); setProfile({ id: data.user.id, role: "admin", org_id: "00000000-0000-0000-0000-000000000001" }); }
+    } catch (e) {
+      console.error("Profile error:", e);
+      const fallback = { id: user.id, role: "admin", org_id: "00000000-0000-0000-0000-000000000001" };
+      setProfile(fallback);
+      localStorage.setItem("cuota_profile", JSON.stringify(fallback));
+    }
   };
 
-  const handleLogout = () => { setSession(null); setProfile(null); setSavedCalls([]); setPage("calls"); };
+  const clearSession = () => {
+    setSession(null);
+    setProfile(null);
+    setSavedCalls([]);
+    setPage("calls");
+    setFolderClient(null);
+    setFolderAE(null);
+    localStorage.removeItem("cuota_session");
+    localStorage.removeItem("cuota_profile");
+    localStorage.removeItem("cuota_access_token");
+  };
+
+  const handleLogout = () => { clearSession(); };
 
   // Review functions
   const handleScoreChange = (catId, idx) => { setScores(p => ({ ...p, [catId]: { ...p[catId], [idx]: !p[catId]?.[idx] } })); };
@@ -503,8 +870,7 @@ export default function CuotaCallReview() {
     if (!transcript.trim()) { setError("Paste a transcript first."); return; }
     setAnalyzing(true); setError("");
     try {
-      const apiKey = localStorage.getItem("cuota_api_key");
-      if (!apiKey) throw new Error("Enter your API key in Settings (top right) first.");
+      if (!apiKey) throw new Error("Enter your API key above to analyze calls.");
       const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"}, body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4096,messages:[{role:"user",content:ANALYSIS_PROMPT+"\n\n---\n\nTRANSCRIPT:\n"+transcript}]}) });
       if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||"API error");}
       const data=await res.json();
@@ -529,25 +895,18 @@ export default function CuotaCallReview() {
   };
 
   const saveCall = async () => {
-    if (!token) { setError("Please log in to save calls."); return; }
     setSaving(true); setError(""); setSaveSuccess(false);
     try {
+      const validToken = await getValidToken();
+      if (!validToken) { clearSession(); setError("Session expired. Please log in again."); setSaving(false); return; }
+
       const orgId = profile?.org_id || "00000000-0000-0000-0000-000000000001";
-      // Find or create rep
-      const repsTable = await supabase.from("reps", token);
-      let reps = await repsTable.selectWhere("*", `org_id=eq.${orgId}&full_name=eq.${encodeURIComponent(callInfo.repName)}`);
-      let repId;
-      if (Array.isArray(reps) && reps.length > 0) { repId = reps[0].id; }
-      else {
-        const newRep = await repsTable.insert({ org_id: orgId, full_name: callInfo.repName || "Unknown Rep" });
-        repId = Array.isArray(newRep) && newRep[0] ? newRep[0].id : null;
-      }
-      if (!repId) throw new Error("Could not create rep record");
+      const repId = await findOrCreateRep(callInfo.repName, orgId, validToken);
 
       const callData = {
         org_id: orgId,
-        rep_id: repId,
-        reviewed_by: session.user.id,
+        reviewed_by: session.user?.id,
+        ...(repId ? { rep_id: repId } : {}),
         prospect_company: callInfo.prospectCompany,
         call_date: callInfo.callDate,
         call_type: callInfo.callType,
@@ -563,7 +922,7 @@ export default function CuotaCallReview() {
         coaching_notes: notes,
       };
 
-      const table = await supabase.from("call_reviews", token);
+      const table = await supabase.from("call_reviews", validToken);
       if (selectedCall?.id) {
         await table.update(callData, `id=eq.${selectedCall.id}`);
       } else {
@@ -572,7 +931,9 @@ export default function CuotaCallReview() {
       setSaveSuccess(true);
       await loadCalls();
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err) { setError("Save failed: " + err.message); } finally { setSaving(false); }
+    } catch (err) {
+      setError("Save failed: " + (err.message || "Unknown error"));
+    } finally { setSaving(false); }
   };
 
   const loadCallIntoReview = (call) => {
@@ -600,6 +961,7 @@ export default function CuotaCallReview() {
     setPage("review"); setActiveTab("transcript");
   };
 
+  if (loading && !session) return <div style={{ minHeight: "100vh", background: "#012441" }} />;
   if (!session) return <AuthScreen onAuth={handleAuth} />;
 
   const tabs = [
@@ -625,7 +987,7 @@ export default function CuotaCallReview() {
           { id: "progression", label: "Progression", icon: "\u{1F4C8}" },
           ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
         ].map(nav => (
-          <button key={nav.id} onClick={() => setPage(nav.id)} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === nav.id ? "rgba(255,255,255,0.08)" : "transparent", color: page === nav.id ? "#f5f3f0" : "rgba(255,255,255,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
+          <button key={nav.id} onClick={() => { setPage(nav.id); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === nav.id ? "rgba(255,255,255,0.08)" : "transparent", color: page === nav.id ? "#f5f3f0" : "rgba(255,255,255,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
             <span>{nav.icon}</span> {nav.label}
             {nav.badge > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#31CE81" }}>{nav.badge}</span>}
           </button>
@@ -633,13 +995,13 @@ export default function CuotaCallReview() {
         <div style={{ flex: 1 }} />
         {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setShowInvite(true)} style={{ padding: "6px 12px", border: "1px solid rgba(49,206,129,0.3)", borderRadius: 8, background: "rgba(49,206,129,0.08)", color: "#31CE81", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Invite</button>}
         <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", flexShrink: 0 }}>{session.user?.email}</span>
-        <button onClick={() => { const k = window.prompt("Enter your Anthropic API key (sk-ant-...):",localStorage.getItem("cuota_api_key")||""); if(k&&k.startsWith("sk-ant-")){localStorage.setItem("cuota_api_key",k);alert("API key saved!");} }} style={{ padding: "6px 12px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>API Key</button>
+        <button onClick={async () => { const k = window.prompt("Enter your Anthropic API key (sk-ant-...):", apiKey || ""); if(k&&k.startsWith("sk-ant-")){localStorage.setItem("cuota_api_key",k); setApiKey(k); const t = await getValidToken(); if(t) await supabase.updateUser(t, { api_key: k }); alert("API key saved!");} }} style={{ padding: "6px 12px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{apiKey ? "API Key \u2713" : "API Key"}</button>
         <button onClick={handleLogout} style={{ padding: "6px 12px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, background: "transparent", color: "rgba(255,255,255,0.4)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Logout</button>
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
         {/* SAVED CALLS PAGE */}
-        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} />}
+        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} />}
 
         {/* PROGRESSION PAGE */}
         {page === "progression" && <ProgressionView calls={savedCalls} />}
@@ -649,6 +1011,24 @@ export default function CuotaCallReview() {
         {page === "review" && (
           <>
             {/* API Key */}
+            {!apiKey && (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const k = e.target.elements.apiKeyInput.value.trim();
+                if (!k || !k.startsWith("sk-ant-")) { setError("API key must start with sk-ant-"); return; }
+                localStorage.setItem("cuota_api_key", k);
+                setApiKey(k);
+                setError("");
+                const t = await getValidToken();
+                if (t) await supabase.updateUser(t, { api_key: k });
+              }} style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 16, padding: 20, marginBottom: 24, textAlign: "center" }}>
+                <p style={{ color: "#3b82f6", fontSize: 14, fontWeight: 600, margin: "0 0 12px" }}>Enter your Anthropic API key to analyze calls</p>
+                <div style={{ display: "flex", gap: 8, maxWidth: 500, margin: "0 auto" }}>
+                  <input name="apiKeyInput" type="password" placeholder="sk-ant-..." style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#f5f3f0", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+                  <button type="submit" style={{ padding: "10px 20px", background: "#3b82f6", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Save Key</button>
+                </div>
+              </form>
+            )}
 
             {/* Call Info */}
             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
