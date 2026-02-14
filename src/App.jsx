@@ -13,7 +13,7 @@ const supabase = {
   async auth(action, body) {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/${action}`, { method: "POST", headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY }, body: JSON.stringify(body) });
     const data = await r.json();
-    if (!r.ok) return { error: data.error || data.msg || data.message || "Auth failed", error_description: data.error_description || `HTTP ${r.status}` };
+    if (!r.ok) return { error: data.error || data.msg || data.message || "Auth failed", error_description: data.error_description || data.msg || data.message || `HTTP ${r.status}` };
     return data;
   },
   async updateUser(token, metadata) {
@@ -159,7 +159,7 @@ function AuthScreen({ onAuth }) {
     try {
       if (mode === "login") {
         const data = await supabase.auth("token?grant_type=password", { email, password });
-        if (data.error || data.error_description) throw new Error(data.error_description || data.error?.message || "Login failed");
+        if (data.error || data.error_description) throw new Error(data.error_description || data.error || "Login failed");
         if (!data.access_token || !data.user?.id) throw new Error("Invalid server response. Please try again.");
         onAuth(data);
       } else {
