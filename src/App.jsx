@@ -1545,7 +1545,7 @@ export default function CuotaCallReview() {
                   </div>
                   <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, padding: 16 }}>
                     <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700 }}>Biggest Miss</span>
-                    <p style={{ fontSize: 13, color: "#fecaca", margin: "8px 0 0", lineHeight: 1.6 }}>{aiAnalysis.biggest_miss}</p>
+                    <p style={{ fontSize: 13, color: "#991b1b", margin: "8px 0 0", lineHeight: 1.6 }}>{aiAnalysis.biggest_miss}</p>
                   </div>
                 </div>
                 <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 18 }}>
