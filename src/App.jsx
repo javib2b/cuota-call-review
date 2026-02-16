@@ -112,11 +112,20 @@ function groupCallsByClientAndAE(calls) {
   calls.forEach(call => {
     const client = call.category_scores?.client;
     let bucket;
-    if (client && (PREDEFINED_CLIENTS.includes(client) || client === "Prospect" || client === "Other")) {
+    if (client && PREDEFINED_CLIENTS.includes(client)) {
+      // Explicit predefined client — use it directly
       bucket = client;
     } else {
+      // Try fuzzy matching prospect_company against predefined clients
       const company = (call.prospect_company || "").toLowerCase();
-      bucket = PREDEFINED_CLIENTS.find(c => company.includes(c.toLowerCase())) || "Other";
+      const matched = PREDEFINED_CLIENTS.find(c => company.includes(c.toLowerCase()));
+      if (matched) {
+        bucket = matched;
+      } else if (client === "Prospect") {
+        bucket = "Prospect";
+      } else {
+        bucket = "Other";
+      }
     }
     const ae = call.rep_name || call.category_scores?.rep_name || "Unknown";
     if (!groups[bucket]) groups[bucket] = {};
