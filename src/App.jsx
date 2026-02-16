@@ -56,29 +56,19 @@ const supabase = {
 };
 
 const CATEGORIES = [
-  { id: "opening", name: "Opening & Agenda Setting", weight: 8, description: "Did the rep set a clear agenda, confirm time, and establish purpose?", criteria: ["Confirmed time available", "Stated clear agenda/purpose", "Asked prospect to add items", "Set expectations for outcome"] },
-  { id: "discovery", name: "Discovery Depth", weight: 15, description: "Quality of questions asked to uncover pain, impact, and urgency", criteria: ["Identified core business pain", "Quantified impact of the problem", "Explored timeline/urgency", "Uncovered previous attempts to solve", "Asked 'why now?' or trigger event"] },
-  { id: "qualification", name: "Qualification (MEDDPICC)", weight: 15, description: "Did the rep qualify the opportunity properly?", criteria: ["Metrics: Success criteria defined", "Economic Buyer: Identified or accessed", "Decision Criteria: Understood", "Decision Process: Mapped", "Paper Process: Legal/procurement discussed", "Implicated Pain: Connected to business impact", "Champion: Identified and tested", "Competition: Landscape understood"] },
-  { id: "storytelling", name: "Storytelling & Social Proof", weight: 10, description: "Use of relevant case studies, analogies, and proof points", criteria: ["Used relevant customer story", "Matched story to prospect's situation", "Included specific metrics/outcomes", "Created 'that could be us' moment"] },
-  { id: "objection", name: "Objection Handling", weight: 12, description: "How the rep addressed concerns, pushback, and resistance", criteria: ["Acknowledged the concern genuinely", "Asked clarifying questions before responding", "Reframed rather than argued", "Used evidence/proof to address", "Confirmed resolution before moving on"] },
-  { id: "demo", name: "Demo / Value Presentation", weight: 10, description: "Was the demo/presentation tailored and compelling?", criteria: ["Tied features to stated pain points", "Avoided feature dumping", "Asked engagement questions during demo", "Created 'aha' moments"] },
-  { id: "multithreading", name: "Multi-threading & Stakeholders", weight: 10, description: "Did the rep expand beyond single contact?", criteria: ["Asked about other stakeholders", "Understood org structure", "Planned to engage additional contacts", "Discussed how to get champion buy-in"] },
-  { id: "nextsteps", name: "Next Steps & Commitment", weight: 12, description: "Quality and specificity of agreed next steps", criteria: ["Proposed specific next step", "Got calendar commitment (date/time)", "Assigned clear action items", "Summarized what was agreed", "Created urgency or deadline"] },
-  { id: "control", name: "Call Control & Presence", weight: 8, description: "Rep's ability to manage flow, pace, and energy", criteria: ["Managed talk/listen ratio well", "Redirected tangents effectively", "Showed confidence and authority", "Used silence effectively", "Matched prospect's energy/pace"] },
+  { id: "pre_call_research", name: "Pre-Call Research" },
+  { id: "intro_opening", name: "Intro/Opening" },
+  { id: "agenda", name: "Agenda" },
+  { id: "discovery", name: "Discovery" },
+  { id: "pitch", name: "Pitch" },
+  { id: "services_product", name: "Services/Product Overview" },
+  { id: "pricing", name: "Pricing" },
+  { id: "next_steps", name: "Next Steps/Closing" },
+  { id: "objection_handling", name: "Objection Handling" },
 ];
 
-const RISK_DEFINITIONS = [
-  { id: "single_thread", label: "Single-Threaded Deal", icon: "\u{1F9F5}", severity: "high" },
-  { id: "no_next_steps", label: "Vague or No Next Steps", icon: "\u{1F4C5}", severity: "high" },
-  { id: "no_pain", label: "Pain Not Quantified", icon: "\u{1F3AF}", severity: "high" },
-  { id: "happy_ears", label: "Happy Ears Detected", icon: "\u{1F442}", severity: "medium" },
-  { id: "no_champion", label: "No Champion Identified", icon: "\u{1F6E1}\uFE0F", severity: "medium" },
-  { id: "competitor_unhandled", label: "Competitor Mentioned, Not Addressed", icon: "\u2694\uFE0F", severity: "medium" },
-  { id: "no_timeline", label: "No Timeline Established", icon: "\u23F0", severity: "medium" },
-  { id: "no_budget", label: "Budget Not Discussed", icon: "\u{1F4B0}", severity: "low" },
-  { id: "low_engagement", label: "Low Prospect Engagement", icon: "\u{1F636}", severity: "high" },
-  { id: "feature_dump", label: "Feature Dumping Detected", icon: "\u{1F4E6}", severity: "low" },
-];
+// Old category IDs for backward compatibility detection
+const OLD_CATEGORY_IDS = ["opening", "qualification", "storytelling", "objection", "demo", "multithreading", "nextsteps", "control"];
 
 const DEFAULT_CLIENTS = ["11x", "Arc", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
@@ -99,19 +89,25 @@ function saveClients(clients) {
   localStorage.setItem("cuota_clients", JSON.stringify(clients));
 }
 
+function isNewFormat(call) {
+  const cs = call.category_scores;
+  if (!cs) return false;
+  return CATEGORIES.some(cat => cs[cat.id]?.score !== undefined);
+}
+
 function computeCategoryAverages(calls) {
   const avgs = {};
   CATEGORIES.forEach(cat => {
     let total = 0, count = 0;
     calls.forEach(c => {
+      if (!isNewFormat(c)) return;
       const cs = c.category_scores?.[cat.id];
-      if (cs) {
-        const checked = Object.values(cs).filter(v => v === true).length;
-        total += (checked / cat.criteria.length) * 100;
+      if (cs && typeof cs.score === "number") {
+        total += cs.score;
         count++;
       }
     });
-    avgs[cat.id] = count > 0 ? Math.round(total / count) : 0;
+    avgs[cat.id] = count > 0 ? Math.round((total / count) * 10) / 10 : 0;
   });
   return avgs;
 }
@@ -121,6 +117,7 @@ function computeWeakAndStrongPoints(calls) {
   const sorted = CATEGORIES.map(cat => ({ id: cat.id, name: cat.name, avg: avgs[cat.id] })).sort((a, b) => a.avg - b.avg);
   return { weak: sorted.slice(0, 3), strong: sorted.slice(-3).reverse() };
 }
+
 
 function groupCallsByClientAndAE(calls, clientList) {
   const groups = {};
@@ -144,11 +141,9 @@ function groupCallsByClientAndAE(calls, clientList) {
   return groups;
 }
 
-const ANALYSIS_PROMPT = "You are an expert sales call reviewer using the Cuota Revenue Framework. Analyze the following sales call transcript.\n\nSCORING FRAMEWORK (9 categories):\n1. OPENING (8%): Confirmed time | Stated agenda | Asked prospect to add | Set expectations\n2. DISCOVERY (15%): Core pain | Quantified impact | Timeline/urgency | Previous attempts | Why now\n3. QUALIFICATION MEDDPICC (15%): Metrics | Economic Buyer | Decision Criteria | Decision Process | Paper Process | Implicated Pain | Champion | Competition\n4. STORYTELLING (10%): Customer story | Matched situation | Specific metrics | That could be us moment\n5. OBJECTION HANDLING (12%): Acknowledged | Clarifying questions | Reframed | Evidence | Confirmed resolution\n6. DEMO (10%): Tied to pain | No feature dump | Engagement questions | Aha moments\n7. MULTI-THREADING (10%): Other stakeholders | Org structure | Additional contacts | Champion buy-in\n8. NEXT STEPS (12%): Specific step | Calendar commitment | Action items | Summarized | Urgency\n9. CALL CONTROL (8%): Talk ratio | Redirected tangents | Confidence | Silence | Matched energy\n\nRISK FLAGS: single_thread, no_next_steps, no_pain, happy_ears, no_champion, competitor_unhandled, no_timeline, no_budget, low_engagement, feature_dump\n\nALSO EXTRACT from the transcript:\n- rep_name: The sales rep / account executive name\n- prospect_company: The prospect's company name\n- prospect_name: The main prospect/buyer on the call\n- call_type: One of Discovery, Demo, Follow-up, Negotiation, Closing\n- deal_stage: One of Early, Mid-Pipe, Late Stage, Negotiation\n\nRESPOND ONLY WITH VALID JSON:\n{\"metadata\":{\"rep_name\":\"...\",\"prospect_company\":\"...\",\"prospect_name\":\"...\",\"call_type\":\"...\",\"deal_stage\":\"...\"},\"scores\":{\"opening\":{\"criteria_met\":[true,false,...],\"key_moment\":\"...\"},\"discovery\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"qualification\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"storytelling\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"objection\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"demo\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"multithreading\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"nextsteps\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"control\":{\"criteria_met\":[...],\"key_moment\":\"...\"}},\"risks\":{\"single_thread\":false,\"no_next_steps\":false,\"no_pain\":false,\"happy_ears\":false,\"no_champion\":false,\"competitor_unhandled\":false,\"no_timeline\":false,\"no_budget\":false,\"low_engagement\":false,\"feature_dump\":false},\"coaching_notes\":\"...\",\"executive_summary\":\"...\",\"top_3_improvements\":[\"...\",\"...\",\"...\"],\"strongest_moment\":\"...\",\"biggest_miss\":\"...\"}";
-
 function getScoreColor(s) { return s >= 80 ? "#31CE81" : s >= 60 ? "#eab308" : s >= 40 ? "#f97316" : "#ef4444"; }
 function getScoreLabel(s) { return s >= 85 ? "Excellent" : s >= 70 ? "Strong" : s >= 55 ? "Developing" : s >= 40 ? "Needs Work" : "Critical"; }
-function getMomentumLabel(m) { return m >= 80 ? { label: "Accelerating", color: "#31CE81", icon: "\u{1F680}" } : m >= 60 ? { label: "Steady", color: "#3b82f6", icon: "\u27A1\uFE0F" } : m >= 40 ? { label: "Stalling", color: "#eab308", icon: "\u26A0\uFE0F" } : { label: "At Risk", color: "#ef4444", icon: "\u{1F53B}" }; }
+function getScoreColor10(s) { return s >= 8 ? "#31CE81" : s >= 6 ? "#eab308" : s >= 4 ? "#f97316" : "#ef4444"; }
 
 function CircularScore({ score, size = 120, strokeWidth = 8, label }) {
   const r = (size - strokeWidth) / 2, c = 2 * Math.PI * r, o = c - (score / 100) * c, color = getScoreColor(score);
@@ -235,8 +230,11 @@ function AuthScreen({ onAuth }) {
 }
 
 // ==================== CATEGORY BAR ====================
-function CategoryBar({ category, scores, aiKeyMoment, onScoreChange }) {
-  const cs = scores[category.id] || {}, checked = Object.values(cs).filter(Boolean).length, total = category.criteria.length, pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+function CategoryBar({ category, scores, onScoreChange }) {
+  const cs = scores[category.id] || {};
+  const score = cs.score || 0;
+  const details = cs.details || "";
+  const pct = Math.round((score / 10) * 100);
   const [expanded, setExpanded] = useState(false);
   return (
     <div style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
@@ -244,23 +242,20 @@ function CategoryBar({ category, scores, aiKeyMoment, onScoreChange }) {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{category.name}</span>
-            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: getScoreColor(pct) + "22", color: getScoreColor(pct), fontWeight: 600 }}>{pct}%</span>
-            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)" }}>w: {category.weight}%</span>
+            <span style={{ fontSize: 12, padding: "2px 10px", borderRadius: 20, background: getScoreColor10(score) + "22", color: getScoreColor10(score), fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{score}/10</span>
           </div>
-          <div style={{ height: 4, background: "rgba(0,0,0,0.08)", borderRadius: 4 }}><div style={{ height: "100%", width: pct + "%", background: getScoreColor(pct), borderRadius: 4, transition: "width 0.5s" }} /></div>
+          <div style={{ height: 4, background: "rgba(0,0,0,0.08)", borderRadius: 4 }}><div style={{ height: "100%", width: pct + "%", background: getScoreColor10(score), borderRadius: 4, transition: "width 0.5s" }} /></div>
         </div>
         <span style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", transform: expanded ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>{"\u25BC"}</span>
       </div>
       {expanded && (
-        <div style={{ padding: "4px 18px 14px", borderTop: "1px solid #FFFFFF" }}>
-          <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "8px 0 12px", lineHeight: 1.5 }}>{category.description}</p>
-          {aiKeyMoment && <div style={{ padding: "10px 14px", marginBottom: 12, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 8 }}><span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 600 }}>Key Moment</span><p style={{ fontSize: 12, color: "#2563eb", margin: "4px 0 0", lineHeight: 1.5 }}>{aiKeyMoment}</p></div>}
-          {category.criteria.map((cr, i) => (
-            <label key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer", borderBottom: i < category.criteria.length - 1 ? "1px solid #FFFFFF" : "none" }}>
-              <input type="checkbox" checked={!!cs[i]} onChange={() => onScoreChange(category.id, i)} style={{ accentColor: "#31CE81", width: 16, height: 16 }} />
-              <span style={{ fontSize: 13, color: cs[i] ? "#1A2B3C" : "rgba(0,0,0,0.5)" }}>{cr}</span>
-            </label>
-          ))}
+        <div style={{ padding: "4px 18px 14px", borderTop: "1px solid rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "10px 0 12px" }}>
+            <label style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", fontWeight: 600 }}>Score:</label>
+            <input type="number" min={0} max={10} value={score} onChange={e => onScoreChange(category.id, Math.max(0, Math.min(10, parseInt(e.target.value) || 0)))} style={{ width: 56, padding: "6px 8px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, fontSize: 14, fontWeight: 700, textAlign: "center", fontFamily: "'Space Mono', monospace", outline: "none" }} />
+            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>/10</span>
+          </div>
+          {details && <p style={{ fontSize: 13, color: "rgba(0,0,0,0.6)", margin: "0 0 4px", lineHeight: 1.6 }}>{details}</p>}
         </div>
       )}
     </div>
@@ -411,7 +406,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 {strong.map(p => (
                   <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
                     <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>{p.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#31CE81", fontFamily: "'Space Mono', monospace" }}>{p.avg}%</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#31CE81", fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
                   </div>
                 ))}
               </div>
@@ -420,7 +415,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 {weak.map(p => (
                   <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
                     <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>{p.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>{p.avg}%</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
                   </div>
                 ))}
               </div>
@@ -440,7 +435,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
               <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{call.call_type} | {call.call_date}</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, color: getMomentumLabel(call.momentum_score || 0).color }}>{getMomentumLabel(call.momentum_score || 0).icon} {call.momentum_score || 0}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(call.overall_score || 0)}</div>
               <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{call.deal_value ? "$" + Number(call.deal_value).toLocaleString() : ""}</div>
             </div>
           </div>
@@ -992,35 +987,23 @@ function AdminDashboard({ allCalls }) {
   const repStats = {};
   allCalls.forEach(c => {
     const name = c.category_scores?.rep_name || "Unknown";
-    if (!repStats[name]) repStats[name] = { calls: 0, totalScore: 0, totalMomentum: 0, risks: 0 };
+    if (!repStats[name]) repStats[name] = { calls: 0, totalScore: 0 };
     repStats[name].calls++;
     repStats[name].totalScore += c.overall_score || 0;
-    repStats[name].totalMomentum += c.momentum_score || 0;
-    const riskCount = c.risk_flags ? Object.values(c.risk_flags).filter(Boolean).length : 0;
-    repStats[name].risks += riskCount;
   });
 
   const totalCalls = allCalls.length;
   const avgScore = totalCalls > 0 ? Math.round(allCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / totalCalls) : 0;
-  const avgMomentum = totalCalls > 0 ? Math.round(allCalls.reduce((s, c) => s + (c.momentum_score || 0), 0) / totalCalls) : 0;
-  const avgClose = totalCalls > 0 ? Math.round(allCalls.reduce((s, c) => s + (c.close_probability || 0), 0) / totalCalls) : 0;
 
   const catAverages = computeCategoryAverages(allCalls);
-
-  const riskCounts = {};
-  RISK_DEFINITIONS.forEach(r => { riskCounts[r.id] = 0; });
-  allCalls.forEach(c => { if (c.risk_flags) RISK_DEFINITIONS.forEach(r => { if (c.risk_flags[r.id]) riskCounts[r.id]++; }); });
-  const topRisks = RISK_DEFINITIONS.filter(r => riskCounts[r.id] > 0).sort((a, b) => riskCounts[b.id] - riskCounts[a.id]);
 
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Admin Dashboard</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
         {[
           { label: "Total Calls", value: totalCalls, color: "#1A2B3C" },
-          { label: "Avg Score", value: avgScore, color: getScoreColor(avgScore) },
-          { label: "Avg Momentum", value: avgMomentum, color: getMomentumLabel(avgMomentum).color },
-          { label: "Avg Close %", value: avgClose + "%", color: getScoreColor(avgClose) },
+          { label: "Avg Score", value: avgScore + "%", color: getScoreColor(avgScore) },
         ].map((card, i) => (
           <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, textAlign: "center" }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: card.color, fontFamily: "'Space Mono', monospace" }}>{card.value}</div>
@@ -1030,52 +1013,36 @@ function AdminDashboard({ allCalls }) {
       </div>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Rep Leaderboard</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, fontSize: 10, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, padding: "0 0 8px", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-          <span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span style={{ textAlign: "center" }}>Avg Score</span><span style={{ textAlign: "center" }}>Avg Momentum</span><span style={{ textAlign: "center" }}>Avg Risks</span>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8, fontSize: 10, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, padding: "0 0 8px", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+          <span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span style={{ textAlign: "center" }}>Avg Score</span>
         </div>
         {Object.entries(repStats).sort((a, b) => (b[1].totalScore / b[1].calls) - (a[1].totalScore / a[1].calls)).map(([name, stats]) => {
           const avg = Math.round(stats.totalScore / stats.calls);
-          const avgM = Math.round(stats.totalMomentum / stats.calls);
-          const avgR = (stats.risks / stats.calls).toFixed(1);
           return (
-            <div key={name} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr", gap: 8, padding: "10px 0", borderBottom: "1px solid #FFFFFF", alignItems: "center" }}>
+            <div key={name} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8, padding: "10px 0", borderBottom: "1px solid #FFFFFF", alignItems: "center" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{name}</span>
               <span style={{ textAlign: "center", fontSize: 13, color: "rgba(0,0,0,0.5)" }}>{stats.calls}</span>
-              <span style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: getScoreColor(avg) }}>{avg}</span>
-              <span style={{ textAlign: "center", fontSize: 13, color: getMomentumLabel(avgM).color }}>{avgM}</span>
-              <span style={{ textAlign: "center", fontSize: 13, color: Number(avgR) > 3 ? "#ef4444" : Number(avgR) > 1.5 ? "#eab308" : "#31CE81" }}>{avgR}</span>
+              <span style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: getScoreColor(avg) }}>{avg}%</span>
             </div>
           );
         })}
       </div>
-      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20 }}>
         <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Category Averages (All Reps)</h3>
         {CATEGORIES.map(cat => {
           const avg = catAverages[cat.id];
+          const pct = Math.round((avg / 10) * 100);
           return (
             <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid #FFFFFF" }}>
               <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", width: 180, flexShrink: 0 }}>{cat.name}</span>
               <div style={{ flex: 1, height: 8, background: "rgba(0,0,0,0.08)", borderRadius: 4 }}>
-                <div style={{ height: "100%", width: avg + "%", background: getScoreColor(avg), borderRadius: 4, transition: "width 0.5s" }} />
+                <div style={{ height: "100%", width: pct + "%", background: getScoreColor10(avg), borderRadius: 4, transition: "width 0.5s" }} />
               </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(avg), fontFamily: "'Space Mono', monospace", width: 40, textAlign: "right" }}>{avg}%</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(avg), fontFamily: "'Space Mono', monospace", width: 50, textAlign: "right" }}>{avg}/10</span>
             </div>
           );
         })}
       </div>
-      {topRisks.length > 0 && (
-        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Most Common Risks</h3>
-          {topRisks.slice(0, 5).map(risk => (
-            <div key={risk.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #FFFFFF" }}>
-              <span style={{ fontSize: 16 }}>{risk.icon}</span>
-              <span style={{ fontSize: 13, color: "#1A2B3C", flex: 1 }}>{risk.label}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: risk.severity === "high" ? "#ef4444" : risk.severity === "medium" ? "#eab308" : "rgba(0,0,0,0.45)", fontFamily: "'Space Mono', monospace" }}>{riskCounts[risk.id]}x</span>
-              <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", width: 60 }}>({totalCalls > 0 ? Math.round(riskCounts[risk.id] / totalCalls * 100) : 0}%)</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -1147,13 +1114,11 @@ export default function CuotaCallReview() {
   // Review state
   const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
   const [scores, setScores] = useState({});
-  const [risks, setRisks] = useState({});
   const [notes, setNotes] = useState("");
   const [activeTab, setActiveTab] = useState("transcript");
   const [transcript, setTranscript] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [aiKeyMoments, setAiKeyMoments] = useState({});
   const [error, setError] = useState("");
   const [callsError, setCallsError] = useState("");
 
@@ -1346,16 +1311,10 @@ export default function CuotaCallReview() {
   const handleLogout = () => { clearSession(); };
 
   // Review functions
-  const handleScoreChange = (catId, idx) => { setScores(p => ({ ...p, [catId]: { ...p[catId], [idx]: !p[catId]?.[idx] } })); };
-  const handleRiskToggle = (id) => { setRisks(p => ({ ...p, [id]: !p[id] })); };
+  const handleScoreChange = (catId, newScore) => { setScores(p => ({ ...p, [catId]: { ...p[catId], score: newScore } })); };
 
-  const calcFactor = (id) => { const s = scores[id] || {}, cat = CATEGORIES.find(c => c.id === id); return cat ? Object.values(s).filter(Boolean).length / cat.criteria.length || 0 : 0; };
-  const overallScore = Math.round(CATEGORIES.reduce((t, cat) => { const cs = scores[cat.id] || {}; return t + (cat.criteria.length > 0 ? Object.values(cs).filter(Boolean).length / cat.criteria.length : 0) * cat.weight; }, 0));
-  const momentum = Math.round(calcFactor("nextsteps") * 30 + calcFactor("discovery") * 25 + calcFactor("qualification") * 25 + calcFactor("multithreading") * 20);
-  const hrc = RISK_DEFINITIONS.filter(r => risks[r.id] && r.severity === "high").length;
-  const mrc = RISK_DEFINITIONS.filter(r => risks[r.id] && r.severity === "medium").length;
-  const closeProbability = Math.max(5, Math.min(95, Math.round(overallScore * 0.5 + momentum * 0.5 - hrc * 12 - mrc * 5)));
-  const mi = getMomentumLabel(momentum);
+  const totalRaw = CATEGORIES.reduce((sum, cat) => sum + (scores[cat.id]?.score || 0), 0);
+  const overallScore = Math.round((totalRaw / 90) * 100);
 
   const analyzeTranscript = async () => {
     if (!transcript.trim()) { setError("Paste a transcript first."); return; }
@@ -1366,10 +1325,9 @@ export default function CuotaCallReview() {
       const res = await fetch("/api/analyze", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${validToken}`}, body:JSON.stringify({transcript, apiKey: apiKey || undefined}) });
       if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||"Analysis failed");}
       const result=await res.json();
-      const newScores = {}, newKM = {};
-      CATEGORIES.forEach(cat => { const ai = result.scores[cat.id]; if (ai) { newScores[cat.id] = {}; ai.criteria_met.forEach((met, i) => { newScores[cat.id][i] = met; }); newKM[cat.id] = ai.key_moment; } });
-      setScores(newScores); setAiKeyMoments(newKM);
-      const newRisks = {}; RISK_DEFINITIONS.forEach(r => { newRisks[r.id] = !!result.risks[r.id]; }); setRisks(newRisks);
+      const newScores = {};
+      CATEGORIES.forEach(cat => { const ai = result.scores[cat.id]; if (ai) { newScores[cat.id] = { score: ai.score || 0, details: ai.details || "" }; } });
+      setScores(newScores);
       // Auto-fill call info from transcript
       if (result.metadata) {
         setCallInfo(p => ({
@@ -1380,7 +1338,7 @@ export default function CuotaCallReview() {
           dealStage: result.metadata.deal_stage || p.dealStage,
         }));
       }
-      setAiAnalysis(result); setNotes(result.coaching_notes || ""); setActiveTab("insights");
+      setAiAnalysis(result); setNotes(result.gut_check || ""); setActiveTab("insights");
     } catch (err) { setError("Analysis failed: " + err.message); } finally { setAnalyzing(false); }
   };
 
@@ -1404,9 +1362,9 @@ export default function CuotaCallReview() {
         deal_value: callInfo.dealValue ? Number(callInfo.dealValue) : null,
         category_scores: { ...scores, rep_name: callInfo.repName, prospect_name: aiAnalysis?.metadata?.prospect_name || "", client: callInfo.client },
         overall_score: overallScore,
-        momentum_score: momentum,
-        close_probability: closeProbability,
-        risk_flags: risks,
+        momentum_score: null,
+        close_probability: null,
+        risk_flags: null,
         transcript: transcript,
         ai_analysis: aiAnalysis,
         coaching_notes: notes,
@@ -1429,17 +1387,18 @@ export default function CuotaCallReview() {
   const loadCallIntoReview = (call) => {
     setSelectedCall(call);
     setCallInfo({ client: call.category_scores?.client || "", repName: call.category_scores?.rep_name || "", prospectCompany: call.prospect_company || "", callDate: call.call_date || "", callType: call.call_type || "Discovery", dealStage: call.deal_stage || "Early", dealValue: call.deal_value || "" });
-    setScores(call.category_scores || {});
-    setRisks(call.risk_flags || {});
+    // Detect old format (boolean criteria) vs new format ({ score, details })
+    const cs = call.category_scores || {};
+    const isOld = OLD_CATEGORY_IDS.some(id => cs[id] && typeof Object.values(cs[id])[0] === "boolean");
+    if (isOld) {
+      // Old format: don't load category scores into the new scorecard — just show overall
+      setScores({});
+    } else {
+      setScores(cs);
+    }
     setNotes(call.coaching_notes || "");
     setTranscript(call.transcript || "");
     setAiAnalysis(call.ai_analysis || null);
-    setAiKeyMoments({});
-    if (call.ai_analysis?.scores) {
-      const km = {};
-      CATEGORIES.forEach(cat => { if (call.ai_analysis.scores[cat.id]?.key_moment) km[cat.id] = call.ai_analysis.scores[cat.id].key_moment; });
-      setAiKeyMoments(km);
-    }
     setPage("review");
     setActiveTab("scorecard");
   };
@@ -1447,7 +1406,7 @@ export default function CuotaCallReview() {
   const startNewReview = () => {
     setSelectedCall(null);
     setCallInfo({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
-    setScores({}); setRisks({}); setNotes(""); setTranscript(""); setAiAnalysis(null); setAiKeyMoments({}); setError("");
+    setScores({}); setNotes(""); setTranscript(""); setAiAnalysis(null); setError("");
     setPage("review"); setActiveTab("transcript");
   };
 
@@ -1457,7 +1416,6 @@ export default function CuotaCallReview() {
   const tabs = [
     { id: "transcript", label: "Transcript" },
     { id: "scorecard", label: "Scorecard" },
-    { id: "risks", label: "Risks" + (Object.values(risks).filter(Boolean).length > 0 ? " (" + Object.values(risks).filter(Boolean).length + ")" : "") },
     { id: "insights", label: aiAnalysis ? "AI Insights \u2726" : "AI Insights" },
     { id: "notes", label: "Notes" },
   ];
@@ -1529,19 +1487,21 @@ export default function CuotaCallReview() {
             </div>
 
             {/* Score Dashboard */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 16, marginBottom: 24 }}>
               <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 <CircularScore score={overallScore} size={100} label="overall" />
+                <div style={{ textAlign: "center" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace" }}>{totalRaw}/90</span>
+                  <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginLeft: 6 }}>({overallScore}%)</span>
+                </div>
                 <span style={{ fontSize: 11, fontWeight: 600, color: getScoreColor(overallScore), textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
               </div>
-              <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 28 }}>{mi.icon}</span>
-                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 24, fontWeight: 700, color: mi.color }}>{momentum}</span>
-                <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(0,0,0,0.45)" }}>Momentum</span>
-              </div>
-              <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <CircularScore score={closeProbability} size={100} label="close %" />
-              </div>
+              {aiAnalysis?.gut_check && (
+                <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "#7c3aed", fontWeight: 700 }}>Gut Check</span>
+                  <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
+                </div>
+              )}
             </div>
 
             {/* Tabs */}
@@ -1569,57 +1529,46 @@ export default function CuotaCallReview() {
             {/* Scorecard */}
             {activeTab === "scorecard" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {CATEGORIES.map(cat => <CategoryBar key={cat.id} category={cat} scores={scores} aiKeyMoment={aiKeyMoments[cat.id]} onScoreChange={handleScoreChange} />)}
-              </div>
-            )}
-
-            {/* Risks */}
-            {activeTab === "risks" && (
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Risk Flags</h3>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  {RISK_DEFINITIONS.map(risk => (
-                    <div key={risk.id} onClick={() => handleRiskToggle(risk.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, cursor: "pointer", background: risks[risk.id] ? risk.severity === "high" ? "rgba(239,68,68,0.08)" : risk.severity === "medium" ? "rgba(234,179,8,0.06)" : "#FFFFFF" : "#FFFFFF", border: risks[risk.id] ? "1px solid " + (risk.severity === "high" ? "rgba(239,68,68,0.25)" : risk.severity === "medium" ? "rgba(234,179,8,0.2)" : "rgba(0,0,0,0.06)") : "1px solid #FFFFFF" }}>
-                      <span style={{ fontSize: 16 }}>{risk.icon}</span>
-                      <span style={{ fontSize: 13, color: risks[risk.id] ? "#1A2B3C" : "rgba(0,0,0,0.35)", flex: 1, fontWeight: risks[risk.id] ? 500 : 400 }}>{risk.label}</span>
-                      <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: risk.severity === "high" ? "rgba(239,68,68,0.6)" : risk.severity === "medium" ? "rgba(234,179,8,0.5)" : "rgba(0,0,0,0.25)", fontWeight: 600 }}>{risk.severity}</span>
-                    </div>
-                  ))}
-                </div>
+                {CATEGORIES.map(cat => <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />)}
               </div>
             )}
 
             {/* AI Insights */}
             {activeTab === "insights" && (aiAnalysis ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* Gut Check */}
                 <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 18 }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Executive Summary</h4>
-                  <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.executive_summary}</p>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Gut Check</h4>
+                  <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 12, padding: 16 }}>
-                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700 }}>Strongest Moment</span>
-                    <p style={{ fontSize: 13, color: "#1a7a42", margin: "8px 0 0", lineHeight: 1.6 }}>{aiAnalysis.strongest_moment}</p>
+
+                {/* Strengths */}
+                <div>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#31CE81", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Strengths</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                    {(aiAnalysis.strengths || []).map((s, i) => (
+                      <div key={i} style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 12, padding: 16 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1a7a42", marginBottom: 6 }}>{s.title}</div>
+                        <p style={{ fontSize: 12, color: "#1a7a42", margin: 0, lineHeight: 1.6, opacity: 0.85 }}>{s.description}</p>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, padding: 16 }}>
-                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700 }}>Biggest Miss</span>
-                    <p style={{ fontSize: 13, color: "#991b1b", margin: "8px 0 0", lineHeight: 1.6 }}>{aiAnalysis.biggest_miss}</p>
+                </div>
+
+                {/* Areas of Opportunity */}
+                <div>
+                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#eab308", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Areas of Opportunity</h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {(aiAnalysis.areas_of_opportunity || []).map((area, i) => (
+                      <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16 }}>
+                        <p style={{ fontSize: 13, color: "#1A2B3C", margin: "0 0 10px", lineHeight: 1.6 }}>{area.description}</p>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 12px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8 }}>
+                          <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, flexShrink: 0, paddingTop: 2 }}>Fix</span>
+                          <p style={{ fontSize: 12, color: "#2563eb", margin: 0, lineHeight: 1.6 }}>{area.fix}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 18 }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#eab308", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Top 3 Improvements</h4>
-                  {(aiAnalysis.top_3_improvements || []).map((item, i) => (
-                    <div key={i} style={{ display: "flex", gap: 10, padding: "10px 0", borderBottom: i < 2 ? "1px solid #FFFFFF" : "none" }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#eab308", fontFamily: "'Space Mono', monospace", minWidth: 24 }}>{i + 1}.</span>
-                      <span style={{ fontSize: 13, color: "#1A2B3C", lineHeight: 1.6 }}>{item}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 18 }}>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Coaching Notes</h4>
-                  <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.8, margin: 0, whiteSpace: "pre-wrap" }}>{aiAnalysis.coaching_notes}</p>
                 </div>
               </div>
             ) : (

@@ -3,7 +3,37 @@
 // Uses ANTHROPIC_API_KEY env var, falls back to user-provided apiKey
 import { authenticateUser } from "./lib/supabase.js";
 
-const ANALYSIS_PROMPT = "You are an expert sales call reviewer using the Cuota Revenue Framework. Analyze the following sales call transcript.\n\nSCORING FRAMEWORK (9 categories):\n1. OPENING (8%): Confirmed time | Stated agenda | Asked prospect to add | Set expectations\n2. DISCOVERY (15%): Core pain | Quantified impact | Timeline/urgency | Previous attempts | Why now\n3. QUALIFICATION MEDDPICC (15%): Metrics | Economic Buyer | Decision Criteria | Decision Process | Paper Process | Implicated Pain | Champion | Competition\n4. STORYTELLING (10%): Customer story | Matched situation | Specific metrics | That could be us moment\n5. OBJECTION HANDLING (12%): Acknowledged | Clarifying questions | Reframed | Evidence | Confirmed resolution\n6. DEMO (10%): Tied to pain | No feature dump | Engagement questions | Aha moments\n7. MULTI-THREADING (10%): Other stakeholders | Org structure | Additional contacts | Champion buy-in\n8. NEXT STEPS (12%): Specific step | Calendar commitment | Action items | Summarized | Urgency\n9. CALL CONTROL (8%): Talk ratio | Redirected tangents | Confidence | Silence | Matched energy\n\nRISK FLAGS: single_thread, no_next_steps, no_pain, happy_ears, no_champion, competitor_unhandled, no_timeline, no_budget, low_engagement, feature_dump\n\nALSO EXTRACT from the transcript:\n- rep_name: The sales rep / account executive name\n- prospect_company: The prospect's company name\n- prospect_name: The main prospect/buyer on the call\n- call_type: One of Discovery, Demo, Follow-up, Negotiation, Closing\n- deal_stage: One of Early, Mid-Pipe, Late Stage, Negotiation\n\nRESPOND ONLY WITH VALID JSON:\n{\"metadata\":{\"rep_name\":\"...\",\"prospect_company\":\"...\",\"prospect_name\":\"...\",\"call_type\":\"...\",\"deal_stage\":\"...\"},\"scores\":{\"opening\":{\"criteria_met\":[true,false,...],\"key_moment\":\"...\"},\"discovery\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"qualification\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"storytelling\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"objection\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"demo\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"multithreading\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"nextsteps\":{\"criteria_met\":[...],\"key_moment\":\"...\"},\"control\":{\"criteria_met\":[...],\"key_moment\":\"...\"}},\"risks\":{\"single_thread\":false,\"no_next_steps\":false,\"no_pain\":false,\"happy_ears\":false,\"no_champion\":false,\"competitor_unhandled\":false,\"no_timeline\":false,\"no_budget\":false,\"low_engagement\":false,\"feature_dump\":false},\"coaching_notes\":\"...\",\"executive_summary\":\"...\",\"top_3_improvements\":[\"...\",\"...\",\"...\"],\"strongest_moment\":\"...\",\"biggest_miss\":\"...\"}";
+const ANALYSIS_PROMPT = `You are an expert sales call reviewer using the Cuota scoring rubric. Analyze the following sales call transcript.
+
+SCORING RUBRIC — 9 categories, each scored out of 10 (total /90):
+1. PRE-CALL RESEARCH (pre_call_research): Did the rep show evidence of researching the prospect, their company, industry, and pain points before the call?
+2. INTRO/OPENING (intro_opening): Did the rep introduce themselves clearly, build rapport, and set a professional tone?
+3. AGENDA (agenda): Did the rep set a clear agenda, confirm time, and get buy-in on what would be covered?
+4. DISCOVERY (discovery): Quality and depth of questions to uncover pain, impact, timeline, and decision process.
+5. PITCH (pitch): Was the pitch tailored to the prospect's specific situation and pain points uncovered in discovery?
+6. SERVICES/PRODUCT OVERVIEW (services_product): Was the product/service explanation clear, relevant, and tied to value rather than features?
+7. PRICING (pricing): Was pricing discussed confidently, anchored to value, and objections around cost handled well?
+8. NEXT STEPS/CLOSING (next_steps): Were specific next steps proposed, calendar commitments obtained, and clear action items assigned?
+9. OBJECTION HANDLING (objection_handling): Were objections acknowledged, explored, and addressed effectively with evidence or reframing?
+
+For each category, provide:
+- score: An integer from 0 to 10
+- details: 2-3 sentences explaining the score — what the rep did well or missed
+
+ALSO PROVIDE:
+- gut_check: An honest 3-5 sentence paragraph giving your overall gut feeling about this call. Be direct and constructive.
+- strengths: Exactly 3 strengths, each with a short title and 1-2 sentence description.
+- areas_of_opportunity: 2-4 areas where the rep can improve. Each must have a description of the gap AND a "fix" — a specific, actionable suggestion the rep can implement immediately.
+
+ALSO EXTRACT from the transcript:
+- rep_name: The sales rep / account executive name
+- prospect_company: The prospect's company name
+- prospect_name: The main prospect/buyer on the call
+- call_type: One of Discovery, Demo, Follow-up, Negotiation, Closing
+- deal_stage: One of Early, Mid-Pipe, Late Stage, Negotiation
+
+RESPOND ONLY WITH VALID JSON:
+{"metadata":{"rep_name":"...","prospect_company":"...","prospect_name":"...","call_type":"...","deal_stage":"..."},"scores":{"pre_call_research":{"score":7,"details":"..."},"intro_opening":{"score":8,"details":"..."},"agenda":{"score":6,"details":"..."},"discovery":{"score":7,"details":"..."},"pitch":{"score":5,"details":"..."},"services_product":{"score":6,"details":"..."},"pricing":{"score":4,"details":"..."},"next_steps":{"score":8,"details":"..."},"objection_handling":{"score":7,"details":"..."}},"gut_check":"...","strengths":[{"title":"...","description":"..."},{"title":"...","description":"..."},{"title":"...","description":"..."}],"areas_of_opportunity":[{"description":"...","fix":"..."},{"description":"...","fix":"..."}]}`;
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -42,7 +72,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
+        max_tokens: 8192,
         messages: [{ role: "user", content: ANALYSIS_PROMPT + "\n\n---\n\nTRANSCRIPT:\n" + transcript }],
       }),
     });
