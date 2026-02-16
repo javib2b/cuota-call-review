@@ -153,42 +153,69 @@ export default async function handler(req, res) {
 
       const gongCalls = await gong.listAllCalls(fromDate);
 
+      // Log raw Gong response structure for debugging
+      let _debugSample = null;
+      if (gongCalls.length > 0) {
+        const s = gongCalls[0];
+        _debugSample = {
+          topLevelKeys: Object.keys(s),
+          metaDataKeys: s.metaData ? Object.keys(s.metaData) : null,
+          partiesSample: (s.parties || []).slice(0, 1).map(p => ({ keys: Object.keys(p), affiliation: p.affiliation, name: p.name, emailAddress: p.emailAddress })),
+          metaDataId: s.metaData?.id,
+          metaDataTitle: s.metaData?.title,
+          topLevelId: s.id,
+        };
+        console.log("Gong debug sample:", JSON.stringify(_debugSample));
+      }
+
       // Get processed status for these calls
       const processedTable = adminTable("gong_processed_calls");
-      const gongCallIds = gongCalls.map((c) => c.metaData?.id).filter(Boolean);
       let processed = [];
-      if (gongCallIds.length > 0) {
+      try {
         processed = await processedTable.select("*", `org_id=eq.${orgId}`);
         if (!Array.isArray(processed)) processed = [];
-      }
+      } catch { processed = []; }
 
       const processedMap = {};
       processed.forEach((p) => { processedMap[p.gong_call_id] = p; });
 
-      // Log first call structure for debugging
-      if (gongCalls.length > 0) {
-        const sample = gongCalls[0];
-        console.log("Gong call sample keys:", Object.keys(sample));
-        console.log("Gong call metaData keys:", sample.metaData ? Object.keys(sample.metaData) : "NO_METADATA");
-        console.log("Gong call metaData.id:", sample.metaData?.id, "type:", typeof sample.metaData?.id);
-      }
-
       const enrichedCalls = gongCalls.map((call) => {
-        // Robust ID extraction — try multiple locations
-        const id = String(call.metaData?.id || call.id || call.callId || "");
-        const proc = id ? processedMap[id] : null;
+        // Robust ID extraction — try every possible location
+        const rawId = call.metaData?.id ?? call.id ?? call.callId ?? null;
+        const id = rawId != null ? String(rawId) : null;
+
+        const proc = id ? (processedMap[id] || processedMap[rawId]) : null;
         const callParties = call.parties || [];
         const internal = callParties.filter(p => p.affiliation === "Internal");
         const external = callParties.filter(p => p.affiliation === "External");
+
+        // Build a useful display title from available data
+        const gongTitle = call.metaData?.title || call.title || "";
+        const aeNames = internal.map(p => p.name).filter(Boolean);
+        const prospectNames = external.map(p => p.name).filter(Boolean);
+        const allNames = callParties.map(p => p.name || p.emailAddress).filter(Boolean);
+        const started = call.metaData?.started || call.started;
+
+        let displayTitle = gongTitle;
+        if (!displayTitle || displayTitle === "Untitled") {
+          if (aeNames.length > 0 && prospectNames.length > 0) {
+            displayTitle = `${aeNames[0]} \u2194 ${prospectNames[0]}`;
+          } else if (allNames.length > 0) {
+            displayTitle = allNames.slice(0, 2).join(" & ");
+          } else if (started) {
+            displayTitle = `Call on ${new Date(started).toLocaleDateString()}`;
+          }
+        }
+
         return {
-          gongCallId: id || null,
-          title: call.metaData?.title || "Untitled",
-          started: call.metaData?.started,
-          duration: call.metaData?.duration,
-          direction: call.metaData?.direction,
-          parties: callParties.map((p) => p.name || p.emailAddress).filter(Boolean),
-          aeName: internal.map(p => p.name).filter(Boolean).join(", ") || null,
-          prospectName: external.map(p => p.name).filter(Boolean).join(", ") || null,
+          gongCallId: id,
+          title: displayTitle || "Untitled",
+          started,
+          duration: call.metaData?.duration || call.duration,
+          direction: call.metaData?.direction || call.direction,
+          parties: allNames,
+          aeName: aeNames.join(", ") || null,
+          prospectName: prospectNames.join(", ") || null,
           prospectTitle: external.map(p => p.title).filter(Boolean).join(", ") || null,
           status: proc?.status || "new",
           callReviewId: proc?.call_review_id || null,
@@ -199,7 +226,7 @@ export default async function handler(req, res) {
       // Sort by date, newest first
       enrichedCalls.sort((a, b) => new Date(b.started || 0) - new Date(a.started || 0));
 
-      return res.status(200).json({ calls: enrichedCalls });
+      return res.status(200).json({ calls: enrichedCalls, _debug: _debugSample });
     }
 
     // POST — process a single call

@@ -655,6 +655,8 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   const [processing, setProcessing] = useState(null);
   const [error, setError] = useState("");
 
+  const [debugInfo, setDebugInfo] = useState(null);
+
   const loadGongCalls = useCallback(async () => {
     setLoading(true); setError("");
     try {
@@ -664,6 +666,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Failed to load calls");
       setCalls(data.calls || []);
+      if (data._debug) setDebugInfo(data._debug);
     } catch (e) { setError(e.message); } finally { setLoading(false); }
   }, [getValidToken, client]);
 
@@ -714,6 +717,13 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
         </div>
 
         {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+
+        {debugInfo && (
+          <details style={{ marginBottom: 12, fontSize: 11, color: "rgba(0,0,0,0.5)" }}>
+            <summary style={{ cursor: "pointer", fontWeight: 600 }}>Gong API debug</summary>
+            <pre style={{ background: "rgba(0,0,0,0.03)", padding: 8, borderRadius: 6, overflow: "auto", maxHeight: 120, fontSize: 10 }}>{JSON.stringify(debugInfo, null, 2)}</pre>
+          </details>
+        )}
 
         {loading ? (
           <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>Loading Gong calls...</p>
