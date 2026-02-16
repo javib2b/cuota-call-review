@@ -80,7 +80,7 @@ const RISK_DEFINITIONS = [
   { id: "feature_dump", label: "Feature Dumping Detected", icon: "\u{1F4E6}", severity: "low" },
 ];
 
-const PREDEFINED_CLIENTS = ["Factor", "Arc", "11x", "Rapido", "Xepelin", "Planimatik", "Nauta"];
+const PREDEFINED_CLIENTS = ["11x", "Arc", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
 
 function computeCategoryAverages(calls) {
   const avgs = {};
