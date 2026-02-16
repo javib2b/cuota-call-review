@@ -128,6 +128,5 @@ export function buildCallData(aiResult, computed, transcript, orgId, repId, clie
     transcript,
     ai_analysis: aiResult,
     coaching_notes: aiResult.coaching_notes || "",
-    source: "gong",
   };
 }
