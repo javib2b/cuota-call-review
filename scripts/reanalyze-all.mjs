@@ -1,7 +1,24 @@
-// Server-side Claude analysis module
-// Duplicated scoring constants from src/App.jsx to keep serverless functions self-contained
+#!/usr/bin/env node
+// One-off script to re-analyze all saved calls with the new /10 rubric + risk indicators.
+//
+// Usage:
+//   SUPABASE_SERVICE_KEY=your_key ANTHROPIC_API_KEY=your_key node scripts/reanalyze-all.mjs
+//
+// Optional:
+//   --dry-run     Preview which calls would be re-analyzed without making changes
+//   --limit N     Only process N calls (useful for testing)
 
+const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+
+if (!SUPABASE_SERVICE_KEY) { console.error("Missing SUPABASE_SERVICE_KEY env var"); process.exit(1); }
+if (!ANTHROPIC_API_KEY) { console.error("Missing ANTHROPIC_API_KEY env var"); process.exit(1); }
+
+const args = process.argv.slice(2);
+const dryRun = args.includes("--dry-run");
+const limitIdx = args.indexOf("--limit");
+const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1]) : Infinity;
 
 const CATEGORIES = [
   { id: "pre_call_research", name: "Pre-Call Research" },
@@ -58,10 +75,19 @@ ALSO EXTRACT from the transcript:
 RESPOND ONLY WITH VALID JSON:
 {"metadata":{"rep_name":"...","prospect_company":"...","prospect_name":"...","call_type":"...","deal_stage":"..."},"scores":{"pre_call_research":{"score":7,"details":"..."},"intro_opening":{"score":8,"details":"..."},"agenda":{"score":6,"details":"..."},"discovery":{"score":7,"details":"..."},"pitch":{"score":5,"details":"..."},"services_product":{"score":6,"details":"..."},"pricing":{"score":4,"details":"..."},"next_steps":{"score":8,"details":"..."},"objection_handling":{"score":7,"details":"..."}},"risks":{"meddpicc_gaps":{"flagged":true,"details":"..."},"single_threaded":{"flagged":false,"details":"..."},"no_decision_maker":{"flagged":true,"details":"..."},"engagement_gap":{"flagged":false,"details":"..."},"no_next_steps":{"flagged":false,"details":"..."}},"gut_check":"...","strengths":[{"title":"...","description":"..."},{"title":"...","description":"..."},{"title":"...","description":"..."}],"areas_of_opportunity":[{"description":"...","fix":"..."},{"description":"...","fix":"..."}]}`;
 
-// Call Claude API and parse the analysis result
-export async function analyzeTranscript(transcript) {
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+const headers = {
+  "Content-Type": "application/json",
+  apikey: SUPABASE_SERVICE_KEY,
+  Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+};
 
+async function fetchAllCalls() {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/call_reviews?select=id,prospect_company,call_date,call_type,deal_stage,deal_value,category_scores,transcript,overall_score&order=created_at.asc`, { headers });
+  if (!r.ok) throw new Error(`Supabase fetch failed: ${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+async function analyzeTranscript(transcript) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -86,54 +112,109 @@ export async function analyzeTranscript(transcript) {
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }
 
-// Compute overall score from AI result — new /10 rubric
-export function computeScores(aiResult) {
+function computeScores(aiResult) {
   const scores = {};
-
-  // Build category scores object with { score, details } per category
   CATEGORIES.forEach((cat) => {
     const ai = aiResult.scores[cat.id];
-    if (ai) {
-      scores[cat.id] = { score: ai.score || 0, details: ai.details || "" };
-    }
+    if (ai) scores[cat.id] = { score: ai.score || 0, details: ai.details || "" };
   });
-
-  // Add metadata to category_scores
   if (aiResult.metadata) {
     scores.rep_name = aiResult.metadata.rep_name || "";
     scores.prospect_name = aiResult.metadata.prospect_name || "";
   }
-
-  // Calculate overall score: sum of /10 scores → percentage of /90
-  const total = CATEGORIES.reduce((sum, cat) => {
-    const cs = scores[cat.id];
-    return sum + (cs?.score || 0);
-  }, 0);
-  const overallScore = Math.round((total / 90) * 100);
-
-  return { scores, overallScore };
+  const total = CATEGORIES.reduce((sum, cat) => sum + (scores[cat.id]?.score || 0), 0);
+  return { scores, overallScore: Math.round((total / 90) * 100) };
 }
 
-// Build the call_reviews row from analysis results
-export function buildCallData(aiResult, computed, transcript, orgId, repId, client) {
-  return {
-    org_id: orgId,
-    ...(repId ? { rep_id: repId } : {}),
-    prospect_company: aiResult.metadata?.prospect_company || "",
-    call_date: new Date().toISOString().split("T")[0],
-    call_type: aiResult.metadata?.call_type || "Discovery",
-    deal_stage: aiResult.metadata?.deal_stage || "Early",
-    deal_value: null,
-    category_scores: {
-      ...computed.scores,
-      client: client || aiResult.metadata?.prospect_company || "Other",
-    },
-    overall_score: computed.overallScore,
-    momentum_score: null,
-    close_probability: null,
-    risk_flags: aiResult.risks || null,
-    transcript,
-    ai_analysis: aiResult,
-    coaching_notes: aiResult.gut_check || "",
-  };
+async function updateCall(id, data) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/call_reviews?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { ...headers, Prefer: "return=minimal" },
+    body: JSON.stringify(data),
+  });
+  if (!r.ok) throw new Error(`Update failed for ${id}: ${r.status} ${await r.text()}`);
 }
+
+async function main() {
+  console.log("Fetching all calls from Supabase...");
+  const calls = await fetchAllCalls();
+  console.log(`Found ${calls.length} calls.`);
+
+  const toProcess = calls.filter(c => c.transcript && c.transcript.trim().length > 50);
+  const skipped = calls.length - toProcess.length;
+  if (skipped > 0) console.log(`Skipping ${skipped} calls with no/short transcript.`);
+
+  const batch = toProcess.slice(0, limit);
+  console.log(`Will process ${batch.length} calls${dryRun ? " (DRY RUN)" : ""}.\n`);
+
+  let success = 0, failed = 0;
+
+  for (let i = 0; i < batch.length; i++) {
+    const call = batch[i];
+    const label = `[${i + 1}/${batch.length}] ${call.id} — ${call.prospect_company || "Unknown"} (${call.call_date || "no date"})`;
+
+    if (dryRun) {
+      console.log(`  ${label} — would re-analyze (transcript: ${call.transcript.length} chars)`);
+      continue;
+    }
+
+    try {
+      process.stdout.write(`  ${label} — analyzing...`);
+      const aiResult = await analyzeTranscript(call.transcript);
+      const computed = computeScores(aiResult);
+
+      // Preserve existing metadata from category_scores (client, rep_name, gong data, etc.)
+      const existingCS = call.category_scores || {};
+      const preservedKeys = {};
+      for (const [k, v] of Object.entries(existingCS)) {
+        // Keep non-category keys (client, rep_name, prospect_name, gong_*, call_title)
+        if (!CATEGORIES.some(cat => cat.id === k) && typeof v !== "object") {
+          preservedKeys[k] = v;
+        }
+        // Also preserve array/string metadata keys from Gong enrichment
+        if (k.startsWith("gong_") || k === "call_title") {
+          preservedKeys[k] = v;
+        }
+      }
+
+      const newCategoryScores = {
+        ...computed.scores,
+        ...preservedKeys,
+      };
+
+      // Use AI-extracted metadata but prefer existing values for rep_name/prospect_name if they came from Gong
+      if (existingCS.rep_name) newCategoryScores.rep_name = existingCS.rep_name;
+      if (existingCS.prospect_name) newCategoryScores.prospect_name = existingCS.prospect_name;
+      if (existingCS.client) newCategoryScores.client = existingCS.client;
+
+      const updateData = {
+        category_scores: newCategoryScores,
+        overall_score: computed.overallScore,
+        risk_flags: aiResult.risks || null,
+        ai_analysis: aiResult,
+        coaching_notes: aiResult.gut_check || "",
+        // Preserve call_type/deal_stage from AI if not already set meaningfully
+        call_type: aiResult.metadata?.call_type || call.call_type || "Discovery",
+        deal_stage: aiResult.metadata?.deal_stage || call.deal_stage || "Early",
+      };
+
+      await updateCall(call.id, updateData);
+
+      const flaggedCount = aiResult.risks ? Object.values(aiResult.risks).filter(r => r.flagged).length : 0;
+      console.log(` done. Score: ${computed.overallScore}% | Risks: ${flaggedCount} flagged`);
+      success++;
+    } catch (err) {
+      console.log(` FAILED: ${err.message}`);
+      failed++;
+    }
+
+    // Small delay to avoid rate limiting
+    if (i < batch.length - 1) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+
+  console.log(`\nDone! ${success} succeeded, ${failed} failed${skipped > 0 ? `, ${skipped} skipped (no transcript)` : ""}.`);
+}
+
+main().catch(err => { console.error("Fatal:", err); process.exit(1); });

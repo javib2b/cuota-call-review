@@ -70,6 +70,14 @@ const CATEGORIES = [
 // Old category IDs for backward compatibility detection
 const OLD_CATEGORY_IDS = ["opening", "qualification", "storytelling", "objection", "demo", "multithreading", "nextsteps", "control"];
 
+const RISK_INDICATORS = [
+  { id: "meddpicc_gaps", label: "MEDDPICC Gaps", severity: "high" },
+  { id: "single_threaded", label: "Single-Threaded Deal", severity: "high" },
+  { id: "no_decision_maker", label: "No Access to Decision Maker", severity: "high" },
+  { id: "engagement_gap", label: "Time Since Last Call", severity: "medium" },
+  { id: "no_next_steps", label: "No Clear Next Steps", severity: "high" },
+];
+
 const DEFAULT_CLIENTS = ["11x", "Arc", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://logo.clearbit.com/${domain}` : null; }
@@ -1364,7 +1372,7 @@ export default function CuotaCallReview() {
         overall_score: overallScore,
         momentum_score: null,
         close_probability: null,
-        risk_flags: null,
+        risk_flags: aiAnalysis?.risks || null,
         transcript: transcript,
         ai_analysis: aiAnalysis,
         coaching_notes: notes,
@@ -1570,6 +1578,29 @@ export default function CuotaCallReview() {
                     ))}
                   </div>
                 </div>
+
+                {/* Risk Indicators */}
+                {aiAnalysis.risks && (
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Risk Indicators</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {RISK_INDICATORS.map(risk => {
+                        const data = aiAnalysis.risks[risk.id];
+                        if (!data) return null;
+                        const flagged = data.flagged;
+                        return (
+                          <div key={risk.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, background: flagged ? risk.severity === "high" ? "rgba(239,68,68,0.06)" : "rgba(234,179,8,0.06)" : "rgba(49,206,129,0.04)", border: "1px solid " + (flagged ? risk.severity === "high" ? "rgba(239,68,68,0.2)" : "rgba(234,179,8,0.2)" : "rgba(49,206,129,0.15)") }}>
+                            <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{flagged ? risk.severity === "high" ? "\u26A0\uFE0F" : "\u26A0" : "\u2705"}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: flagged ? "#1A2B3C" : "rgba(0,0,0,0.5)", marginBottom: 2 }}>{risk.label}</div>
+                              <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{data.details}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ textAlign: "center", padding: 40, color: "rgba(0,0,0,0.4)" }}>

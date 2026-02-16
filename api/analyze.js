@@ -20,6 +20,17 @@ For each category, provide:
 - score: An integer from 0 to 10
 - details: 2-3 sentences explaining the score — what the rep did well or missed
 
+RISK INDICATORS — assess each of these (flagged = true if the risk is present):
+- meddpicc_gaps: Are there significant gaps in MEDDPICC qualification? (Metrics, Economic Buyer, Decision Criteria, Decision Process, Paper Process, Implicated Pain, Champion, Competition)
+- single_threaded: Is this deal relying on a single contact with no multi-threading or stakeholder engagement?
+- no_decision_maker: Does the rep lack access to or awareness of the economic buyer / decision maker?
+- engagement_gap: Is there evidence of a long gap between this and previous interactions, or stalling momentum?
+- no_next_steps: Were next steps vague, missing, or not committed to with a specific date/time?
+
+For each risk, provide:
+- flagged: true or false
+- details: 1-2 sentences explaining why the risk is or isn't present
+
 ALSO PROVIDE:
 - gut_check: An honest 3-5 sentence paragraph giving your overall gut feeling about this call. Be direct and constructive.
 - strengths: Exactly 3 strengths, each with a short title and 1-2 sentence description.
@@ -33,7 +44,7 @@ ALSO EXTRACT from the transcript:
 - deal_stage: One of Early, Mid-Pipe, Late Stage, Negotiation
 
 RESPOND ONLY WITH VALID JSON:
-{"metadata":{"rep_name":"...","prospect_company":"...","prospect_name":"...","call_type":"...","deal_stage":"..."},"scores":{"pre_call_research":{"score":7,"details":"..."},"intro_opening":{"score":8,"details":"..."},"agenda":{"score":6,"details":"..."},"discovery":{"score":7,"details":"..."},"pitch":{"score":5,"details":"..."},"services_product":{"score":6,"details":"..."},"pricing":{"score":4,"details":"..."},"next_steps":{"score":8,"details":"..."},"objection_handling":{"score":7,"details":"..."}},"gut_check":"...","strengths":[{"title":"...","description":"..."},{"title":"...","description":"..."},{"title":"...","description":"..."}],"areas_of_opportunity":[{"description":"...","fix":"..."},{"description":"...","fix":"..."}]}`;
+{"metadata":{"rep_name":"...","prospect_company":"...","prospect_name":"...","call_type":"...","deal_stage":"..."},"scores":{"pre_call_research":{"score":7,"details":"..."},"intro_opening":{"score":8,"details":"..."},"agenda":{"score":6,"details":"..."},"discovery":{"score":7,"details":"..."},"pitch":{"score":5,"details":"..."},"services_product":{"score":6,"details":"..."},"pricing":{"score":4,"details":"..."},"next_steps":{"score":8,"details":"..."},"objection_handling":{"score":7,"details":"..."}},"risks":{"meddpicc_gaps":{"flagged":true,"details":"..."},"single_threaded":{"flagged":false,"details":"..."},"no_decision_maker":{"flagged":true,"details":"..."},"engagement_gap":{"flagged":false,"details":"..."},"no_next_steps":{"flagged":false,"details":"..."}},"gut_check":"...","strengths":[{"title":"...","description":"..."},{"title":"...","description":"..."},{"title":"...","description":"..."}],"areas_of_opportunity":[{"description":"...","fix":"..."},{"description":"...","fix":"..."}]}`;
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
