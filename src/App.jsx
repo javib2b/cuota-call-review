@@ -81,6 +81,8 @@ const RISK_DEFINITIONS = [
 ];
 
 const DEFAULT_CLIENTS = ["11x", "Arc", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
+const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
+function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://logo.clearbit.com/${domain}` : null; }
 
 function loadClients() {
   try {
@@ -271,7 +273,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
   const breadcrumb = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#31CE81" : "#1A2B3C", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Saved Calls</span>
+      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#31CE81" : "#1A2B3C", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Clients</span>
       {folderClient && <>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span onClick={() => setFolderAE(null)} style={{ color: folderAE ? "#31CE81" : "#1A2B3C", cursor: folderAE ? "pointer" : "default", fontWeight: 600 }}>{folderClient}</span>
@@ -292,7 +294,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
     return (
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Saved Calls ({calls.length})</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Clients</h2>
           {newReviewBtn}
         </div>
         {error && (
@@ -302,7 +304,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           </div>
         )}
         {calls.length === 0 && !error && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls reviewed yet. Click "+ New Review" to get started.</p>}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
           {clients.map(client => {
             const aes = grouped[client] || {};
             const aeCount = Object.keys(aes).length;
@@ -310,28 +312,42 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             const callCount = clientCalls.length;
             const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
             const isEmpty = callCount === 0;
+            const logoUrl = getClientLogo(client);
             return (
-              <div key={client} style={{ position: "relative", background: isEmpty ? "rgba(0,0,0,0.02)" : "#FFFFFF", border: "1px solid " + (isEmpty ? "#FFFFFF" : "rgba(0,0,0,0.08)"), borderRadius: 12, padding: 20, cursor: isEmpty ? "default" : "pointer", textAlign: "center", opacity: isEmpty ? 0.4 : 1, transition: "all 0.2s" }} onClick={() => !isEmpty && setFolderClient(client)}>
-                {onDeleteClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Remove "${client}" folder?`)) onDeleteClient(client); }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: "rgba(0,0,0,0.25)", fontSize: 14, cursor: "pointer", padding: "2px 6px", borderRadius: 4, lineHeight: 1 }} title="Remove client">{"\u2715"}</button>}
-                <div style={{ fontSize: 28, marginBottom: 8 }}>{"\uD83D\uDCC1"}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C", marginBottom: 8 }}>{client}</div>
-                {callCount > 0 ? (
-                  <>
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-                      <CircularScore score={avgScore} size={56} strokeWidth={4} />
+              <div key={client} style={{ position: "relative", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isEmpty ? 0.5 : 1, transition: "all 0.2s", boxShadow: isEmpty ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && setFolderClient(client)}>
+                {onDeleteClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Remove "${client}" folder?`)) onDeleteClient(client); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 12, cursor: "pointer", padding: "2px 6px", borderRadius: 6, lineHeight: 1, zIndex: 2 }} title="Remove client">{"\u2715"}</button>}
+                <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                    {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
+                    <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "#31CE81", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
+                    {callCount > 0 ? (
+                      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{callCount} call{callCount !== 1 ? "s" : ""} · {aeCount} rep{aeCount !== 1 ? "s" : ""}</div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>No calls yet</div>
+                    )}
+                  </div>
+                </div>
+                {callCount > 0 && (
+                  <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <CircularScore score={avgScore} size={40} strokeWidth={3} />
+                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>avg score</div>
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>{callCount} call{callCount !== 1 ? "s" : ""} &middot; {aeCount} AE{aeCount !== 1 ? "s" : ""}</div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>No calls yet</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(avgScore), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(avgScore)}</div>
+                  </div>
                 )}
               </div>
             );
           })}
           {onAddClient && (
-            <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "rgba(0,0,0,0.02)", border: "2px dashed rgba(0,0,0,0.12)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 140 }}>
-              <div style={{ fontSize: 28, marginBottom: 8, color: "rgba(0,0,0,0.25)" }}>+</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.35)" }}>Add Client</div>
+            <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "#FFFFFF", border: "2px dashed rgba(0,0,0,0.1)", borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(49,206,129,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                <span style={{ fontSize: 24, color: "#31CE81", fontWeight: 300 }}>+</span>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.4)" }}>Add Client</div>
             </div>
           )}
         </div>
@@ -1410,7 +1426,7 @@ export default function CuotaCallReview() {
         <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 16, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
         {[
           { id: "review", label: "Call Review", icon: "\u{1F4DE}" },
-          { id: "calls", label: "Saved Calls", icon: "\u{1F4C1}", badge: savedCalls.length },
+          { id: "calls", label: "Clients", icon: "\u{1F4C1}", badge: savedCalls.length },
           { id: "progression", label: "Progression", icon: "\u{1F4C8}" },
           ...(profile?.role === "admin" ? [{ id: "integrations", label: "Integrations", icon: "\u2699\uFE0F" }] : []),
           ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
