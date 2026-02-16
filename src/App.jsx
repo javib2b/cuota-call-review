@@ -848,7 +848,9 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", marginTop: 3 }}>
                       {call.aeName && <span style={{ fontWeight: 600 }}>AE: {call.aeName}</span>}
                       {call.aeName && call.prospectName && <span> &middot; </span>}
-                      {call.prospectName && <span>Prospect: {call.prospectName}{call.prospectTitle ? ` (${call.prospectTitle})` : ""}</span>}
+                      {call.prospectName && <span>Prospect: {call.prospectName}</span>}
+                      {call.prospectCompany && <span> &middot; {call.prospectCompany}</span>}
+                      {call.prospectTitle && <span style={{ color: "rgba(0,0,0,0.35)" }}> ({call.prospectTitle})</span>}
                     </div>
                   )}
                   {call.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{call.errorMessage}</div>}

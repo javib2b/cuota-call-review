@@ -58,7 +58,10 @@ async function processGongCall(gong, callId, orgId, client) {
 
     // Extract structured metadata from Gong parties
     const internalParties = parties.filter(p => p.affiliation === "Internal").map(p => p.name).filter(Boolean);
-    const externalParties = parties.filter(p => p.affiliation === "External").map(p => p.name).filter(Boolean);
+    const externalRaw = parties.filter(p => p.affiliation === "External");
+    const externalNames = externalRaw.map(p => p.name).filter(Boolean);
+    const externalCompanies = externalRaw.map(p => p.company).filter(Boolean);
+    const externalTitles = externalRaw.map(p => p.title).filter(Boolean);
     const gongCallMeta = callData.calls?.[0]?.metaData;
     const gongTitle = gongCallMeta?.title || "";
 
@@ -81,13 +84,18 @@ async function processGongCall(gong, callId, orgId, client) {
 
     // Override AI-guessed metadata with structured Gong data
     if (repName) reviewData.category_scores.rep_name = repName;
-    if (externalParties.length > 0) reviewData.category_scores.prospect_name = externalParties[0];
-    if (externalParties.length > 0 && !reviewData.prospect_company) reviewData.prospect_company = externalParties[0];
+    if (externalNames.length > 0) reviewData.category_scores.prospect_name = externalNames[0];
+    // Use company name for prospect_company (not person name)
+    if (externalCompanies.length > 0) {
+      reviewData.prospect_company = externalCompanies[0];
+    }
     if (gongTitle) reviewData.category_scores.call_title = gongTitle;
 
-    // Store all Gong party names for reference
+    // Store all Gong party data for reference
     if (internalParties.length > 0) reviewData.category_scores.gong_internal_parties = internalParties;
-    if (externalParties.length > 0) reviewData.category_scores.gong_external_parties = externalParties;
+    if (externalNames.length > 0) reviewData.category_scores.gong_external_parties = externalNames;
+    if (externalCompanies.length > 0) reviewData.category_scores.gong_external_companies = externalCompanies;
+    if (externalTitles.length > 0) reviewData.category_scores.gong_external_titles = externalTitles;
 
     // Store call date from Gong metadata
     if (gongCallMeta?.started) {
@@ -160,7 +168,7 @@ export default async function handler(req, res) {
         _debugSample = {
           topLevelKeys: Object.keys(s),
           metaDataKeys: s.metaData ? Object.keys(s.metaData) : null,
-          partiesSample: (s.parties || []).slice(0, 1).map(p => ({ keys: Object.keys(p), affiliation: p.affiliation, name: p.name, emailAddress: p.emailAddress })),
+          partiesSample: (s.parties || []).slice(0, 2).map(p => ({ keys: Object.keys(p), affiliation: p.affiliation, name: p.name, emailAddress: p.emailAddress, company: p.company, title: p.title })),
           metaDataId: s.metaData?.id,
           metaDataTitle: s.metaData?.title,
           topLevelId: s.id,
@@ -226,6 +234,7 @@ export default async function handler(req, res) {
           parties: allNames,
           aeName: aeNames.join(", ") || null,
           prospectName: prospectNames.join(", ") || null,
+          prospectCompany: external.map(p => p.company).filter(Boolean).join(", ") || null,
           prospectTitle: external.map(p => p.title).filter(Boolean).join(", ") || null,
           status: proc?.status || "new",
           callReviewId: proc?.call_review_id || null,
