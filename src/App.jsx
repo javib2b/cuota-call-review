@@ -743,6 +743,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
   const [error, setError] = useState("");
+  const [aeFilter, setAeFilter] = useState("");
 
   const [debugInfo, setDebugInfo] = useState(null);
 
@@ -818,10 +819,21 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
           <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>Loading Gong calls...</p>
         ) : calls.length === 0 ? (
           <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>No calls found in the last 30 days.</p>
-        ) : (
+        ) : (() => {
+          const aeNames = [...new Set(calls.map(c => c.aeName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+          const filtered = aeFilter ? calls.filter(c => c.aeName === aeFilter) : calls;
+          return (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 4 }}>{calls.length} calls from last 30 days</div>
-            {calls.map(call => (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}{aeFilter ? ` for ${aeFilter}` : " from last 30 days"}</div>
+              {aeNames.length > 1 && (
+                <select value={aeFilter} onChange={e => setAeFilter(e.target.value)} style={{ padding: "5px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "#FFFFFF", color: "#1A2B3C", fontSize: 12, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+                  <option value="">All AEs</option>
+                  {aeNames.map(ae => <option key={ae} value={ae}>{ae}</option>)}
+                </select>
+              )}
+            </div>
+            {filtered.map(call => (
               <div key={call.gongCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -850,7 +862,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
               </div>
             ))}
           </div>
-        )}
+          ); })()}
       </div>
     </div>
   );
