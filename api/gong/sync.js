@@ -207,9 +207,19 @@ export default async function handler(req, res) {
           }
         }
 
+        // Infer call type from title keywords
+        const titleLower = (gongTitle || "").toLowerCase();
+        let callType = null;
+        if (/\bintro\b|introduction|first\s+call|initial|discovery/.test(titleLower)) callType = "Discovery";
+        else if (/\bfollow[\s-]?up\b|check[\s-]?in|recap|touchbase|touch\s+base/.test(titleLower)) callType = "Follow-up";
+        else if (/\bdemo\b|demonstration|walkthrough|walk[\s-]?through|presentation/.test(titleLower)) callType = "Demo";
+        else if (/\bnegotiat\b|pricing|proposal|contract/.test(titleLower)) callType = "Negotiation";
+        else if (/\bclos(e|ing)\b|sign(ing|ature)?|final/.test(titleLower)) callType = "Closing";
+
         return {
           gongCallId: id,
           title: displayTitle || "Untitled",
+          callType,
           started,
           duration: call.metaData?.duration || call.duration,
           direction: call.metaData?.direction || call.direction,
