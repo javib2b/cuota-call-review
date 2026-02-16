@@ -56,6 +56,12 @@ async function processGongCall(gong, callId, orgId, client) {
     const parties = callData.calls?.[0]?.parties || [];
     const speakerMap = buildSpeakerMap(parties);
 
+    // Extract structured metadata from Gong parties
+    const internalParties = parties.filter(p => p.affiliation === "Internal").map(p => p.name).filter(Boolean);
+    const externalParties = parties.filter(p => p.affiliation === "External").map(p => p.name).filter(Boolean);
+    const gongCallMeta = callData.calls?.[0]?.metaData;
+    const gongTitle = gongCallMeta?.title || "";
+
     // Format transcript
     const transcriptText = formatTranscript(transcriptData.callTranscripts || [], speakerMap);
     if (!transcriptText.trim()) {
@@ -66,15 +72,24 @@ async function processGongCall(gong, callId, orgId, client) {
     const aiResult = await analyzeTranscript(transcriptText);
     const computed = computeScores(aiResult);
 
-    // Find or create rep
-    const repName = aiResult.metadata?.rep_name || "";
+    // Use Gong's internal party as AE name (fallback to AI-extracted)
+    const repName = internalParties[0] || aiResult.metadata?.rep_name || "";
     const repId = await findOrCreateRep(repName, orgId);
 
     // Use the configured client (not AI-guessed)
     const reviewData = buildCallData(aiResult, computed, transcriptText, orgId, repId, client);
 
-    // Also store the gong_call_id and call date from Gong metadata
-    const gongCallMeta = callData.calls?.[0]?.metaData;
+    // Override AI-guessed metadata with structured Gong data
+    if (repName) reviewData.category_scores.rep_name = repName;
+    if (externalParties.length > 0) reviewData.category_scores.prospect_name = externalParties[0];
+    if (externalParties.length > 0 && !reviewData.prospect_company) reviewData.prospect_company = externalParties[0];
+    if (gongTitle) reviewData.category_scores.call_title = gongTitle;
+
+    // Store all Gong party names for reference
+    if (internalParties.length > 0) reviewData.category_scores.gong_internal_parties = internalParties;
+    if (externalParties.length > 0) reviewData.category_scores.gong_external_parties = externalParties;
+
+    // Store call date from Gong metadata
     if (gongCallMeta?.started) {
       reviewData.call_date = new Date(gongCallMeta.started).toISOString().split("T")[0];
     }
