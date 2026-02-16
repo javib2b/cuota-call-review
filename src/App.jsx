@@ -436,38 +436,56 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
 // ==================== PROGRESSION ====================
 function ProgressionView({ calls }) {
-  const repCalls = {};
-  calls.forEach(c => { const name = c.rep_name || "Unknown"; if (!repCalls[name]) repCalls[name] = []; repCalls[name].push(c); });
-  Object.values(repCalls).forEach(arr => arr.sort((a, b) => new Date(a.call_date) - new Date(b.call_date)));
+  // Group calls by client → rep
+  const clientReps = {};
+  calls.forEach(c => {
+    const client = c.category_scores?.client || "Other";
+    const rep = c.rep_name || c.category_scores?.rep_name || "Unknown";
+    if (!clientReps[client]) clientReps[client] = {};
+    if (!clientReps[client][rep]) clientReps[client][rep] = [];
+    clientReps[client][rep].push(c);
+  });
+  // Sort calls within each rep by date
+  Object.values(clientReps).forEach(reps => Object.values(reps).forEach(arr => arr.sort((a, b) => new Date(a.call_date) - new Date(b.call_date))));
+  const sortedClients = Object.keys(clientReps).sort((a, b) => a.localeCompare(b));
 
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Rep Progression</h2>
-      {Object.keys(repCalls).length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>Save some calls to see progression data.</p>}
-      {Object.entries(repCalls).map(([name, rCalls]) => {
-        const first = rCalls[0]?.overall_score || 0, last = rCalls[rCalls.length - 1]?.overall_score || 0, delta = last - first;
-        const maxScore = Math.max(...rCalls.map(c => c.overall_score || 0), 1);
+      {sortedClients.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>Save some calls to see progression data.</p>}
+      {sortedClients.map(client => {
+        const reps = clientReps[client];
+        const sortedReps = Object.keys(reps).sort((a, b) => a.localeCompare(b));
         return (
-          <div key={name} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
-                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)" }}>{rCalls.length} call{rCalls.length !== 1 ? "s" : ""} reviewed</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 24, fontWeight: 700, color: getScoreColor(last), fontFamily: "'Space Mono', monospace" }}>{last}</div>
-                <div style={{ fontSize: 12, color: delta >= 0 ? "#31CE81" : "#ef4444" }}>{delta >= 0 ? "+" : ""}{delta} pts</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "end", gap: 4, height: 60 }}>
-              {rCalls.map((c, i) => {
-                const h = Math.max(8, ((c.overall_score || 0) / 100) * 60);
-                return <div key={i} title={`${c.call_date}: ${c.overall_score}`} style={{ flex: 1, height: h, background: getScoreColor(c.overall_score || 0), borderRadius: 4, transition: "height 0.3s", maxWidth: 40 }} />;
-              })}
-            </div>
-            <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-              {rCalls.map((c, i) => <div key={i} style={{ flex: 1, fontSize: 9, color: "rgba(0,0,0,0.25)", textAlign: "center", maxWidth: 40 }}>{c.call_date?.slice(5)}</div>)}
-            </div>
+          <div key={client} style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#31CE81", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid rgba(49,206,129,0.2)" }}>{client}</div>
+            {sortedReps.map(name => {
+              const rCalls = reps[name];
+              const first = rCalls[0]?.overall_score || 0, last = rCalls[rCalls.length - 1]?.overall_score || 0, delta = last - first;
+              return (
+                <div key={name} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 10, marginLeft: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
+                      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)" }}>{rCalls.length} call{rCalls.length !== 1 ? "s" : ""} reviewed</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: getScoreColor(last), fontFamily: "'Space Mono', monospace" }}>{last}</div>
+                      {rCalls.length > 1 && <div style={{ fontSize: 12, color: delta >= 0 ? "#31CE81" : "#ef4444" }}>{delta >= 0 ? "+" : ""}{delta} pts</div>}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "end", gap: 4, height: 60 }}>
+                    {rCalls.map((c, i) => {
+                      const h = Math.max(8, ((c.overall_score || 0) / 100) * 60);
+                      return <div key={i} title={`${c.call_date}: ${c.overall_score}`} style={{ flex: 1, height: h, background: getScoreColor(c.overall_score || 0), borderRadius: 4, transition: "height 0.3s", maxWidth: 40 }} />;
+                    })}
+                  </div>
+                  <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                    {rCalls.map((c, i) => <div key={i} style={{ flex: 1, fontSize: 9, color: "rgba(0,0,0,0.25)", textAlign: "center", maxWidth: 40 }}>{c.call_date?.slice(5)}</div>)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         );
       })}
