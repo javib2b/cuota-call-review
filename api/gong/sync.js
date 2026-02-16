@@ -165,14 +165,23 @@ export default async function handler(req, res) {
       const processedMap = {};
       processed.forEach((p) => { processedMap[p.gong_call_id] = p; });
 
+      // Log first call structure for debugging
+      if (gongCalls.length > 0) {
+        const sample = gongCalls[0];
+        console.log("Gong call sample keys:", Object.keys(sample));
+        console.log("Gong call metaData keys:", sample.metaData ? Object.keys(sample.metaData) : "NO_METADATA");
+        console.log("Gong call metaData.id:", sample.metaData?.id, "type:", typeof sample.metaData?.id);
+      }
+
       const enrichedCalls = gongCalls.map((call) => {
-        const id = call.metaData?.id;
-        const proc = processedMap[id];
+        // Robust ID extraction — try multiple locations
+        const id = String(call.metaData?.id || call.id || call.callId || "");
+        const proc = id ? processedMap[id] : null;
         const callParties = call.parties || [];
         const internal = callParties.filter(p => p.affiliation === "Internal");
         const external = callParties.filter(p => p.affiliation === "External");
         return {
-          gongCallId: id,
+          gongCallId: id || null,
           title: call.metaData?.title || "Untitled",
           started: call.metaData?.started,
           duration: call.metaData?.duration,
@@ -185,7 +194,7 @@ export default async function handler(req, res) {
           callReviewId: proc?.call_review_id || null,
           errorMessage: proc?.error_message || null,
         };
-      });
+      }).filter(c => c.gongCallId);
 
       // Sort by date, newest first
       enrichedCalls.sort((a, b) => new Date(b.started || 0) - new Date(a.started || 0));
@@ -196,7 +205,10 @@ export default async function handler(req, res) {
     // POST — process a single call
     if (req.method === "POST") {
       const { callId, client: bodyClient } = req.body || {};
-      if (!callId) return res.status(400).json({ error: "callId is required" });
+      if (!callId) {
+        console.error("POST /api/gong/sync: missing callId. req.body:", JSON.stringify(req.body));
+        return res.status(400).json({ error: "callId is required" });
+      }
 
       // Use the client from settings (which was already looked up by client param)
       const targetClient = bodyClient || settings.client || "Other";

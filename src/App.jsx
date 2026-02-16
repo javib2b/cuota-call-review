@@ -670,13 +670,15 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   useEffect(() => { loadGongCalls(); }, [loadGongCalls]);
 
   const processCall = async (gongCallId) => {
+    if (!gongCallId) { setError("Cannot process call: missing call ID"); return; }
     setProcessing(gongCallId); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/gong/sync", {
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      const r = await fetch(`/api/gong/sync${qs}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ callId: gongCallId, client: client || "Other" }),
+        body: JSON.stringify({ callId: String(gongCallId), client: client || "Other" }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Processing failed");
