@@ -451,16 +451,33 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 }
 
 // ==================== PROGRESSION ====================
+function normalizeRepName(name) {
+  if (!name) return "Unknown";
+  return name.trim().replace(/\s+/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+}
+
 function ProgressionView({ calls }) {
-  // Group calls by client → rep
-  const clientReps = {};
+  // Step 1: Collect all calls per normalized rep name
+  const repAllCalls = {};
   calls.forEach(c => {
-    const client = c.category_scores?.client || "Other";
-    const rep = c.rep_name || c.category_scores?.rep_name || "Unknown";
-    if (!clientReps[client]) clientReps[client] = {};
-    if (!clientReps[client][rep]) clientReps[client][rep] = [];
-    clientReps[client][rep].push(c);
+    const rep = normalizeRepName(c.rep_name || c.category_scores?.rep_name);
+    if (!repAllCalls[rep]) repAllCalls[rep] = [];
+    repAllCalls[rep].push(c);
   });
+
+  // Step 2: Determine each rep's primary client (majority of their calls)
+  const clientReps = {};
+  Object.entries(repAllCalls).forEach(([rep, repCalls]) => {
+    const clientCounts = {};
+    repCalls.forEach(c => {
+      const cl = c.category_scores?.client || "Other";
+      clientCounts[cl] = (clientCounts[cl] || 0) + 1;
+    });
+    const primaryClient = Object.entries(clientCounts).sort((a, b) => b[1] - a[1])[0][0];
+    if (!clientReps[primaryClient]) clientReps[primaryClient] = {};
+    clientReps[primaryClient][rep] = repCalls;
+  });
+
   // Sort calls within each rep by date
   Object.values(clientReps).forEach(reps => Object.values(reps).forEach(arr => arr.sort((a, b) => new Date(a.call_date) - new Date(b.call_date))));
   const sortedClients = Object.keys(clientReps).sort((a, b) => a.localeCompare(b));
