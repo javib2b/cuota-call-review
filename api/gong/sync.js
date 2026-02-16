@@ -168,13 +168,19 @@ export default async function handler(req, res) {
       const enrichedCalls = gongCalls.map((call) => {
         const id = call.metaData?.id;
         const proc = processedMap[id];
+        const callParties = call.parties || [];
+        const internal = callParties.filter(p => p.affiliation === "Internal");
+        const external = callParties.filter(p => p.affiliation === "External");
         return {
           gongCallId: id,
           title: call.metaData?.title || "Untitled",
           started: call.metaData?.started,
           duration: call.metaData?.duration,
           direction: call.metaData?.direction,
-          parties: (call.parties || []).map((p) => p.name || p.emailAddress).filter(Boolean),
+          parties: callParties.map((p) => p.name || p.emailAddress).filter(Boolean),
+          aeName: internal.map(p => p.name).filter(Boolean).join(", ") || null,
+          prospectName: external.map(p => p.name).filter(Boolean).join(", ") || null,
+          prospectTitle: external.map(p => p.title).filter(Boolean).join(", ") || null,
           status: proc?.status || "new",
           callReviewId: proc?.call_review_id || null,
           errorMessage: proc?.error_message || null,

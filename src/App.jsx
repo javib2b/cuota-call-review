@@ -727,8 +727,14 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                   <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
                     {call.started ? new Date(call.started).toLocaleDateString() : ""}
                     {call.duration ? ` \u00B7 ${Math.round(call.duration / 60)}min` : ""}
-                    {call.parties?.length > 0 ? ` \u00B7 ${call.parties.slice(0, 2).join(", ")}` : ""}
                   </div>
+                  {(call.aeName || call.prospectName) && (
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", marginTop: 3 }}>
+                      {call.aeName && <span style={{ fontWeight: 600 }}>AE: {call.aeName}</span>}
+                      {call.aeName && call.prospectName && <span> &middot; </span>}
+                      {call.prospectName && <span>Prospect: {call.prospectName}{call.prospectTitle ? ` (${call.prospectTitle})` : ""}</span>}
+                    </div>
+                  )}
                   {call.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{call.errorMessage}</div>}
                 </div>
                 {statusBadge(call.status)}
