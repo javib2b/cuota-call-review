@@ -1281,7 +1281,7 @@ export default function CuotaCallReview() {
     try {
       if (!apiKey) throw new Error("Enter your API key above to analyze calls.");
       const res = await fetch("https://api.anthropic.com/v1/messages", { method:"POST", headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"}, body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:4096,messages:[{role:"user",content:ANALYSIS_PROMPT+"\n\n---\n\nTRANSCRIPT:\n"+transcript}]}) });
-      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||"API error");}
+      if(!res.ok){const e=await res.json().catch(()=>({}));const msg=e.error?.message||"API error";if(res.status===401||msg.toLowerCase().includes("api-key")||msg.toLowerCase().includes("authentication")){localStorage.removeItem("cuota_api_key");setApiKey("");throw new Error("Invalid API key — please re-enter your Anthropic key.");}throw new Error(msg);}
       const data=await res.json();
       const text = data.content.map(c => c.text || "").join("");
       const result = JSON.parse(text.replace(/```json|```/g, "").trim());
@@ -1406,7 +1406,7 @@ export default function CuotaCallReview() {
         <div style={{ flex: 1 }} />
         {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setShowInvite(true)} style={{ padding: "6px 12px", border: "1px solid rgba(49,206,129,0.3)", borderRadius: 8, background: "rgba(49,206,129,0.08)", color: "#31CE81", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Invite</button>}
         <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{session.user?.email}</span>
-        <button onClick={async () => { const k = window.prompt("Enter your Anthropic API key (sk-ant-...):", apiKey || ""); if(k&&k.startsWith("sk-ant-")){localStorage.setItem("cuota_api_key",k); setApiKey(k); const t = await getValidToken(); if(t) await supabase.updateUser(t, { api_key: k }); alert("API key saved!");} }} style={{ padding: "6px 12px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{apiKey ? "API Key \u2713" : "API Key"}</button>
+        <button onClick={async () => { const k = window.prompt("Enter your Anthropic API key (sk-ant-...):", apiKey || ""); if(k&&k.startsWith("sk-")){localStorage.setItem("cuota_api_key",k); setApiKey(k); const t = await getValidToken(); if(t) await supabase.updateUser(t, { api_key: k }); alert("API key saved!");}else if(k){alert("API key must start with sk-");} }} style={{ padding: "6px 12px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{apiKey ? "API Key \u2713" : "API Key"}</button>
         <button onClick={handleLogout} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Logout</button>
       </div>
 
@@ -1427,7 +1427,7 @@ export default function CuotaCallReview() {
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const k = e.target.elements.apiKeyInput.value.trim();
-                if (!k || !k.startsWith("sk-ant-")) { setError("API key must start with sk-ant-"); return; }
+                if (!k || !k.startsWith("sk-")) { setError("API key must start with sk-"); return; }
                 localStorage.setItem("cuota_api_key", k);
                 setApiKey(k);
                 setError("");
