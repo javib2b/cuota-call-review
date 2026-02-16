@@ -57,7 +57,9 @@ async function processWebhookCall(gongCallId, orgId, settings) {
     const computed = computeScores(aiResult);
     const repName = aiResult.metadata?.rep_name || "";
     const repId = await findOrCreateRep(repName, orgId);
-    const client = aiResult.metadata?.prospect_company || "Other";
+
+    // Use the client from the settings row (per-client config)
+    const client = settings.client || "Other";
 
     const reviewData = buildCallData(aiResult, computed, transcriptText, orgId, repId, client);
 
@@ -74,7 +76,7 @@ async function processWebhookCall(gongCallId, orgId, settings) {
       `org_id=eq.${orgId}&gong_call_id=eq.${gongCallId}`
     );
 
-    console.log(`Webhook: processed Gong call ${gongCallId} → review ${callReviewId} (score: ${computed.overallScore})`);
+    console.log(`Webhook: processed Gong call ${gongCallId} → review ${callReviewId} (score: ${computed.overallScore}, client: ${client})`);
   } catch (err) {
     console.error(`Webhook: failed to process ${gongCallId}:`, err);
     await processedTable.update(
@@ -126,7 +128,7 @@ export default async function handler(req, res) {
     // Return 200 immediately, process in background
     res.status(200).json({ ok: true, processing: callIds.length });
 
-    // Process each call for each org in the background
+    // Process each call for each settings row (each row = one org+client config)
     for (const settings of allSettings) {
       for (const callId of callIds) {
         waitUntil(processWebhookCall(callId, settings.org_id, settings));

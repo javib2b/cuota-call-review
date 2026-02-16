@@ -1,13 +1,16 @@
-// Manual Gong sync endpoint
-// GET /api/gong/sync — list recent Gong calls with processing status
-// POST /api/gong/sync — process a single call (body: { callId })
+// Manual Gong sync endpoint — per-client
+// GET /api/gong/sync?client=11x — list recent Gong calls with processing status
+// POST /api/gong/sync — process a single call (body: { callId, client })
 import { authenticateUser, adminTable } from "../lib/supabase.js";
 import { createGongClient, buildSpeakerMap, formatTranscript } from "../lib/gong.js";
 import { analyzeTranscript, computeScores, buildCallData } from "../lib/analyze.js";
 
-async function getGongSettings(orgId) {
+async function getGongSettings(orgId, client) {
   const table = adminTable("gong_settings");
-  const rows = await table.select("*", `org_id=eq.${orgId}`);
+  const filter = client
+    ? `org_id=eq.${orgId}&client=eq.${encodeURIComponent(client)}`
+    : `org_id=eq.${orgId}`;
+  const rows = await table.select("*", filter);
   if (!Array.isArray(rows) || rows.length === 0) return null;
   return rows[0];
 }
@@ -30,7 +33,7 @@ async function findOrCreateRep(repName, orgId) {
   return null;
 }
 
-async function processGongCall(gong, callId, orgId) {
+async function processGongCall(gong, callId, orgId, client) {
   const processedTable = adminTable("gong_processed_calls");
   const callReviewsTable = adminTable("call_reviews");
 
@@ -67,11 +70,7 @@ async function processGongCall(gong, callId, orgId) {
     const repName = aiResult.metadata?.rep_name || "";
     const repId = await findOrCreateRep(repName, orgId);
 
-    // Determine client bucket
-    const prospectCompany = aiResult.metadata?.prospect_company || "";
-    const client = prospectCompany || "Other";
-
-    // Build call review data
+    // Use the configured client (not AI-guessed)
     const reviewData = buildCallData(aiResult, computed, transcriptText, orgId, repId, client);
 
     // Also store the gong_call_id and call date from Gong metadata
@@ -118,10 +117,17 @@ export default async function handler(req, res) {
     }
 
     const orgId = auth.profile.org_id;
+    const client = req.query?.client || req.body?.client || null;
 
-    // Get Gong settings
-    const settings = await getGongSettings(orgId);
-    if (!settings) return res.status(400).json({ error: "Gong not configured. Set up credentials in Gong Settings." });
+    // Get Gong settings for this client
+    const settings = await getGongSettings(orgId, client);
+    if (!settings) {
+      return res.status(400).json({
+        error: client
+          ? `Gong not configured for ${client}. Set up credentials in Integrations.`
+          : "Gong not configured. Set up credentials in Integrations.",
+      });
+    }
 
     const gong = createGongClient(settings.gong_access_key, settings.gong_access_key_secret, settings.gong_base_url);
 
@@ -168,10 +174,12 @@ export default async function handler(req, res) {
 
     // POST — process a single call
     if (req.method === "POST") {
-      const { callId } = req.body || {};
+      const { callId, client: bodyClient } = req.body || {};
       if (!callId) return res.status(400).json({ error: "callId is required" });
 
-      const result = await processGongCall(gong, callId, orgId);
+      // Use the client from settings (which was already looked up by client param)
+      const targetClient = bodyClient || settings.client || "Other";
+      const result = await processGongCall(gong, callId, orgId, targetClient);
       return res.status(200).json(result);
     }
 

@@ -1,4 +1,4 @@
-// Gong settings CRUD — admin only
+// Gong settings CRUD — admin only, per-client
 import { authenticateUser, adminTable } from "../lib/supabase.js";
 
 export default async function handler(req, res) {
@@ -21,35 +21,55 @@ export default async function handler(req, res) {
 
     const orgId = auth.profile.org_id;
     const table = adminTable("gong_settings");
+    const client = req.query?.client || null;
 
-    // GET — fetch current settings (mask secrets)
+    // GET — fetch settings
     if (req.method === "GET") {
-      const rows = await table.select("*", `org_id=eq.${orgId}`);
+      // If no client specified, return ALL configs for this org
+      if (!client) {
+        const rows = await table.select("*", `org_id=eq.${orgId}`);
+        if (!Array.isArray(rows)) return res.status(200).json({ configs: [] });
+        const configs = rows.map((s) => ({
+          client: s.client || "Other",
+          configured: true,
+          gong_base_url: s.gong_base_url,
+          auto_review: s.auto_review,
+          gong_access_key_masked: s.gong_access_key ? "****" + s.gong_access_key.slice(-4) : "",
+          gong_access_key_secret_masked: s.gong_access_key_secret ? "****" + s.gong_access_key_secret.slice(-4) : "",
+          updated_at: s.updated_at,
+        }));
+        return res.status(200).json({ configs });
+      }
+
+      // With client specified, return that client's config
+      const rows = await table.select("*", `org_id=eq.${orgId}&client=eq.${encodeURIComponent(client)}`);
       if (!Array.isArray(rows) || rows.length === 0) {
         return res.status(200).json({ configured: false });
       }
       const settings = rows[0];
       return res.status(200).json({
         configured: true,
+        client: settings.client,
         id: settings.id,
         gong_base_url: settings.gong_base_url,
         auto_review: settings.auto_review,
-        // Mask secrets — only show last 4 chars
         gong_access_key_masked: settings.gong_access_key ? "****" + settings.gong_access_key.slice(-4) : "",
         gong_access_key_secret_masked: settings.gong_access_key_secret ? "****" + settings.gong_access_key_secret.slice(-4) : "",
         updated_at: settings.updated_at,
       });
     }
 
-    // POST — save/update settings
+    // POST — save/update settings (client required in body)
     if (req.method === "POST") {
-      const { accessKey, accessKeySecret, baseUrl, autoReview } = req.body || {};
+      const { accessKey, accessKeySecret, baseUrl, autoReview, client: bodyClient } = req.body || {};
+      const targetClient = bodyClient || "Other";
       if (!accessKey || !accessKeySecret) {
         return res.status(400).json({ error: "Access key and secret are required" });
       }
 
       const data = {
         org_id: orgId,
+        client: targetClient,
         gong_access_key: accessKey,
         gong_access_key_secret: accessKeySecret,
         gong_base_url: baseUrl || "https://us-11211.api.gong.io",
@@ -57,19 +77,20 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString(),
       };
 
-      // Check if settings exist
-      const existing = await table.select("id", `org_id=eq.${orgId}`);
+      // Check if settings exist for this org+client
+      const existing = await table.select("id", `org_id=eq.${orgId}&client=eq.${encodeURIComponent(targetClient)}`);
       if (Array.isArray(existing) && existing.length > 0) {
-        await table.update(data, `org_id=eq.${orgId}`);
+        await table.update(data, `org_id=eq.${orgId}&client=eq.${encodeURIComponent(targetClient)}`);
       } else {
         await table.insert(data);
       }
       return res.status(200).json({ ok: true });
     }
 
-    // DELETE — remove settings
+    // DELETE — remove settings for a specific client
     if (req.method === "DELETE") {
-      await table.delete(`org_id=eq.${orgId}`);
+      const targetClient = client || "Other";
+      await table.delete(`org_id=eq.${orgId}&client=eq.${encodeURIComponent(targetClient)}`);
       return res.status(200).json({ ok: true });
     }
 

@@ -522,7 +522,7 @@ function InviteModal({ token, profile, onClose }) {
 
 
 // ==================== GONG SETTINGS MODAL ====================
-function GongSettingsModal({ token, getValidToken, onClose }) {
+function GongSettingsModal({ token, getValidToken, onClose, client }) {
   const [accessKey, setAccessKey] = useState("");
   const [accessKeySecret, setAccessKeySecret] = useState("");
   const [baseUrl, setBaseUrl] = useState("https://us-11211.api.gong.io");
@@ -538,7 +538,8 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
     (async () => {
       try {
         const t = await getValidToken();
-        const r = await fetch("/api/gong/settings", { headers: { Authorization: `Bearer ${t}` } });
+        const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+        const r = await fetch(`/api/gong/settings${qs}`, { headers: { Authorization: `Bearer ${t}` } });
         if (r.ok) {
           const data = await r.json();
           if (data.configured) {
@@ -550,7 +551,7 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
       } catch (e) { console.error("Load gong settings:", e); }
       setLoading(false);
     })();
-  }, [getValidToken]);
+  }, [getValidToken, client]);
 
   const handleSave = async () => {
     if (!accessKey || !accessKeySecret) { setError("Both access key and secret are required"); return; }
@@ -560,7 +561,7 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
       const r = await fetch("/api/gong/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ accessKey, accessKeySecret, baseUrl, autoReview }),
+        body: JSON.stringify({ accessKey, accessKeySecret, baseUrl, autoReview, client: client || "Other" }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Save failed");
@@ -573,7 +574,8 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
     setTesting(true); setError(""); setSuccess("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/gong/sync", { headers: { Authorization: `Bearer ${t}` } });
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      const r = await fetch(`/api/gong/sync${qs}`, { headers: { Authorization: `Bearer ${t}` } });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Test failed");
       setSuccess(`Connection successful! Found ${data.calls?.length || 0} recent calls.`);
@@ -582,10 +584,11 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Remove Gong integration? This won't delete already-processed calls.")) return;
+    if (!window.confirm(`Remove Gong integration${client ? ` for ${client}` : ""}? This won't delete already-processed calls.`)) return;
     try {
       const t = await getValidToken();
-      await fetch("/api/gong/settings", { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      await fetch(`/api/gong/settings${qs}`, { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
       setConfigured(false); setAccessKey(""); setAccessKeySecret(""); setSuccess("Integration removed.");
       setTimeout(() => setSuccess(""), 3000);
     } catch (e) { setError(e.message); }
@@ -595,7 +598,7 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 460, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Gong Integration</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Gong Integration{client ? ` \u2014 ${client}` : ""}</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
         </div>
 
@@ -646,7 +649,7 @@ function GongSettingsModal({ token, getValidToken, onClose }) {
 }
 
 // ==================== GONG SYNC MODAL ====================
-function GongSyncModal({ getValidToken, onClose, onCallProcessed }) {
+function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   const [calls, setCalls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(null);
@@ -656,12 +659,13 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed }) {
     setLoading(true); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/gong/sync", { headers: { Authorization: `Bearer ${t}` } });
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      const r = await fetch(`/api/gong/sync${qs}`, { headers: { Authorization: `Bearer ${t}` } });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Failed to load calls");
       setCalls(data.calls || []);
     } catch (e) { setError(e.message); } finally { setLoading(false); }
-  }, [getValidToken]);
+  }, [getValidToken, client]);
 
   useEffect(() => { loadGongCalls(); }, [loadGongCalls]);
 
@@ -672,7 +676,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed }) {
       const r = await fetch("/api/gong/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
-        body: JSON.stringify({ callId: gongCallId }),
+        body: JSON.stringify({ callId: gongCallId, client: client || "Other" }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Processing failed");
@@ -700,7 +704,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 560, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Sync Gong Calls</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Sync Gong Calls{client ? ` \u2014 ${client}` : ""}</h3>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={loadGongCalls} disabled={loading} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{loading ? "..." : "Refresh"}</button>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
@@ -738,6 +742,123 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ==================== INTEGRATIONS PAGE ====================
+function IntegrationsPage({ getValidToken, token, loadCalls }) {
+  const [configs, setConfigs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [settingsClient, setSettingsClient] = useState(null);
+  const [syncClient, setSyncClient] = useState(null);
+
+  const loadConfigs = useCallback(async () => {
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gong/settings", { headers: { Authorization: `Bearer ${t}` } });
+      if (r.ok) {
+        const data = await r.json();
+        setConfigs(data.configs || []);
+      }
+    } catch (e) { console.error("Load integrations:", e); }
+    setLoading(false);
+  }, [getValidToken]);
+
+  useEffect(() => { loadConfigs(); }, [loadConfigs]);
+
+  const configMap = {};
+  configs.forEach(c => { configMap[c.client] = c; });
+
+  // Detail view for a specific client
+  if (selectedClient) {
+    const cfg = configMap[selectedClient];
+    return (
+      <div>
+        {settingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={settingsClient} onClose={() => { setSettingsClient(null); loadConfigs(); }} />}
+        {syncClient && <GongSyncModal getValidToken={getValidToken} client={syncClient} onClose={() => setSyncClient(null)} onCallProcessed={loadCalls} />}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
+          <span onClick={() => setSelectedClient(null)} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
+          <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
+          <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{selectedClient}</span>
+        </div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>{selectedClient} &mdash; Integrations</h2>
+
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <span style={{ fontSize: 24 }}>{"\uD83D\uDD17"}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>Gong</div>
+              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
+                {cfg ? "Connected" : "Not connected"}
+                {cfg?.updated_at ? ` \u00B7 Updated ${new Date(cfg.updated_at).toLocaleDateString()}` : ""}
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {cfg && (
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
+              )}
+              {!cfg && (
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(0,0,0,0.2)", display: "inline-block" }} />
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setSettingsClient(selectedClient)} style={{ padding: "10px 20px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              {cfg ? "Edit Credentials" : "Connect Gong"}
+            </button>
+            {cfg && (
+              <button onClick={() => setSyncClient(selectedClient)} style={{ padding: "10px 20px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                Sync Calls
+              </button>
+            )}
+          </div>
+
+          {cfg && (
+            <div style={{ marginTop: 16, padding: "12px 14px", background: "rgba(0,0,0,0.02)", borderRadius: 8 }}>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 4 }}>Configuration</div>
+              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.6)" }}>
+                Base URL: {cfg.gong_base_url} &middot; Auto-review: {cfg.auto_review ? "On" : "Off"}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Grid view of all clients
+  return (
+    <div>
+      {loading ? (
+        <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 40 }}>Loading integrations...</p>
+      ) : (
+        <>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Integrations</h2>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "-12px 0 20px" }}>Configure Gong credentials per client. Synced calls will be filed under the corresponding client folder.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
+            {PREDEFINED_CLIENTS.map(name => {
+              const cfg = configMap[name];
+              return (
+                <div key={name} onClick={() => setSelectedClient(name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>{"\u2699\uFE0F"}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C", marginBottom: 8 }}>{name}</div>
+                  {cfg ? (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
+                      <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>Gong connected</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>Not configured</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -877,9 +998,9 @@ export default function CuotaCallReview() {
   const [folderClient, setFolderClient] = useState(null);
   const [folderAE, setFolderAE] = useState(null);
 
-  // Gong integration state
-  const [gongSettingsOpen, setGongSettingsOpen] = useState(false);
-  const [gongSyncOpen, setGongSyncOpen] = useState(false);
+  // Gong integration state — string (client name) or null
+  const [gongSettingsClient, setGongSettingsClient] = useState(null);
+  const [gongSyncClient, setGongSyncClient] = useState(null);
 
   // Review state
   const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
@@ -1204,8 +1325,8 @@ export default function CuotaCallReview() {
     <div style={{ minHeight: "100vh", background: "#F5F3F0", color: "#1A2B3C", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
-      {gongSettingsOpen && <GongSettingsModal token={token} getValidToken={getValidToken} onClose={() => setGongSettingsOpen(false)} />}
-      {gongSyncOpen && <GongSyncModal getValidToken={getValidToken} onClose={() => setGongSyncOpen(false)} onCallProcessed={loadCalls} />}
+      {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
+      {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
 
       {/* NAV */}
       <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "0 24px", display: "flex", alignItems: "center", gap: 8, height: 56, overflowX: "auto" }}>
@@ -1214,6 +1335,7 @@ export default function CuotaCallReview() {
           { id: "review", label: "Call Review", icon: "\u{1F4DE}" },
           { id: "calls", label: "Saved Calls", icon: "\u{1F4C1}", badge: savedCalls.length },
           { id: "progression", label: "Progression", icon: "\u{1F4C8}" },
+          ...(profile?.role === "admin" ? [{ id: "integrations", label: "Integrations", icon: "\u2699\uFE0F" }] : []),
           ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
         ].map(nav => (
           <button key={nav.id} onClick={() => { setPage(nav.id); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === nav.id ? "rgba(0,0,0,0.06)" : "transparent", color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -1223,8 +1345,6 @@ export default function CuotaCallReview() {
         ))}
         <div style={{ flex: 1 }} />
         {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setShowInvite(true)} style={{ padding: "6px 12px", border: "1px solid rgba(49,206,129,0.3)", borderRadius: 8, background: "rgba(49,206,129,0.08)", color: "#31CE81", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Invite</button>}
-        {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setGongSyncOpen(true)} style={{ padding: "6px 12px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Gong Sync</button>}
-        {profile?.role === "admin" && <button onClick={() => setGongSettingsOpen(true)} style={{ padding: "6px 12px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }} title="Gong Settings">Gong</button>}
         <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{session.user?.email}</span>
         <button onClick={async () => { const k = window.prompt("Enter your Anthropic API key (sk-ant-...):", apiKey || ""); if(k&&k.startsWith("sk-ant-")){localStorage.setItem("cuota_api_key",k); setApiKey(k); const t = await getValidToken(); if(t) await supabase.updateUser(t, { api_key: k }); alert("API key saved!");} }} style={{ padding: "6px 12px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{apiKey ? "API Key \u2713" : "API Key"}</button>
         <button onClick={handleLogout} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Logout</button>
@@ -1236,6 +1356,7 @@ export default function CuotaCallReview() {
 
         {/* PROGRESSION PAGE */}
         {page === "progression" && <ProgressionView calls={savedCalls} />}
+        {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
 
         {/* REVIEW PAGE */}
