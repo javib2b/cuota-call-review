@@ -80,7 +80,22 @@ const RISK_DEFINITIONS = [
   { id: "feature_dump", label: "Feature Dumping Detected", icon: "\u{1F4E6}", severity: "low" },
 ];
 
-const PREDEFINED_CLIENTS = ["11x", "Arc", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
+const DEFAULT_CLIENTS = ["11x", "Arc", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
+
+function loadClients() {
+  try {
+    const stored = localStorage.getItem("cuota_clients");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed.sort((a, b) => a.localeCompare(b));
+    }
+  } catch {}
+  return [...DEFAULT_CLIENTS];
+}
+
+function saveClients(clients) {
+  localStorage.setItem("cuota_clients", JSON.stringify(clients));
+}
 
 function computeCategoryAverages(calls) {
   const avgs = {};
@@ -105,28 +120,20 @@ function computeWeakAndStrongPoints(calls) {
   return { weak: sorted.slice(0, 3), strong: sorted.slice(-3).reverse() };
 }
 
-function groupCallsByClientAndAE(calls) {
+function groupCallsByClientAndAE(calls, clientList) {
   const groups = {};
-  PREDEFINED_CLIENTS.forEach(c => { groups[c] = {}; });
-  groups["Other"] = {};
+  clientList.forEach(c => { groups[c] = {}; });
   calls.forEach(call => {
     const client = call.category_scores?.client;
     let bucket;
-    if (client && PREDEFINED_CLIENTS.includes(client)) {
-      // Explicit predefined client — use it directly
+    if (client && clientList.includes(client)) {
       bucket = client;
     } else {
-      // Try fuzzy matching prospect_company against predefined clients
       const company = (call.prospect_company || "").toLowerCase();
-      const matched = PREDEFINED_CLIENTS.find(c => company.includes(c.toLowerCase()));
-      if (matched) {
-        bucket = matched;
-      } else if (client === "Prospect") {
-        bucket = "Prospect";
-      } else {
-        bucket = "Other";
-      }
+      const matched = clientList.find(c => company.includes(c.toLowerCase()));
+      bucket = matched || null;
     }
+    if (!bucket) return; // skip calls that don't match any client
     const ae = call.rep_name || call.category_scores?.rep_name || "Unknown";
     if (!groups[bucket]) groups[bucket] = {};
     if (!groups[bucket][ae]) groups[bucket][ae] = [];
@@ -259,8 +266,8 @@ function CategoryBar({ category, scores, aiKeyMoment, onScoreChange }) {
 }
 
 // ==================== SAVED CALLS ====================
-function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry }) {
-  const grouped = groupCallsByClientAndAE(calls);
+function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient }) {
+  const grouped = groupCallsByClientAndAE(calls, clients);
 
   const breadcrumb = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
@@ -282,7 +289,6 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
   // ---- CLIENT FOLDERS VIEW ----
   if (!folderClient) {
-    const clientOrder = [...PREDEFINED_CLIENTS, "Prospect", "Other"];
     return (
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -297,16 +303,16 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         )}
         {calls.length === 0 && !error && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls reviewed yet. Click "+ New Review" to get started.</p>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-          {clientOrder.map(client => {
+          {clients.map(client => {
             const aes = grouped[client] || {};
             const aeCount = Object.keys(aes).length;
             const clientCalls = Object.values(aes).flat();
             const callCount = clientCalls.length;
             const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
             const isEmpty = callCount === 0;
-            if (client === "Other" && isEmpty) return null;
             return (
-              <div key={client} onClick={() => !isEmpty && setFolderClient(client)} style={{ background: isEmpty ? "rgba(0,0,0,0.02)" : "#FFFFFF", border: "1px solid " + (isEmpty ? "#FFFFFF" : "rgba(0,0,0,0.08)"), borderRadius: 12, padding: 20, cursor: isEmpty ? "default" : "pointer", textAlign: "center", opacity: isEmpty ? 0.4 : 1, transition: "all 0.2s" }}>
+              <div key={client} style={{ position: "relative", background: isEmpty ? "rgba(0,0,0,0.02)" : "#FFFFFF", border: "1px solid " + (isEmpty ? "#FFFFFF" : "rgba(0,0,0,0.08)"), borderRadius: 12, padding: 20, cursor: isEmpty ? "default" : "pointer", textAlign: "center", opacity: isEmpty ? 0.4 : 1, transition: "all 0.2s" }} onClick={() => !isEmpty && setFolderClient(client)}>
+                {onDeleteClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Remove "${client}" folder?`)) onDeleteClient(client); }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: "rgba(0,0,0,0.25)", fontSize: 14, cursor: "pointer", padding: "2px 6px", borderRadius: 4, lineHeight: 1 }} title="Remove client">{"\u2715"}</button>}
                 <div style={{ fontSize: 28, marginBottom: 8 }}>{"\uD83D\uDCC1"}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C", marginBottom: 8 }}>{client}</div>
                 {callCount > 0 ? (
@@ -322,6 +328,12 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
               </div>
             );
           })}
+          {onAddClient && (
+            <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "rgba(0,0,0,0.02)", border: "2px dashed rgba(0,0,0,0.12)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 140 }}>
+              <div style={{ fontSize: 28, marginBottom: 8, color: "rgba(0,0,0,0.25)" }}>+</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.35)" }}>Add Client</div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -777,7 +789,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
 }
 
 // ==================== INTEGRATIONS PAGE ====================
-function IntegrationsPage({ getValidToken, token, loadCalls }) {
+function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -869,7 +881,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls }) {
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Integrations</h2>
           <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "-12px 0 20px" }}>Configure Gong credentials per client. Synced calls will be filed under the corresponding client folder.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
-            {PREDEFINED_CLIENTS.map(name => {
+            {clients.map(name => {
               const cfg = configMap[name];
               return (
                 <div key={name} onClick={() => setSelectedClient(name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
@@ -1027,6 +1039,24 @@ export default function CuotaCallReview() {
   const [showInvite, setShowInvite] = useState(false);
   const [folderClient, setFolderClient] = useState(null);
   const [folderAE, setFolderAE] = useState(null);
+  const [clients, setClients] = useState(loadClients);
+
+  const addClient = useCallback((name) => {
+    setClients(prev => {
+      if (prev.includes(name)) return prev;
+      const next = [...prev, name].sort((a, b) => a.localeCompare(b));
+      saveClients(next);
+      return next;
+    });
+  }, []);
+
+  const deleteClient = useCallback((name) => {
+    setClients(prev => {
+      const next = prev.filter(c => c !== name);
+      saveClients(next);
+      return next;
+    });
+  }, []);
 
   // Gong integration state — string (client name) or null
   const [gongSettingsClient, setGongSettingsClient] = useState(null);
@@ -1382,11 +1412,11 @@ export default function CuotaCallReview() {
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
         {/* SAVED CALLS PAGE */}
-        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} />}
+        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} />}
 
         {/* PROGRESSION PAGE */}
         {page === "progression" && <ProgressionView calls={savedCalls} />}
-        {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} />}
+        {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
 
         {/* REVIEW PAGE */}
@@ -1416,7 +1446,7 @@ export default function CuotaCallReview() {
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
-                  { key: "client", label: "Client", options: [...PREDEFINED_CLIENTS, "Prospect", "Other"] },
+                  { key: "client", label: "Client", options: clients },
                   { key: "repName", label: "Rep Name", placeholder: "e.g. Sarah Chen" },
                   { key: "prospectCompany", label: "Prospect Company", placeholder: "e.g. Meijer" },
                   { key: "callDate", label: "Call Date", type: "date" },
