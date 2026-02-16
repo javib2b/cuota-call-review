@@ -456,22 +456,39 @@ function normalizeRepName(name) {
   return name.trim().replace(/\s+/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
 }
 
-function ProgressionView({ calls }) {
-  // Step 1: Collect all calls per normalized rep name
+function resolveClient(call, clientList) {
+  const tagged = call.category_scores?.client;
+  if (tagged && clientList.includes(tagged)) return tagged;
+  // Fuzzy match prospect_company against client list
+  const company = (call.prospect_company || "").toLowerCase();
+  const matched = clientList.find(c => company.includes(c.toLowerCase()));
+  if (matched) return matched;
+  // Fuzzy match the tagged client name itself
+  if (tagged) {
+    const tagLower = tagged.toLowerCase();
+    const fuzzy = clientList.find(c => tagLower.includes(c.toLowerCase()) || c.toLowerCase().includes(tagLower));
+    if (fuzzy) return fuzzy;
+  }
+  return null;
+}
+
+function ProgressionView({ calls, clients }) {
+  // Step 1: Collect all calls per normalized rep name, resolving client
   const repAllCalls = {};
   calls.forEach(c => {
     const rep = normalizeRepName(c.rep_name || c.category_scores?.rep_name);
+    const client = resolveClient(c, clients);
+    if (!client) return; // skip calls that don't match any known client
     if (!repAllCalls[rep]) repAllCalls[rep] = [];
-    repAllCalls[rep].push(c);
+    repAllCalls[rep].push({ ...c, _resolvedClient: client });
   });
 
-  // Step 2: Determine each rep's primary client (majority of their calls)
+  // Step 2: Determine each rep's primary client (majority of their resolved calls)
   const clientReps = {};
   Object.entries(repAllCalls).forEach(([rep, repCalls]) => {
     const clientCounts = {};
     repCalls.forEach(c => {
-      const cl = c.category_scores?.client || "Other";
-      clientCounts[cl] = (clientCounts[cl] || 0) + 1;
+      clientCounts[c._resolvedClient] = (clientCounts[c._resolvedClient] || 0) + 1;
     });
     const primaryClient = Object.entries(clientCounts).sort((a, b) => b[1] - a[1])[0][0];
     if (!clientReps[primaryClient]) clientReps[primaryClient] = {};
@@ -1464,7 +1481,7 @@ export default function CuotaCallReview() {
         {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} />}
 
         {/* PROGRESSION PAGE */}
-        {page === "progression" && <ProgressionView calls={savedCalls} />}
+        {page === "progression" && <ProgressionView calls={savedCalls} clients={clients} />}
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
 
