@@ -521,6 +521,227 @@ function InviteModal({ token, profile, onClose }) {
 }
 
 
+// ==================== GONG SETTINGS MODAL ====================
+function GongSettingsModal({ token, getValidToken, onClose }) {
+  const [accessKey, setAccessKey] = useState("");
+  const [accessKeySecret, setAccessKeySecret] = useState("");
+  const [baseUrl, setBaseUrl] = useState("https://us-11211.api.gong.io");
+  const [autoReview, setAutoReview] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [configured, setConfigured] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const t = await getValidToken();
+        const r = await fetch("/api/gong/settings", { headers: { Authorization: `Bearer ${t}` } });
+        if (r.ok) {
+          const data = await r.json();
+          if (data.configured) {
+            setConfigured(true);
+            setBaseUrl(data.gong_base_url || "https://us-11211.api.gong.io");
+            setAutoReview(data.auto_review !== false);
+          }
+        }
+      } catch (e) { console.error("Load gong settings:", e); }
+      setLoading(false);
+    })();
+  }, [getValidToken]);
+
+  const handleSave = async () => {
+    if (!accessKey || !accessKeySecret) { setError("Both access key and secret are required"); return; }
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gong/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ accessKey, accessKeySecret, baseUrl, autoReview }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Save failed");
+      setConfigured(true); setSuccess("Settings saved!"); setAccessKey(""); setAccessKeySecret("");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (e) { setError(e.message); } finally { setSaving(false); }
+  };
+
+  const handleTest = async () => {
+    setTesting(true); setError(""); setSuccess("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gong/sync", { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Test failed");
+      setSuccess(`Connection successful! Found ${data.calls?.length || 0} recent calls.`);
+      setTimeout(() => setSuccess(""), 5000);
+    } catch (e) { setError(e.message); } finally { setTesting(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Remove Gong integration? This won't delete already-processed calls.")) return;
+    try {
+      const t = await getValidToken();
+      await fetch("/api/gong/settings", { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
+      setConfigured(false); setAccessKey(""); setAccessKeySecret(""); setSuccess("Integration removed.");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (e) { setError(e.message); }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 460, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Gong Integration</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>Loading...</p>
+        ) : (
+          <>
+            {configured && (
+              <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 13, color: "#1a7a42" }}>
+                Gong is connected. Enter new credentials below to update.
+              </div>
+            )}
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Access Key</label>
+              <input value={accessKey} onChange={e => setAccessKey(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Gong access key"} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Access Key Secret</label>
+              <input type="password" value={accessKeySecret} onChange={e => setAccessKeySecret(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Gong access key secret"} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Gong API Base URL</label>
+              <input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, cursor: "pointer" }}>
+              <input type="checkbox" checked={autoReview} onChange={() => setAutoReview(!autoReview)} style={{ accentColor: "#31CE81", width: 16, height: 16 }} />
+              <span style={{ fontSize: 13, color: "#1A2B3C" }}>Auto-review new calls via webhook</span>
+            </label>
+
+            {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+            {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
+              {configured && (
+                <button onClick={handleTest} disabled={testing} style={{ padding: "10px 16px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{testing ? "Testing..." : "Test"}</button>
+              )}
+            </div>
+            {configured && (
+              <button onClick={handleDelete} style={{ width: "100%", marginTop: 12, padding: "8px", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Remove Integration</button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==================== GONG SYNC MODAL ====================
+function GongSyncModal({ getValidToken, onClose, onCallProcessed }) {
+  const [calls, setCalls] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(null);
+  const [error, setError] = useState("");
+
+  const loadGongCalls = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gong/sync", { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed to load calls");
+      setCalls(data.calls || []);
+    } catch (e) { setError(e.message); } finally { setLoading(false); }
+  }, [getValidToken]);
+
+  useEffect(() => { loadGongCalls(); }, [loadGongCalls]);
+
+  const processCall = async (gongCallId) => {
+    setProcessing(gongCallId); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gong/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ callId: gongCallId }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Processing failed");
+      // Update local state
+      setCalls(prev => prev.map(c => c.gongCallId === gongCallId ? { ...c, status: "completed", overallScore: data.overallScore } : c));
+      if (onCallProcessed) onCallProcessed();
+    } catch (e) {
+      setError(e.message);
+      setCalls(prev => prev.map(c => c.gongCallId === gongCallId ? { ...c, status: "failed", errorMessage: e.message } : c));
+    } finally { setProcessing(null); }
+  };
+
+  const statusBadge = (status) => {
+    const styles = {
+      new: { bg: "rgba(59,130,246,0.1)", color: "#3b82f6", text: "New" },
+      processing: { bg: "rgba(234,179,8,0.1)", color: "#eab308", text: "Processing..." },
+      completed: { bg: "rgba(49,206,129,0.1)", color: "#31CE81", text: "Reviewed" },
+      failed: { bg: "rgba(239,68,68,0.1)", color: "#ef4444", text: "Failed" },
+    };
+    const s = styles[status] || styles.new;
+    return <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: s.bg, color: s.color, fontWeight: 600 }}>{s.text}</span>;
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 560, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Sync Gong Calls</h3>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={loadGongCalls} disabled={loading} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{loading ? "..." : "Refresh"}</button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
+          </div>
+        </div>
+
+        {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>Loading Gong calls...</p>
+        ) : calls.length === 0 ? (
+          <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>No calls found in the last 30 days.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 4 }}>{calls.length} calls from last 30 days</div>
+            {calls.map(call => (
+              <div key={call.gongCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</div>
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+                    {call.started ? new Date(call.started).toLocaleDateString() : ""}
+                    {call.duration ? ` \u00B7 ${Math.round(call.duration / 60)}min` : ""}
+                    {call.parties?.length > 0 ? ` \u00B7 ${call.parties.slice(0, 2).join(", ")}` : ""}
+                  </div>
+                  {call.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{call.errorMessage}</div>}
+                </div>
+                {statusBadge(call.status)}
+                {(call.status === "new" || call.status === "failed") && (
+                  <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                    {processing === call.gongCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ==================== ADMIN DASHBOARD ====================
 function AdminDashboard({ allCalls }) {
   const repStats = {};
@@ -655,6 +876,10 @@ export default function CuotaCallReview() {
   const [showInvite, setShowInvite] = useState(false);
   const [folderClient, setFolderClient] = useState(null);
   const [folderAE, setFolderAE] = useState(null);
+
+  // Gong integration state
+  const [gongSettingsOpen, setGongSettingsOpen] = useState(false);
+  const [gongSyncOpen, setGongSyncOpen] = useState(false);
 
   // Review state
   const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
@@ -979,7 +1204,9 @@ export default function CuotaCallReview() {
     <div style={{ minHeight: "100vh", background: "#F5F3F0", color: "#1A2B3C", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
-      
+      {gongSettingsOpen && <GongSettingsModal token={token} getValidToken={getValidToken} onClose={() => setGongSettingsOpen(false)} />}
+      {gongSyncOpen && <GongSyncModal getValidToken={getValidToken} onClose={() => setGongSyncOpen(false)} onCallProcessed={loadCalls} />}
+
       {/* NAV */}
       <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "0 24px", display: "flex", alignItems: "center", gap: 8, height: 56, overflowX: "auto" }}>
         <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 16, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
@@ -996,6 +1223,8 @@ export default function CuotaCallReview() {
         ))}
         <div style={{ flex: 1 }} />
         {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setShowInvite(true)} style={{ padding: "6px 12px", border: "1px solid rgba(49,206,129,0.3)", borderRadius: 8, background: "rgba(49,206,129,0.08)", color: "#31CE81", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Invite</button>}
+        {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setGongSyncOpen(true)} style={{ padding: "6px 12px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Gong Sync</button>}
+        {profile?.role === "admin" && <button onClick={() => setGongSettingsOpen(true)} style={{ padding: "6px 12px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }} title="Gong Settings">Gong</button>}
         <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{session.user?.email}</span>
         <button onClick={async () => { const k = window.prompt("Enter your Anthropic API key (sk-ant-...):", apiKey || ""); if(k&&k.startsWith("sk-ant-")){localStorage.setItem("cuota_api_key",k); setApiKey(k); const t = await getValidToken(); if(t) await supabase.updateUser(t, { api_key: k }); alert("API key saved!");} }} style={{ padding: "6px 12px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{apiKey ? "API Key \u2713" : "API Key"}</button>
         <button onClick={handleLogout} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Logout</button>
