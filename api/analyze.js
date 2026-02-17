@@ -36,10 +36,10 @@ ALSO PROVIDE:
 - strengths: Exactly 3 strengths, each with a short title and 1-2 sentence description.
 - areas_of_opportunity: 2-4 areas where the rep can improve. Each must have a description of the gap AND a "fix" — a specific, actionable suggestion the rep can implement immediately.
 
-ALSO EXTRACT from the transcript:
-- rep_name: The sales rep / account executive name
-- prospect_company: The prospect's company name
-- prospect_name: The main prospect/buyer on the call
+ALSO EXTRACT from the transcript (pay close attention to introductions in the first 1-2 minutes):
+- rep_name: The sales rep / account executive name (the person from the SELLING company who is running the call)
+- prospect_company: The company name of the BUYER/PROSPECT being sold to. This is NOT the rep's company or the rep's employer. Listen carefully for introductions like "I'm [name] from [company]" or "we at [company]" from the non-rep speakers. If the prospect mentions their company name at any point, use that. If unclear, look for the company being discussed as the potential customer.
+- prospect_name: The main prospect/buyer on the call (the person being sold to, not the rep)
 - call_type: One of Discovery, Demo, Follow-up, Negotiation, Closing
 - deal_stage: One of Early, Mid-Pipe, Late Stage, Negotiation
 
