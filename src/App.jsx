@@ -476,12 +476,15 @@ function resolveClient(call, clientList) {
 }
 
 function ProgressionView({ calls, clients }) {
+  const [expandedClient, setExpandedClient] = useState(null);
+
   // Step 1: Collect all calls per normalized rep name, resolving client
   const repAllCalls = {};
   calls.forEach(c => {
+    if (!isNewFormat(c)) return;
     const rep = normalizeRepName(c.rep_name || c.category_scores?.rep_name);
     const client = resolveClient(c, clients);
-    if (!client) return; // skip calls that don't match any known client
+    if (!client) return;
     if (!repAllCalls[rep]) repAllCalls[rep] = [];
     repAllCalls[rep].push({ ...c, _resolvedClient: client });
   });
@@ -500,48 +503,211 @@ function ProgressionView({ calls, clients }) {
 
   // Sort calls within each rep by date
   Object.values(clientReps).forEach(reps => Object.values(reps).forEach(arr => arr.sort((a, b) => new Date(a.call_date) - new Date(b.call_date))));
-  const sortedClients = Object.keys(clientReps).sort((a, b) => a.localeCompare(b));
+  const sortedClients = clients.filter(c => clientReps[c]).sort((a, b) => a.localeCompare(b));
+
+  // Compute client-level stats
+  const clientStats = {};
+  sortedClients.forEach(client => {
+    const reps = clientReps[client];
+    const repNames = Object.keys(reps);
+    const allClientCalls = repNames.flatMap(r => reps[r]);
+    const avgScore = allClientCalls.length > 0 ? Math.round(allClientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / allClientCalls.length) : 0;
+    // Trend: average of last calls minus average of first calls across all reps
+    let trendDelta = 0;
+    let trendCount = 0;
+    repNames.forEach(r => {
+      const rc = reps[r];
+      if (rc.length > 1) {
+        trendDelta += (rc[rc.length - 1]?.overall_score || 0) - (rc[0]?.overall_score || 0);
+        trendCount++;
+      }
+    });
+    const trend = trendCount > 0 ? Math.round(trendDelta / trendCount) : 0;
+    clientStats[client] = { repCount: repNames.length, callCount: allClientCalls.length, avgScore, trend };
+  });
 
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Rep Progression</h2>
       {sortedClients.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>Save some calls to see progression data.</p>}
-      {sortedClients.map(client => {
-        const reps = clientReps[client];
+
+      {/* Tier 1: Client Overview Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
+        {sortedClients.map(client => {
+          const stats = clientStats[client];
+          const logoUrl = getClientLogo(client);
+          const isExpanded = expandedClient === client;
+          return (
+            <div key={client} onClick={() => setExpandedClient(isExpanded ? null : client)} style={{ background: isExpanded ? "rgba(49,206,129,0.04)" : "#FFFFFF", border: isExpanded ? "2px solid #31CE81" : "1px solid rgba(0,0,0,0.08)", borderRadius: 16, cursor: "pointer", overflow: "hidden", transition: "all 0.2s", boxShadow: isExpanded ? "0 4px 12px rgba(49,206,129,0.15)" : "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                  {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
+                  <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "#31CE81", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
+                  <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{stats.callCount} call{stats.callCount !== 1 ? "s" : ""} · {stats.repCount} rep{stats.repCount !== 1 ? "s" : ""}</div>
+                </div>
+              </div>
+              <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <CircularScore score={stats.avgScore} size={40} strokeWidth={3} />
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>avg score</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  {stats.trend !== 0 && (
+                    <span style={{ fontSize: 13, fontWeight: 700, color: stats.trend > 0 ? "#31CE81" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
+                      {stats.trend > 0 ? "\u25B2" : "\u25BC"} {Math.abs(stats.trend)} pts
+                    </span>
+                  )}
+                  {stats.trend === 0 && <span style={{ fontSize: 12, color: "rgba(0,0,0,0.3)" }}>&mdash;</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tier 2: Expanded Rep Detail Cards */}
+      {expandedClient && clientReps[expandedClient] && (() => {
+        const reps = clientReps[expandedClient];
         const sortedReps = Object.keys(reps).sort((a, b) => a.localeCompare(b));
         return (
-          <div key={client} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#31CE81", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10, paddingBottom: 6, borderBottom: "2px solid rgba(49,206,129,0.2)" }}>{client}</div>
-            {sortedReps.map(name => {
-              const rCalls = reps[name];
-              const first = rCalls[0]?.overall_score || 0, last = rCalls[rCalls.length - 1]?.overall_score || 0, delta = last - first;
-              return (
-                <div key={name} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 10, marginLeft: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
-                      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)" }}>{rCalls.length} call{rCalls.length !== 1 ? "s" : ""} reviewed</div>
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#31CE81", textTransform: "uppercase", letterSpacing: 1, marginBottom: 14, paddingBottom: 6, borderBottom: "2px solid rgba(49,206,129,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
+              {expandedClient} — Reps ({sortedReps.length})
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {sortedReps.map(name => {
+                const rCalls = reps[name];
+                const first = rCalls[0]?.overall_score || 0;
+                const last = rCalls[rCalls.length - 1]?.overall_score || 0;
+                const delta = rCalls.length > 1 ? last - first : 0;
+                const { weak, strong } = computeWeakAndStrongPoints(rCalls);
+
+                // Risk patterns from last 3 calls
+                const recentCalls = rCalls.slice(-3);
+                const riskPatterns = RISK_INDICATORS.map(risk => {
+                  const flagged = recentCalls.filter(c => c.category_scores?.risk_indicators?.[risk.id]?.flagged).length;
+                  return { ...risk, flagged, total: recentCalls.length };
+                }).filter(r => r.flagged > 0);
+
+                // Coaching insights
+                const insights = [];
+                const weakBelow6 = weak.filter(w => w.avg > 0 && w.avg < 6);
+                if (weakBelow6.length > 0) insights.push(`Focus on ${weakBelow6[0].name} (${weakBelow6[0].avg}/10)`);
+                const criticalRisks = riskPatterns.filter(r => r.flagged === r.total && r.total >= 2);
+                if (criticalRisks.length > 0) insights.push(`${criticalRisks[0].label} flagged in all recent calls`);
+                const strongAbove8 = strong.filter(s => s.avg >= 8);
+                if (strongAbove8.length > 0 && insights.length < 2) insights.push(`Leverage strong ${strongAbove8[0].name} skills (${strongAbove8[0].avg}/10)`);
+
+                // Sparkline data
+                const sparkPoints = rCalls.map((c, i) => ({
+                  x: rCalls.length === 1 ? 50 : (i / (rCalls.length - 1)) * 100,
+                  y: c.overall_score || 0,
+                  date: c.call_date,
+                }));
+                const svgH = 60;
+                const svgPad = 6;
+                const sparkSvgPoints = sparkPoints.map(p => ({
+                  cx: `${p.x}%`,
+                  cy: svgPad + ((100 - p.y) / 100) * (svgH - svgPad * 2),
+                  cxNum: p.x,
+                  score: p.y,
+                  date: p.date,
+                }));
+                const polyline = sparkSvgPoints.map(p => `${p.cxNum},${p.cy}`).join(" ");
+
+                return (
+                  <div key={name} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+                    {/* 1. Header Row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                      <CircularScore score={last} size={70} strokeWidth={5} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
+                        <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{rCalls.length} call{rCalls.length !== 1 ? "s" : ""} reviewed</div>
+                      </div>
+                      {rCalls.length > 1 && (
+                        <div style={{ textAlign: "right" }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, color: delta >= 0 ? "#31CE81" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
+                            {delta >= 0 ? "+" : ""}{delta} pts
+                          </span>
+                          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{first} → {last}</div>
+                        </div>
+                      )}
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: getScoreColor(last), fontFamily: "'Space Mono', monospace" }}>{last}</div>
-                      {rCalls.length > 1 && <div style={{ fontSize: 12, color: delta >= 0 ? "#31CE81" : "#ef4444" }}>{delta >= 0 ? "+" : ""}{delta} pts</div>}
+
+                    {/* 2. Score Sparkline */}
+                    {rCalls.length > 1 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <svg width="100%" height={svgH} viewBox={`0 0 100 ${svgH}`} preserveAspectRatio="none" style={{ display: "block" }}>
+                          <polyline points={polyline} fill="none" stroke="rgba(49,206,129,0.4)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                          {sparkSvgPoints.map((p, i) => (
+                            <circle key={i} cx={p.cxNum} cy={p.cy} r="3" fill={getScoreColor(p.score)} stroke="#fff" strokeWidth="1" vectorEffect="non-scaling-stroke">
+                              <title>{p.date}: {p.score}</title>
+                            </circle>
+                          ))}
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* 3. Category Performance (two-column) */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: riskPatterns.length > 0 || insights.length > 0 ? 16 : 0 }}>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700, marginBottom: 8 }}>Strongest</div>
+                        {strong.map(p => (
+                          <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
+                            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.55)" }}>{p.name}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>Weakest</div>
+                        {weak.map(p => (
+                          <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
+                            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.55)" }}>{p.name}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+
+                    {/* 4. Risk Patterns */}
+                    {riskPatterns.length > 0 && (
+                      <div style={{ marginBottom: insights.length > 0 ? 16 : 0 }}>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", fontWeight: 700, marginBottom: 8 }}>Risk Patterns (last {recentCalls.length} calls)</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {riskPatterns.map(r => {
+                            const isCritical = r.flagged === r.total && r.total >= 2;
+                            return (
+                              <span key={r.id} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: isCritical ? "rgba(239,68,68,0.1)" : "rgba(234,179,8,0.1)", color: isCritical ? "#ef4444" : "#b45309", fontWeight: 600 }}>
+                                {r.label}: {r.flagged}/{r.total} {isCritical && "CRITICAL"}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 5. Coaching Insights */}
+                    {insights.length > 0 && (
+                      <div style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 10, padding: "12px 16px" }}>
+                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, marginBottom: 6 }}>Coaching Insights</div>
+                        {insights.map((ins, i) => (
+                          <div key={i} style={{ fontSize: 12, color: "#1e40af", padding: "2px 0", display: "flex", alignItems: "baseline", gap: 6 }}>
+                            <span style={{ color: "#3b82f6" }}>&bull;</span> {ins}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ display: "flex", alignItems: "end", gap: 4, height: 60 }}>
-                    {rCalls.map((c, i) => {
-                      const h = Math.max(8, ((c.overall_score || 0) / 100) * 60);
-                      return <div key={i} title={`${c.call_date}: ${c.overall_score}`} style={{ flex: 1, height: h, background: getScoreColor(c.overall_score || 0), borderRadius: 4, transition: "height 0.3s", maxWidth: 40 }} />;
-                    })}
-                  </div>
-                  <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                    {rCalls.map((c, i) => <div key={i} style={{ flex: 1, fontSize: 9, color: "rgba(0,0,0,0.25)", textAlign: "center", maxWidth: 40 }}>{c.call_date?.slice(5)}</div>)}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         );
-      })}
+      })()}
     </div>
   );
 }
@@ -1351,6 +1517,8 @@ export default function CuotaCallReview() {
   };
 
   const saveCall = async () => {
+    if (!callInfo.client) { setError("Please select a client before saving."); return; }
+    if (!callInfo.repName.trim()) { setError("Please enter a rep name before saving."); return; }
     setSaving(true); setError(""); setSaveSuccess(false);
     try {
       const validToken = await getValidToken();
@@ -1472,7 +1640,7 @@ export default function CuotaCallReview() {
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
-                  { key: "client", label: "Client", options: clients },
+                  { key: "client", label: "Client", options: clients, required: true },
                   { key: "repName", label: "Rep Name", placeholder: "e.g. Sarah Chen" },
                   { key: "prospectCompany", label: "Prospect Company", placeholder: "e.g. Meijer" },
                   { key: "callDate", label: "Call Date", type: "date" },
@@ -1483,8 +1651,9 @@ export default function CuotaCallReview() {
                   <div key={f.key}>
                     <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{f.label}</label>
                     {f.options ? (
-                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
-                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF" }}>{o}</option>)}
+                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!callInfo[f.key] && f.required ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.06)"), borderRadius: 8, color: callInfo[f.key] ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
+                        {!callInfo[f.key] && <option value="">Select {f.label.toLowerCase()}...</option>}
+                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF", color: "#1A2B3C" }}>{o}</option>)}
                       </select>
                     ) : (
                       <input type={f.type || "text"} value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
