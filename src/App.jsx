@@ -536,10 +536,8 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           <div key={call.id} onClick={() => onSelect(call)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
             <CircularScore score={call.overall_score || 0} size={50} strokeWidth={4} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{call.category_scores?.prospect_name || call.prospect_company || "Unknown"}</div>
-              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
-                {call.category_scores?.prospect_name && call.prospect_company ? `${call.prospect_company} · ` : ""}{call.call_type} | {call.call_date}
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{call.prospect_company || "Unknown Company"}</div>
+              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{call.call_type} | {call.call_date}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(call.overall_score || 0)}</div>
