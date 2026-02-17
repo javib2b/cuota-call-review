@@ -392,50 +392,147 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
   // ---- AE DETAIL VIEW ----
   const aeCalls = (grouped[folderClient] || {})[folderAE] || [];
-  const aeAvg = aeCalls.length > 0 ? Math.round(aeCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / aeCalls.length) : 0;
+  const sortedAeCalls = [...aeCalls].sort((a, b) => new Date(a.call_date) - new Date(b.call_date));
+  const latestScore = sortedAeCalls.length > 0 ? (sortedAeCalls[sortedAeCalls.length - 1].overall_score || 0) : 0;
+  const firstScore = sortedAeCalls.length > 0 ? (sortedAeCalls[0].overall_score || 0) : 0;
+  const delta = sortedAeCalls.length > 1 ? latestScore - firstScore : 0;
   const { weak, strong } = computeWeakAndStrongPoints(aeCalls);
+
+  // Risk patterns from last 3 calls
+  const recentCalls = sortedAeCalls.slice(-3);
+  const riskPatterns = RISK_INDICATORS.map(risk => {
+    const flagged = recentCalls.filter(c => c.category_scores?.risk_indicators?.[risk.id]?.flagged).length;
+    return { ...risk, flagged, total: recentCalls.length };
+  }).filter(r => r.flagged > 0);
+
+  // Coaching insights
+  const coachingInsights = [];
+  const weakBelow6 = weak.filter(w => w.avg > 0 && w.avg < 6);
+  if (weakBelow6.length > 0) coachingInsights.push(`Focus on ${weakBelow6[0].name} (${weakBelow6[0].avg}/10)`);
+  const criticalRisks = riskPatterns.filter(r => r.flagged === r.total && r.total >= 2);
+  if (criticalRisks.length > 0) coachingInsights.push(`${criticalRisks[0].label} flagged in all recent calls`);
+  const strongAbove8 = strong.filter(s => s.avg >= 8);
+  if (strongAbove8.length > 0 && coachingInsights.length < 2) coachingInsights.push(`Leverage strong ${strongAbove8[0].name} skills (${strongAbove8[0].avg}/10)`);
+
+  // Sparkline data
+  const sparkPoints = sortedAeCalls.map((c, i) => ({
+    x: sortedAeCalls.length === 1 ? 50 : (i / (sortedAeCalls.length - 1)) * 100,
+    y: c.overall_score || 0,
+    date: c.call_date,
+  }));
+  const svgH = 80;
+  const svgPad = 8;
+  const sparkSvgPoints = sparkPoints.map(p => ({
+    cx: `${p.x}%`,
+    cy: svgPad + ((100 - p.y) / 100) * (svgH - svgPad * 2),
+    cxNum: p.x,
+    score: p.y,
+    date: p.date,
+  }));
+  const polyline = sparkSvgPoints.map(p => `${p.cxNum},${p.cy}`).join(" ");
 
   return (
     <div>
       {breadcrumb}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>{folderAE}</h2>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20 }}>
         {newReviewBtn}
       </div>
 
-      {/* Summary Panel */}
-      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-          <CircularScore score={aeAvg} size={80} strokeWidth={6} label="avg" />
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700, marginBottom: 8 }}>Strong Points</div>
-                {strong.map(p => (
-                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
-                    <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>{p.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#31CE81", fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
-                  </div>
-                ))}
+      {/* SECTION 1: Header Card */}
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 24, marginBottom: 16, display: "flex", alignItems: "center", gap: 20 }}>
+        <CircularScore score={latestScore} size={80} strokeWidth={6} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C" }}>{folderAE}</div>
+          <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", marginTop: 4 }}>
+            {sortedAeCalls.length} call{sortedAeCalls.length !== 1 ? "s" : ""} reviewed
+          </div>
+        </div>
+        {sortedAeCalls.length > 1 && (
+          <div style={{ textAlign: "right" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: delta >= 0 ? "#31CE81" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
+              {delta >= 0 ? "+" : ""}{delta} pts
+            </span>
+            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{firstScore} &rarr; {latestScore}</div>
+          </div>
+        )}
+      </div>
+
+      {/* SECTION 2: Score Trend (only if >1 call) */}
+      {sortedAeCalls.length > 1 && (
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", fontWeight: 700, marginBottom: 12 }}>Score Trend</div>
+          <svg width="100%" height={svgH} viewBox={`0 0 100 ${svgH}`} preserveAspectRatio="none" style={{ display: "block" }}>
+            <polyline points={polyline} fill="none" stroke="rgba(49,206,129,0.4)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+            {sparkSvgPoints.map((p, i) => (
+              <circle key={i} cx={p.cxNum} cy={p.cy} r="3.5" fill={getScoreColor(p.score)} stroke="#fff" strokeWidth="1.5" vectorEffect="non-scaling-stroke">
+                <title>{p.date}: {p.score}</title>
+              </circle>
+            ))}
+          </svg>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)" }}>{sortedAeCalls[0].call_date}</span>
+            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)" }}>{sortedAeCalls[sortedAeCalls.length - 1].call_date}</span>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 3: Category Performance */}
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700, marginBottom: 10 }}>Strongest</div>
+            {strong.map(p => (
+              <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                <span style={{ fontSize: 12, color: "rgba(0,0,0,0.55)" }}>{p.name}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
               </div>
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>Weak Points</div>
-                {weak.map(p => (
-                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
-                    <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>{p.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
-                  </div>
-                ))}
+            ))}
+          </div>
+          <div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700, marginBottom: 10 }}>Weakest</div>
+            {weak.map(p => (
+              <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                <span style={{ fontSize: 12, color: "rgba(0,0,0,0.55)" }}>{p.name}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Individual Call Cards */}
-      <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.5)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Calls ({aeCalls.length})</h3>
+      {/* SECTION 4: Risk Patterns */}
+      {riskPatterns.length > 0 && (
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", fontWeight: 700, marginBottom: 10 }}>Risk Patterns (last {recentCalls.length} calls)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {riskPatterns.map(r => {
+              const isCritical = r.flagged === r.total && r.total >= 2;
+              return (
+                <span key={r.id} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 20, background: isCritical ? "rgba(239,68,68,0.1)" : "rgba(234,179,8,0.1)", color: isCritical ? "#ef4444" : "#b45309", fontWeight: 600 }}>
+                  {r.label}: {r.flagged}/{r.total} {isCritical && "CRITICAL"}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 5: Coaching Insights */}
+      {coachingInsights.length > 0 && (
+        <div style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 14, padding: "16px 24px", marginBottom: 16 }}>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, marginBottom: 8 }}>Coaching Insights</div>
+          {coachingInsights.map((ins, i) => (
+            <div key={i} style={{ fontSize: 13, color: "#1e40af", padding: "3px 0", display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ color: "#3b82f6" }}>&bull;</span> {ins}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* SECTION 6: Call List (chronological, oldest first) */}
+      <h3 style={{ fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.5)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Calls ({sortedAeCalls.length})</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {aeCalls.map(call => (
+        {sortedAeCalls.map(call => (
           <div key={call.id} onClick={() => onSelect(call)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
             <CircularScore score={call.overall_score || 0} size={50} strokeWidth={4} />
             <div style={{ flex: 1 }}>
@@ -453,264 +550,6 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
   );
 }
 
-// ==================== PROGRESSION ====================
-function normalizeRepName(name) {
-  if (!name) return "Unknown";
-  return name.trim().replace(/\s+/g, " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-}
-
-function resolveClient(call, clientList) {
-  const tagged = call.category_scores?.client;
-  if (tagged && clientList.includes(tagged)) return tagged;
-  // Fuzzy match prospect_company against client list
-  const company = (call.prospect_company || "").toLowerCase();
-  const matched = clientList.find(c => company.includes(c.toLowerCase()));
-  if (matched) return matched;
-  // Fuzzy match the tagged client name itself
-  if (tagged) {
-    const tagLower = tagged.toLowerCase();
-    const fuzzy = clientList.find(c => tagLower.includes(c.toLowerCase()) || c.toLowerCase().includes(tagLower));
-    if (fuzzy) return fuzzy;
-  }
-  return null;
-}
-
-function ProgressionView({ calls, clients }) {
-  const [expandedClient, setExpandedClient] = useState(null);
-
-  // Step 1: Collect all calls per normalized rep name, resolving client
-  const repAllCalls = {};
-  calls.forEach(c => {
-    if (!isNewFormat(c)) return;
-    const rep = normalizeRepName(c.rep_name || c.category_scores?.rep_name);
-    const client = resolveClient(c, clients);
-    if (!client) return;
-    if (!repAllCalls[rep]) repAllCalls[rep] = [];
-    repAllCalls[rep].push({ ...c, _resolvedClient: client });
-  });
-
-  // Step 2: Determine each rep's primary client (majority of their resolved calls)
-  const clientReps = {};
-  Object.entries(repAllCalls).forEach(([rep, repCalls]) => {
-    const clientCounts = {};
-    repCalls.forEach(c => {
-      clientCounts[c._resolvedClient] = (clientCounts[c._resolvedClient] || 0) + 1;
-    });
-    const primaryClient = Object.entries(clientCounts).sort((a, b) => b[1] - a[1])[0][0];
-    if (!clientReps[primaryClient]) clientReps[primaryClient] = {};
-    clientReps[primaryClient][rep] = repCalls;
-  });
-
-  // Sort calls within each rep by date
-  Object.values(clientReps).forEach(reps => Object.values(reps).forEach(arr => arr.sort((a, b) => new Date(a.call_date) - new Date(b.call_date))));
-  const sortedClients = clients.filter(c => clientReps[c]).sort((a, b) => a.localeCompare(b));
-
-  // Compute client-level stats
-  const clientStats = {};
-  sortedClients.forEach(client => {
-    const reps = clientReps[client];
-    const repNames = Object.keys(reps);
-    const allClientCalls = repNames.flatMap(r => reps[r]);
-    const avgScore = allClientCalls.length > 0 ? Math.round(allClientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / allClientCalls.length) : 0;
-    // Trend: average of last calls minus average of first calls across all reps
-    let trendDelta = 0;
-    let trendCount = 0;
-    repNames.forEach(r => {
-      const rc = reps[r];
-      if (rc.length > 1) {
-        trendDelta += (rc[rc.length - 1]?.overall_score || 0) - (rc[0]?.overall_score || 0);
-        trendCount++;
-      }
-    });
-    const trend = trendCount > 0 ? Math.round(trendDelta / trendCount) : 0;
-    clientStats[client] = { repCount: repNames.length, callCount: allClientCalls.length, avgScore, trend };
-  });
-
-  return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Rep Progression</h2>
-      {sortedClients.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>Save some calls to see progression data.</p>}
-
-      {/* Tier 1: Client Overview Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14, marginBottom: 20 }}>
-        {sortedClients.map(client => {
-          const stats = clientStats[client];
-          const logoUrl = getClientLogo(client);
-          const isExpanded = expandedClient === client;
-          return (
-            <div key={client} onClick={() => setExpandedClient(isExpanded ? null : client)} style={{ background: isExpanded ? "rgba(49,206,129,0.04)" : "#FFFFFF", border: isExpanded ? "2px solid #31CE81" : "1px solid rgba(0,0,0,0.08)", borderRadius: 16, cursor: "pointer", overflow: "hidden", transition: "all 0.2s", boxShadow: isExpanded ? "0 4px 12px rgba(49,206,129,0.15)" : "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                  {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-                  <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "#31CE81", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
-                  <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{stats.callCount} call{stats.callCount !== 1 ? "s" : ""} · {stats.repCount} rep{stats.repCount !== 1 ? "s" : ""}</div>
-                </div>
-              </div>
-              <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <CircularScore score={stats.avgScore} size={40} strokeWidth={3} />
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>avg score</div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {stats.trend !== 0 && (
-                    <span style={{ fontSize: 13, fontWeight: 700, color: stats.trend > 0 ? "#31CE81" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
-                      {stats.trend > 0 ? "\u25B2" : "\u25BC"} {Math.abs(stats.trend)} pts
-                    </span>
-                  )}
-                  {stats.trend === 0 && <span style={{ fontSize: 12, color: "rgba(0,0,0,0.3)" }}>&mdash;</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Tier 2: Expanded Rep Detail Cards */}
-      {expandedClient && clientReps[expandedClient] && (() => {
-        const reps = clientReps[expandedClient];
-        const sortedReps = Object.keys(reps).sort((a, b) => a.localeCompare(b));
-        return (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#31CE81", textTransform: "uppercase", letterSpacing: 1, marginBottom: 14, paddingBottom: 6, borderBottom: "2px solid rgba(49,206,129,0.2)", display: "flex", alignItems: "center", gap: 8 }}>
-              {expandedClient} — Reps ({sortedReps.length})
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {sortedReps.map(name => {
-                const rCalls = reps[name];
-                const first = rCalls[0]?.overall_score || 0;
-                const last = rCalls[rCalls.length - 1]?.overall_score || 0;
-                const delta = rCalls.length > 1 ? last - first : 0;
-                const { weak, strong } = computeWeakAndStrongPoints(rCalls);
-
-                // Risk patterns from last 3 calls
-                const recentCalls = rCalls.slice(-3);
-                const riskPatterns = RISK_INDICATORS.map(risk => {
-                  const flagged = recentCalls.filter(c => c.category_scores?.risk_indicators?.[risk.id]?.flagged).length;
-                  return { ...risk, flagged, total: recentCalls.length };
-                }).filter(r => r.flagged > 0);
-
-                // Coaching insights
-                const insights = [];
-                const weakBelow6 = weak.filter(w => w.avg > 0 && w.avg < 6);
-                if (weakBelow6.length > 0) insights.push(`Focus on ${weakBelow6[0].name} (${weakBelow6[0].avg}/10)`);
-                const criticalRisks = riskPatterns.filter(r => r.flagged === r.total && r.total >= 2);
-                if (criticalRisks.length > 0) insights.push(`${criticalRisks[0].label} flagged in all recent calls`);
-                const strongAbove8 = strong.filter(s => s.avg >= 8);
-                if (strongAbove8.length > 0 && insights.length < 2) insights.push(`Leverage strong ${strongAbove8[0].name} skills (${strongAbove8[0].avg}/10)`);
-
-                // Sparkline data
-                const sparkPoints = rCalls.map((c, i) => ({
-                  x: rCalls.length === 1 ? 50 : (i / (rCalls.length - 1)) * 100,
-                  y: c.overall_score || 0,
-                  date: c.call_date,
-                }));
-                const svgH = 60;
-                const svgPad = 6;
-                const sparkSvgPoints = sparkPoints.map(p => ({
-                  cx: `${p.x}%`,
-                  cy: svgPad + ((100 - p.y) / 100) * (svgH - svgPad * 2),
-                  cxNum: p.x,
-                  score: p.y,
-                  date: p.date,
-                }));
-                const polyline = sparkSvgPoints.map(p => `${p.cxNum},${p.cy}`).join(" ");
-
-                return (
-                  <div key={name} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-                    {/* 1. Header Row */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-                      <CircularScore score={last} size={70} strokeWidth={5} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 17, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
-                        <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{rCalls.length} call{rCalls.length !== 1 ? "s" : ""} reviewed</div>
-                      </div>
-                      {rCalls.length > 1 && (
-                        <div style={{ textAlign: "right" }}>
-                          <span style={{ fontSize: 14, fontWeight: 700, color: delta >= 0 ? "#31CE81" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
-                            {delta >= 0 ? "+" : ""}{delta} pts
-                          </span>
-                          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{first} → {last}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 2. Score Sparkline */}
-                    {rCalls.length > 1 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <svg width="100%" height={svgH} viewBox={`0 0 100 ${svgH}`} preserveAspectRatio="none" style={{ display: "block" }}>
-                          <polyline points={polyline} fill="none" stroke="rgba(49,206,129,0.4)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-                          {sparkSvgPoints.map((p, i) => (
-                            <circle key={i} cx={p.cxNum} cy={p.cy} r="3" fill={getScoreColor(p.score)} stroke="#fff" strokeWidth="1" vectorEffect="non-scaling-stroke">
-                              <title>{p.date}: {p.score}</title>
-                            </circle>
-                          ))}
-                        </svg>
-                      </div>
-                    )}
-
-                    {/* 3. Category Performance (two-column) */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: riskPatterns.length > 0 || insights.length > 0 ? 16 : 0 }}>
-                      <div>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700, marginBottom: 8 }}>Strongest</div>
-                        {strong.map(p => (
-                          <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
-                            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.55)" }}>{p.name}</span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#ef4444", fontWeight: 700, marginBottom: 8 }}>Weakest</div>
-                        {weak.map(p => (
-                          <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "3px 0" }}>
-                            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.55)" }}>{p.name}</span>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 4. Risk Patterns */}
-                    {riskPatterns.length > 0 && (
-                      <div style={{ marginBottom: insights.length > 0 ? 16 : 0 }}>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", fontWeight: 700, marginBottom: 8 }}>Risk Patterns (last {recentCalls.length} calls)</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                          {riskPatterns.map(r => {
-                            const isCritical = r.flagged === r.total && r.total >= 2;
-                            return (
-                              <span key={r.id} style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: isCritical ? "rgba(239,68,68,0.1)" : "rgba(234,179,8,0.1)", color: isCritical ? "#ef4444" : "#b45309", fontWeight: 600 }}>
-                                {r.label}: {r.flagged}/{r.total} {isCritical && "CRITICAL"}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 5. Coaching Insights */}
-                    {insights.length > 0 && (
-                      <div style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 10, padding: "12px 16px" }}>
-                        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, marginBottom: 6 }}>Coaching Insights</div>
-                        {insights.map((ins, i) => (
-                          <div key={i} style={{ fontSize: 12, color: "#1e40af", padding: "2px 0", display: "flex", alignItems: "baseline", gap: 6 }}>
-                            <span style={{ color: "#3b82f6" }}>&bull;</span> {ins}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
-    </div>
-  );
-}
 
 // ==================== MAIN APP ====================
 
@@ -1612,7 +1451,6 @@ export default function CuotaCallReview() {
         {[
           { id: "review", label: "Call Review", icon: "\u{1F4DE}" },
           { id: "calls", label: "Clients", icon: "\u{1F4C1}", badge: savedCalls.length },
-          { id: "progression", label: "Progression", icon: "\u{1F4C8}" },
           ...(profile?.role === "admin" ? [{ id: "integrations", label: "Integrations", icon: "\u2699\uFE0F" }] : []),
           ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
         ].map(nav => (
@@ -1631,8 +1469,6 @@ export default function CuotaCallReview() {
         {/* SAVED CALLS PAGE */}
         {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} />}
 
-        {/* PROGRESSION PAGE */}
-        {page === "progression" && <ProgressionView calls={savedCalls} clients={clients} />}
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
 
