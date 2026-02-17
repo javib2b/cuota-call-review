@@ -150,7 +150,7 @@ function groupCallsByClientAndAE(calls, clientList) {
 }
 
 function getScoreColor(s) { return s >= 80 ? "#31CE81" : s >= 60 ? "#eab308" : s >= 40 ? "#f97316" : "#ef4444"; }
-function getScoreLabel(s) { return s >= 85 ? "Excellent" : s >= 70 ? "Strong" : s >= 55 ? "Developing" : s >= 40 ? "Needs Work" : "Critical"; }
+function getScoreLabel(s) { return s >= 85 ? "Solid" : s >= 65 ? "Average" : s >= 50 ? "Needs Work" : "Critical"; }
 function getScoreColor10(s) { return s >= 8 ? "#31CE81" : s >= 6 ? "#eab308" : s >= 4 ? "#f97316" : "#ef4444"; }
 
 function CircularScore({ score, size = 120, strokeWidth = 8, label }) {
