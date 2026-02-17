@@ -1552,9 +1552,12 @@ export default function CuotaCallReview() {
       } else {
         await table.insert(callData);
       }
-      setSaveSuccess(true);
       await loadCalls();
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Navigate to the client folder so the user sees the saved call immediately
+      setPage("calls");
+      setFolderClient(callInfo.client);
+      setFolderAE(null);
+      setSelectedCall(null);
     } catch (err) {
       setError("Save failed: " + (err.message || "Unknown error"));
     } finally { setSaving(false); }
