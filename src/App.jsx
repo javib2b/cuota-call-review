@@ -206,7 +206,7 @@ function AuthScreen({ onAuth }) {
       <div style={{ width: 400, padding: 40 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", letterSpacing: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></div>
-          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 4, letterSpacing: 1 }}>Call Review Engine</div>
+          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 4, letterSpacing: 1 }}>GTM Audit Engine</div>
         </div>
         <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 28 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "#FFFFFF", borderRadius: 10, padding: 4 }}>
@@ -995,6 +995,611 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
   );
 }
 
+// ==================== HOME PAGE ====================
+function HomePage({ savedCalls, enablementDocs, crmSnapshots, clients, onNavigate }) {
+  const totalCalls = savedCalls.length;
+  const avgCallScore = totalCalls > 0 ? Math.round(savedCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / totalCalls) : 0;
+  const totalDocs = enablementDocs.length;
+  const avgDocScore = totalDocs > 0 ? Math.round(enablementDocs.reduce((s, d) => s + (d.overall_score || 0), 0) / totalDocs) : 0;
+  const crmClientCount = [...new Set(crmSnapshots.map(s => s.client))].length;
+
+  const modules = [
+    {
+      id: "calls",
+      title: "Call Intelligence",
+      icon: "📞",
+      description: "AI-powered analysis of every sales conversation. Score reps, track coaching progress, and surface deal risks.",
+      color: "#31CE81",
+      accent: "rgba(49,206,129,0.08)",
+      border: "rgba(49,206,129,0.2)",
+      stats: [
+        { label: "Calls Reviewed", value: totalCalls },
+        { label: "Avg Score", value: totalCalls > 0 ? avgCallScore + "%" : "—", color: totalCalls > 0 ? getScoreColor(avgCallScore) : "rgba(0,0,0,0.3)" },
+      ],
+      cta: totalCalls > 0 ? "View Clients →" : "Start Reviewing →",
+    },
+    {
+      id: "enablement",
+      title: "Enablement",
+      icon: "📄",
+      description: "Audit pitch decks, battle cards, email templates, and playbooks for quality, gaps, and buyer-centricity.",
+      color: "#3b82f6",
+      accent: "rgba(59,130,246,0.08)",
+      border: "rgba(59,130,246,0.2)",
+      stats: [
+        { label: "Documents", value: totalDocs },
+        { label: "Avg Quality", value: totalDocs > 0 ? avgDocScore + "%" : "—", color: totalDocs > 0 ? getScoreColor(avgDocScore) : "rgba(0,0,0,0.3)" },
+      ],
+      cta: totalDocs > 0 ? "View Docs →" : "Upload First Doc →",
+    },
+    {
+      id: "crm",
+      title: "CRM Health",
+      icon: "📊",
+      description: "Enter pipeline data per client and get AI-powered analysis of deal health, coverage ratios, and forecast quality.",
+      color: "#8b5cf6",
+      accent: "rgba(139,92,246,0.08)",
+      border: "rgba(139,92,246,0.2)",
+      stats: [
+        { label: "Snapshots", value: crmSnapshots.length },
+        { label: "Clients Tracked", value: crmClientCount },
+      ],
+      cta: crmSnapshots.length > 0 ? "View Pipeline →" : "Add Pipeline Data →",
+    },
+  ];
+
+  // Per-client health grid
+  const clientHealth = clients.map(client => {
+    const clientCalls = savedCalls.filter(c => {
+      if (c.category_scores?.client === client) return true;
+      return (c.prospect_company || "").toLowerCase().includes(client.toLowerCase());
+    });
+    const callScore = clientCalls.length > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length) : null;
+    const clientDocs = enablementDocs.filter(d => d.client === client);
+    const docScore = clientDocs.length > 0 ? Math.round(clientDocs.reduce((s, d) => s + (d.overall_score || 0), 0) / clientDocs.length) : null;
+    const latestCrm = crmSnapshots.filter(s => s.client === client).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    const crmScore = latestCrm?.overall_score || null;
+    const scores = [callScore, docScore, crmScore].filter(s => s !== null);
+    const overallHealth = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    return { client, callScore, docScore, crmScore, overallHealth, callCount: clientCalls.length, docCount: clientDocs.length };
+  }).filter(c => c.callCount > 0 || c.docCount > 0 || c.crmScore !== null);
+
+  const scoreCell = (score) => score !== null
+    ? <span style={{ fontSize: 13, fontWeight: 700, color: getScoreColor(score), fontFamily: "'Space Mono', monospace" }}>{score}%</span>
+    : <span style={{ fontSize: 12, color: "rgba(0,0,0,0.2)" }}>—</span>;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1A2B3C", margin: "0 0 6px" }}>GTM Audit Dashboard</h1>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Full-funnel visibility across calls, content, and pipeline</p>
+      </div>
+
+      {/* Module cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
+        {modules.map(mod => (
+          <div key={mod.id} onClick={() => onNavigate(mod.id)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 22, cursor: "pointer", transition: "box-shadow 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: mod.accent, border: `1px solid ${mod.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{mod.icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C" }}>{mod.title}</div>
+            </div>
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", lineHeight: 1.6, margin: "0 0 16px", minHeight: 54 }}>{mod.description}</p>
+            <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
+              {mod.stats.map((stat, i) => (
+                <div key={i}>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: stat.color || "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{stat.value}</div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, background: mod.accent, border: `1px solid ${mod.border}`, color: mod.color, fontSize: 12, fontWeight: 700 }}>
+              {mod.cta}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Client health overview */}
+      {clientHealth.length > 0 ? (
+        <div>
+          <h3 style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Client Health Overview</h3>
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 90px)", gap: 0, padding: "10px 20px", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+              <span>Client</span>
+              <span style={{ textAlign: "center" }}>Calls</span>
+              <span style={{ textAlign: "center" }}>Docs</span>
+              <span style={{ textAlign: "center" }}>CRM</span>
+              <span style={{ textAlign: "center" }}>Health</span>
+            </div>
+            {clientHealth.map((ch, i) => (
+              <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 90px)", gap: 0, padding: "13px 20px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{ch.client}</span>
+                <div style={{ textAlign: "center" }}>{scoreCell(ch.callScore)}</div>
+                <div style={{ textAlign: "center" }}>{scoreCell(ch.docScore)}</div>
+                <div style={{ textAlign: "center" }}>{scoreCell(ch.crmScore)}</div>
+                <div style={{ textAlign: "center" }}>{scoreCell(ch.overallHealth)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div style={{ textAlign: "center", padding: "48px 20px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🚀</div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>Start your first GTM audit</h3>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Review a sales call, upload an enablement doc, or add pipeline data to get started.</p>
+          <button onClick={() => onNavigate("calls")} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Review First Call</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==================== ENABLEMENT PAGE ====================
+const ENABLEMENT_DOC_TYPES = [
+  { id: "pitch_deck", name: "Pitch Deck" },
+  { id: "battle_card", name: "Battle Card" },
+  { id: "email_template", name: "Email Template" },
+  { id: "call_script", name: "Call Script" },
+  { id: "playbook", name: "Sales Playbook" },
+  { id: "case_study", name: "Case Study" },
+  { id: "proposal", name: "Proposal Template" },
+];
+
+function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate }) {
+  const [mode, setMode] = useState("list");
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [docTitle, setDocTitle] = useState("");
+  const [docClient, setDocClient] = useState("");
+  const [docType, setDocType] = useState("pitch_deck");
+  const [docContent, setDocContent] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => {
+    setSelectedDoc(null); setDocTitle(""); setDocClient(""); setDocType("pitch_deck");
+    setDocContent(""); setAnalysis(null); setError(""); setMode("new");
+  };
+
+  const viewDoc = (doc) => {
+    setSelectedDoc(doc); setDocTitle(doc.title); setDocClient(doc.client);
+    setDocType(doc.doc_type); setDocContent(doc.content || "");
+    setAnalysis(doc.ai_analysis || null); setError(""); setMode("view");
+  };
+
+  const analyzeDoc = async () => {
+    if (!docContent.trim()) { setError("Paste document content first."); return; }
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-doc", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ content: docContent, docType, title: docTitle }),
+      });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const saveDoc = async () => {
+    if (!docTitle.trim()) { setError("Please enter a document title."); return; }
+    if (!docClient) { setError("Please select a client."); return; }
+    if (!docContent.trim()) { setError("Please paste document content."); return; }
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const data = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client: docClient, doc_type: docType, title: docTitle, content: docContent, overall_score: analysis?.overall_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("enablement_docs", t);
+      if (selectedDoc?.id) { await table.update(data, `id=eq.${selectedDoc.id}`); }
+      else { await table.insert(data); }
+      await onDocsUpdate();
+      setMode("list");
+    } catch (e) {
+      if (e.message?.includes("relation") || e.message?.includes("exist") || e.message?.includes("does not exist")) {
+        setError("The enablement_docs table doesn't exist yet. Run the DB migration in Supabase to set it up.");
+      } else { setError("Save failed: " + e.message); }
+    } finally { setSaving(false); }
+  };
+
+  const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
+  const byClient = {};
+  docs.forEach(d => { if (!byClient[d.client]) byClient[d.client] = []; byClient[d.client].push(d); });
+
+  if (mode === "list") {
+    return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>Enablement</h2>
+            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Audit your sales materials for quality, completeness, and buyer-centricity</p>
+          </div>
+          <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Upload Doc</button>
+        </div>
+        {docs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
+            <div style={{ fontSize: 40, marginBottom: 14 }}>📄</div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>No documents yet</h3>
+            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Upload a pitch deck, battle card, or email template to get an AI quality audit.</p>
+            <button onClick={startNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Upload First Doc</button>
+          </div>
+        ) : Object.entries(byClient).map(([client, clientDocs]) => (
+          <div key={client} style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>{client}</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {clientDocs.map(doc => (
+                <div key={doc.id} onClick={() => viewDoc(doc)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>📄</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</div>
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+                      <span>{docTypeLabel(doc.doc_type)}</span>
+                      {doc.created_at && <span> · {new Date(doc.created_at).toLocaleDateString()}</span>}
+                    </div>
+                  </div>
+                  {doc.overall_score ? (
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(doc.overall_score), fontFamily: "'Space Mono', monospace" }}>{doc.overall_score}%</div>
+                      <div style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", textTransform: "uppercase" }}>{getScoreLabel(doc.overall_score)}</div>
+                    </div>
+                  ) : <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", flexShrink: 0 }}>Not analyzed</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // New / Edit view
+  const isViewMode = mode === "view" && selectedDoc;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
+        <span onClick={() => setMode("list")} style={{ color: "#3b82f6", cursor: "pointer", fontWeight: 600 }}>Enablement</span>
+        <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
+        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{isViewMode ? selectedDoc.title : "New Document"}</span>
+      </div>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Document Title</label>
+            <input value={docTitle} onChange={e => setDocTitle(e.target.value)} placeholder="e.g. Q1 2025 Pitch Deck" style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Client</label>
+            <select value={docClient} onChange={e => setDocClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!docClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: docClient ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+              <option value="">Select client...</option>
+              {clients.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Document Type</label>
+            <select value={docType} onChange={e => setDocType(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+              {ENABLEMENT_DOC_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)" }}>Document Content</label>
+          <button onClick={analyzeDoc} disabled={analyzing || !docContent.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: 8, cursor: analyzing || !docContent.trim() ? "default" : "pointer", background: analyzing || !docContent.trim() ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #3b82f6, #2563eb)", color: analyzing || !docContent.trim() ? "rgba(0,0,0,0.35)" : "#fff", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
+            {analyzing ? "Analyzing..." : "Analyze with AI ✦"}
+          </button>
+        </div>
+        <textarea value={docContent} onChange={e => setDocContent(e.target.value)} placeholder="Paste your document content here — pitch deck text, email template, battle card, playbook, etc." style={{ width: "100%", minHeight: 200, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: 14, fontSize: 13, color: "#1A2B3C", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+        {analyzing && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", textAlign: "center", marginTop: 10 }}>Analyzing document quality... (10-20s)</p>}
+      </div>
+      {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
+      {analysis && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", alignItems: "center", gap: 20 }}>
+            <CircularScore score={analysis.overall_score || 0} size={90} strokeWidth={6} label="quality" />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Document Quality Assessment</div>
+              <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+            </div>
+          </div>
+          {analysis.scores && (
+            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Category Breakdown</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {Object.entries(analysis.scores).map(([key, val]) => {
+                  const label = key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                  const pct = Math.round((val.score / 10) * 100);
+                  return (
+                    <div key={key}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: "rgba(0,0,0,0.6)", fontWeight: 500 }}>{label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor10(val.score), fontFamily: "'Space Mono', monospace" }}>{val.score}/10</span>
+                      </div>
+                      <div style={{ height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 4 }}>
+                        <div style={{ height: "100%", width: pct + "%", background: getScoreColor10(val.score), borderRadius: 4 }} />
+                      </div>
+                      {val.details && <p style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", margin: "4px 0 0", lineHeight: 1.5 }}>{val.details}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {analysis.key_strengths?.length > 0 && (
+            <div>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#31CE81", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Key Strengths</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                {analysis.key_strengths.map((s, i) => (
+                  <div key={i} style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10, padding: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a7a42", marginBottom: 4 }}>{s.title}</div>
+                    <p style={{ fontSize: 11, color: "#1a7a42", margin: 0, lineHeight: 1.6, opacity: 0.85 }}>{s.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {analysis.gaps?.length > 0 && (
+            <div>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#eab308", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Areas to Improve</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {analysis.gaps.map((g, i) => (
+                  <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{g.title}</div>
+                    <p style={{ fontSize: 12, color: "rgba(0,0,0,0.6)", margin: "0 0 10px", lineHeight: 1.6 }}>{g.description}</p>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 12px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8 }}>
+                      <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, flexShrink: 0, paddingTop: 1 }}>Fix</span>
+                      <p style={{ fontSize: 11, color: "#2563eb", margin: 0, lineHeight: 1.6 }}>{g.fix}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {analysis.missing_elements?.length > 0 && (
+            <div style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, padding: 16 }}>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Missing Elements</h4>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {analysis.missing_elements.map((m, i) => (
+                  <span key={i} style={{ padding: "4px 10px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 20, fontSize: 11, color: "#ef4444", fontWeight: 600 }}>{m}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={() => setMode("list")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        <button onClick={saveDoc} disabled={saving} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.7 : 1 }}>{saving ? "Saving..." : isViewMode ? "Update Doc" : "Save Doc"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ==================== CRM PAGE ====================
+function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate }) {
+  const [mode, setMode] = useState("list");
+  const [selectedSnapshot, setSelectedSnapshot] = useState(null);
+  const [selectedClient, setSelectedClient] = useState("");
+  const [snapshotDate, setSnapshotDate] = useState(new Date().toISOString().split("T")[0]);
+  const [crmData, setCrmData] = useState({ quota: "", totalPipeline: "", activeDeals: "", winRate: "", avgDealSize: "", avgCycleDays: "", earlyStage: "", midStage: "", lateStage: "", negotiation: "", wonThisMonth: "", lostThisMonth: "", notes: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => {
+    setSelectedSnapshot(null); setSelectedClient(""); setSnapshotDate(new Date().toISOString().split("T")[0]);
+    setCrmData({ quota: "", totalPipeline: "", activeDeals: "", winRate: "", avgDealSize: "", avgCycleDays: "", earlyStage: "", midStage: "", lateStage: "", negotiation: "", wonThisMonth: "", lostThisMonth: "", notes: "" });
+    setAnalysis(null); setError(""); setMode("new");
+  };
+
+  const viewSnapshot = (snap) => {
+    setSelectedSnapshot(snap); setSelectedClient(snap.client);
+    setCrmData(snap.crm_data || {}); setAnalysis(snap.ai_analysis || null);
+    setSnapshotDate(snap.snapshot_date || new Date().toISOString().split("T")[0]);
+    setError(""); setMode("view");
+  };
+
+  const analyzeData = async () => {
+    if (!selectedClient) { setError("Please select a client first."); return; }
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-crm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ client: selectedClient, crmData, snapshotDate }),
+      });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const saveSnapshot = async () => {
+    if (!selectedClient) { setError("Please select a client."); return; }
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const data = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client: selectedClient, snapshot_date: snapshotDate, crm_data: crmData, overall_score: analysis?.health_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("crm_snapshots", t);
+      if (selectedSnapshot?.id) { await table.update(data, `id=eq.${selectedSnapshot.id}`); }
+      else { await table.insert(data); }
+      await onSnapshotsUpdate();
+      setMode("list");
+    } catch (e) {
+      if (e.message?.includes("relation") || e.message?.includes("exist") || e.message?.includes("does not exist")) {
+        setError("The crm_snapshots table doesn't exist yet. Run the DB migration in Supabase to set it up.");
+      } else { setError("Save failed: " + e.message); }
+    } finally { setSaving(false); }
+  };
+
+  const byClient = {};
+  snapshots.forEach(s => { if (!byClient[s.client]) byClient[s.client] = []; byClient[s.client].push(s); });
+
+  if (mode === "list") {
+    return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>CRM Health</h2>
+            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Track pipeline health and get AI-powered deal analysis per client</p>
+          </div>
+          <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Add Snapshot</button>
+        </div>
+        {snapshots.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "60px 20px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
+            <div style={{ fontSize: 40, marginBottom: 14 }}>📊</div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>No pipeline data yet</h3>
+            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Add a CRM snapshot to get AI analysis of your pipeline health, coverage, and forecast quality.</p>
+            <button onClick={startNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Add First Snapshot</button>
+          </div>
+        ) : Object.entries(byClient).map(([client, clientSnaps]) => (
+          <div key={client} style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>{client}</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {clientSnaps.sort((a, b) => new Date(b.snapshot_date) - new Date(a.snapshot_date)).map(snap => (
+                <div key={snap.id} onClick={() => viewSnapshot(snap)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>📊</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{client} Pipeline Snapshot</div>
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+                      {snap.snapshot_date && <span>{new Date(snap.snapshot_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
+                      {snap.crm_data?.totalPipeline && <span> · ${Number(snap.crm_data.totalPipeline).toLocaleString()} pipeline</span>}
+                    </div>
+                  </div>
+                  {snap.overall_score ? (
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(snap.overall_score), fontFamily: "'Space Mono', monospace" }}>{snap.overall_score}%</div>
+                      <div style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", textTransform: "uppercase" }}>health</div>
+                    </div>
+                  ) : <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", flexShrink: 0 }}>Not analyzed</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // New / Edit view
+  const isViewMode = mode === "view" && selectedSnapshot;
+  const numField = (key, label, placeholder) => (
+    <div key={key}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <input type="number" value={crmData[key] || ""} onChange={e => setCrmData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
+        <span onClick={() => setMode("list")} style={{ color: "#8b5cf6", cursor: "pointer", fontWeight: 600 }}>CRM Health</span>
+        <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
+        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{isViewMode ? `${selectedSnapshot.client} — ${selectedSnapshot.snapshot_date}` : "New Snapshot"}</span>
+      </div>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Client</label>
+            <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!selectedClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: selectedClient ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+              <option value="">Select client...</option>
+              {clients.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Snapshot Date</label>
+            <input type="date" value={snapshotDate} onChange={e => setSnapshotDate(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.45)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Overall Metrics</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+          {numField("quota", "Quota ($)", "e.g. 500000")}
+          {numField("totalPipeline", "Total Pipeline ($)", "e.g. 1500000")}
+          {numField("activeDeals", "Active Deals", "e.g. 24")}
+          {numField("winRate", "Win Rate (%)", "e.g. 22")}
+          {numField("avgDealSize", "Avg Deal Size ($)", "e.g. 45000")}
+          {numField("avgCycleDays", "Avg Sales Cycle (days)", "e.g. 90")}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.45)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Pipeline by Stage</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+          {numField("earlyStage", "Early Stage ($)", "e.g. 500000")}
+          {numField("midStage", "Mid-Pipeline ($)", "e.g. 600000")}
+          {numField("lateStage", "Late Stage ($)", "e.g. 300000")}
+          {numField("negotiation", "Negotiation ($)", "e.g. 100000")}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.45)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Activity (This Month)</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          {numField("wonThisMonth", "Deals Won ($)", "e.g. 90000")}
+          {numField("lostThisMonth", "Deals Lost ($)", "e.g. 40000")}
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Additional Context</label>
+          <textarea value={crmData.notes || ""} onChange={e => setCrmData(p => ({ ...p, notes: e.target.value }))} placeholder="Key at-risk deals, market conditions, team changes, etc." rows={3} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+        </div>
+        <button onClick={analyzeData} disabled={analyzing || !selectedClient} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !selectedClient ? "default" : "pointer", background: analyzing || !selectedClient ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: analyzing || !selectedClient ? "rgba(0,0,0,0.35)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+          {analyzing ? "Analyzing..." : "Analyze Pipeline ✦"}
+        </button>
+        {analyzing && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 8 }}>Analyzing pipeline health... (10-20s)</p>}
+      </div>
+      {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
+      {analysis && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", alignItems: "flex-start", gap: 20 }}>
+            <CircularScore score={analysis.health_score || 0} size={90} strokeWidth={6} label="health" />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#8b5cf6", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Pipeline Health Assessment</div>
+              <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+            </div>
+          </div>
+          {analysis.key_metrics?.length > 0 && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
+              {analysis.key_metrics.map((m, i) => (
+                <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>{m.label}</div>
+                  {m.note && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", marginTop: 6, lineHeight: 1.4 }}>{m.note}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+          {analysis.insights?.length > 0 && (
+            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Key Insights</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {analysis.insights.map((insight, i) => (
+                  <div key={i} style={{ display: "flex", gap: 10, padding: "10px 14px", background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: 8 }}>
+                    <span style={{ fontSize: 14, flexShrink: 0 }}>{insight.type === "risk" ? "⚠️" : insight.type === "opportunity" ? "✅" : "💡"}</span>
+                    <p style={{ fontSize: 13, color: "#1A2B3C", margin: 0, lineHeight: 1.6 }}>{insight.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {analysis.recommendations?.length > 0 && (
+            <div>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#eab308", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Recommendations</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {analysis.recommendations.map((rec, i) => (
+                  <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "12px 16px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{rec.title}</div>
+                    <p style={{ fontSize: 12, color: "rgba(0,0,0,0.6)", margin: 0, lineHeight: 1.6 }}>{rec.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={() => setMode("list")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        <button onClick={saveSnapshot} disabled={saving} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.7 : 1 }}>{saving ? "Saving..." : isViewMode ? "Update Snapshot" : "Save Snapshot"}</button>
+      </div>
+    </div>
+  );
+}
+
 // ==================== ADMIN DASHBOARD ====================
 function AdminDashboard({ allCalls }) {
   const repStats = {};
@@ -1094,8 +1699,10 @@ async function findOrCreateRep(repName, orgId, token) {
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
-  const [page, setPage] = useState("calls");
+  const [page, setPage] = useState("home");
   const [savedCalls, setSavedCalls] = useState([]);
+  const [enablementDocs, setEnablementDocs] = useState([]);
+  const [crmSnapshots, setCrmSnapshots] = useState([]);
   const [selectedCall, setSelectedCall] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -1196,6 +1803,32 @@ export default function CuotaCallReview() {
     }
   }, [getValidToken]);
 
+  // Load enablement docs
+  const loadDocs = useCallback(async () => {
+    const validToken = await getValidToken();
+    if (!validToken) return;
+    try {
+      const table = await supabase.from("enablement_docs", validToken);
+      const data = await table.select("*");
+      if (Array.isArray(data)) setEnablementDocs(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    } catch (e) {
+      console.warn("Enablement docs not available:", e.message);
+    }
+  }, [getValidToken]);
+
+  // Load CRM snapshots
+  const loadCrmSnapshots = useCallback(async () => {
+    const validToken = await getValidToken();
+    if (!validToken) return;
+    try {
+      const table = await supabase.from("crm_snapshots", validToken);
+      const data = await table.select("*");
+      if (Array.isArray(data)) setCrmSnapshots(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    } catch (e) {
+      console.warn("CRM snapshots not available:", e.message);
+    }
+  }, [getValidToken]);
+
   // Validate stored session on mount
   const hasValidated = useRef(false);
   useEffect(() => {
@@ -1235,11 +1868,12 @@ export default function CuotaCallReview() {
     validateSession();
   }, [refreshSessionToken]);
 
-  // Load calls whenever token changes
+  // Load all data whenever token changes
   useEffect(() => {
-    if (token) { loadCalls().finally(() => setLoading(false)); }
-    else { setLoading(false); }
-  }, [token, loadCalls]);
+    if (token) {
+      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots()]).finally(() => setLoading(false));
+    } else { setLoading(false); }
+  }, [token, loadCalls, loadDocs, loadCrmSnapshots]);
 
   // Auto-refresh token every 50 minutes to prevent expiration during use
   useEffect(() => {
@@ -1313,7 +1947,9 @@ export default function CuotaCallReview() {
     setSession(null);
     setProfile(null);
     setSavedCalls([]);
-    setPage("calls");
+    setEnablementDocs([]);
+    setCrmSnapshots([]);
+    setPage("home");
     setFolderClient(null);
     setFolderAE(null);
     localStorage.removeItem("cuota_session");
@@ -1449,8 +2085,10 @@ export default function CuotaCallReview() {
       <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "0 24px", display: "flex", alignItems: "center", gap: 8, height: 56, overflowX: "auto" }}>
         <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 16, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
         {[
-          { id: "review", label: "Call Review", icon: "\u{1F4DE}" },
+          { id: "home", label: "Home", icon: "◼" },
           { id: "calls", label: "Clients", icon: "\u{1F4C1}", badge: savedCalls.length },
+          { id: "enablement", label: "Enablement", icon: "📄" },
+          { id: "crm", label: "CRM", icon: "📊" },
           ...(profile?.role === "admin" ? [{ id: "integrations", label: "Integrations", icon: "\u2699\uFE0F" }] : []),
           ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
         ].map(nav => (
@@ -1466,8 +2104,17 @@ export default function CuotaCallReview() {
       </div>
 
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
-        {/* SAVED CALLS PAGE */}
+        {/* HOME PAGE */}
+        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} />}
+
+        {/* CLIENTS / CALL REVIEWS PAGE */}
         {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} />}
+
+        {/* ENABLEMENT PAGE */}
+        {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
+
+        {/* CRM PAGE */}
+        {page === "crm" && <CrmPage snapshots={crmSnapshots} getValidToken={getValidToken} profile={profile} clients={clients} onSnapshotsUpdate={loadCrmSnapshots} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
