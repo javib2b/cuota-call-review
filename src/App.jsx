@@ -170,30 +170,71 @@ function CircularScore({ score, size = 120, strokeWidth = 8, label }) {
 }
 
 // ==================== FILE DROP ZONE ====================
-function FileDropZone({ value, onChange, placeholder, minHeight = 220, accept = ".txt,.vtt,.srt,.md,.csv" }) {
+async function extractTextFromFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+
+  if (ext === "pdf") {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    let text = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(" ") + "\n\n";
+    }
+    return text.trim();
+  }
+
+  if (ext === "docx") {
+    const arrayBuffer = await file.arrayBuffer();
+    const mammoth = await import("mammoth");
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value.trim();
+  }
+
+  // Plain text files (.txt, .vtt, .srt, .md, etc.)
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsText(file);
+  });
+}
+
+function FileDropZone({ value, onChange, placeholder, minHeight = 220, accept = ".txt,.vtt,.srt,.md,.pdf,.docx" }) {
   const [dragging, setDragging] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
   const fileInputRef = useRef(null);
 
-  const readFile = (file) => {
+  const handleFile = async (file) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => { onChange(e.target.result); setFileName(file.name); };
-    reader.onerror = () => setFileName("");
-    reader.readAsText(file);
+    setExtractError("");
+    setExtracting(true);
+    try {
+      const text = await extractTextFromFile(file);
+      onChange(text);
+      setFileName(file.name);
+    } catch (e) {
+      setExtractError("Could not extract text from this file. Try copying and pasting the text instead.");
+    } finally {
+      setExtracting(false);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) readFile(file);
+    if (file) handleFile(file);
   };
 
   const handleDragOver = (e) => { e.preventDefault(); setDragging(true); };
   const handleDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); };
-
-  const clear = () => { onChange(""); setFileName(""); };
+  const clear = () => { onChange(""); setFileName(""); setExtractError(""); };
 
   return (
     <div onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave} style={{ position: "relative" }}>
@@ -207,21 +248,24 @@ function FileDropZone({ value, onChange, placeholder, minHeight = 220, accept = 
       )}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <div>
-          {fileName ? (
+          {extracting ? (
+            <span style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600 }}>Extracting text...</span>
+          ) : fileName ? (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.25)", borderRadius: 20 }}>
               <span style={{ fontSize: 12 }}>📎</span>
-              <span style={{ fontSize: 11, color: "#1a7a42", fontWeight: 600, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fileName}</span>
+              <span style={{ fontSize: 11, color: "#1a7a42", fontWeight: 600, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fileName}</span>
               <button onClick={clear} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.35)", cursor: "pointer", fontSize: 12, padding: 0, lineHeight: 1 }}>✕</button>
             </div>
           ) : (
-            <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>Drag a file here or paste text below</span>
+            <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>Drop a file or paste text below · PDF, DOCX, TXT, VTT supported</span>
           )}
         </div>
-        <button onClick={() => fileInputRef.current?.click()} style={{ padding: "5px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", color: "rgba(0,0,0,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
+        <button onClick={() => fileInputRef.current?.click()} disabled={extracting} style={{ padding: "5px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", color: "rgba(0,0,0,0.5)", fontSize: 11, fontWeight: 600, cursor: extracting ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
           <span>📎</span> Browse file
         </button>
-        <input ref={fileInputRef} type="file" accept={accept} style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) readFile(f); e.target.value = ""; }} />
+        <input ref={fileInputRef} type="file" accept={accept} style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) handleFile(f); e.target.value = ""; }} />
       </div>
+      {extractError && <div style={{ marginBottom: 8, padding: "7px 12px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{extractError}</div>}
       <textarea
         value={value}
         onChange={e => { onChange(e.target.value); if (!e.target.value) setFileName(""); }}
@@ -1352,7 +1396,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
             {analyzing ? "Analyzing..." : "Analyze with AI ✦"}
           </button>
         </div>
-        <FileDropZone value={docContent} onChange={setDocContent} placeholder="Paste your document content here, or drag and drop a .txt / .md file above — pitch deck, email template, battle card, playbook, etc." minHeight={200} accept=".txt,.md,.html,.csv" />
+        <FileDropZone value={docContent} onChange={setDocContent} placeholder="Paste your document content here, or drag and drop a file — .pdf, .docx, .txt, .md supported..." minHeight={200} accept=".txt,.md,.html,.pdf,.docx" />
         {analyzing && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", textAlign: "center", marginTop: 10 }}>Analyzing document quality... (10-20s)</p>}
       </div>
       {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
@@ -2247,7 +2291,7 @@ export default function CuotaCallReview() {
                   </button>
                 </div>
                 {error && <div style={{ padding: "10px 14px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
-                <FileDropZone value={transcript} onChange={setTranscript} placeholder="Paste your call transcript here, or drag and drop a .txt / .vtt / .srt file above..." minHeight={350} accept=".txt,.vtt,.srt,.md" />
+                <FileDropZone value={transcript} onChange={setTranscript} placeholder="Paste your call transcript here, or drag and drop a file — .txt, .vtt, .srt, .pdf, .docx supported..." minHeight={350} accept=".txt,.vtt,.srt,.md,.pdf,.docx" />
                 {analyzing && <div style={{ marginTop: 16, padding: 20, textAlign: "center", background: "#FFFFFF", borderRadius: 12 }}><p style={{ fontSize: 14, color: "rgba(0,0,0,0.5)" }}>Analyzing transcript... (15-30s)</p></div>}
               </div>
             )}

@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@vercel/functions": "^1.0.0",
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^5.4.624",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
