@@ -1103,138 +1103,136 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
 }
 
 // ==================== HOME PAGE ====================
-function HomePage({ savedCalls, enablementDocs, crmSnapshots, clients, onNavigate }) {
-  const totalCalls = savedCalls.length;
-  const avgCallScore = totalCalls > 0 ? Math.round(savedCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / totalCalls) : 0;
-  const totalDocs = enablementDocs.length;
-  const avgDocScore = totalDocs > 0 ? Math.round(enablementDocs.reduce((s, d) => s + (d.overall_score || 0), 0) / totalDocs) : 0;
-  const crmClientCount = [...new Set(crmSnapshots.map(s => s.client))].length;
+function AuditStatusBadge({ score }) {
+  if (score === null) return <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>Not assessed</span>;
+  const { label, color, bg } = score < 40 ? { label: "Needs Improvement", color: "#ef4444", bg: "rgba(239,68,68,0.08)" }
+    : score < 50 ? { label: "Below Average", color: "#f97316", bg: "rgba(249,115,22,0.08)" }
+    : score < 65 ? { label: "Average", color: "#eab308", bg: "rgba(234,179,8,0.08)" }
+    : score < 80 ? { label: "Great", color: "#22c55e", bg: "rgba(34,197,94,0.08)" }
+    : { label: "Excellent", color: "#31CE81", bg: "rgba(49,206,129,0.08)" };
+  return <span style={{ fontSize: 11, fontWeight: 600, color, background: bg, padding: "2px 8px", borderRadius: 6 }}>{label}</span>;
+}
 
-  const modules = [
-    {
-      id: "calls",
-      title: "Call Intelligence",
-      icon: "📞",
-      description: "AI-powered analysis of every sales conversation. Score reps, track coaching progress, and surface deal risks.",
-      color: "#31CE81",
-      accent: "rgba(49,206,129,0.08)",
-      border: "rgba(49,206,129,0.2)",
-      stats: [
-        { label: "Calls Reviewed", value: totalCalls },
-        { label: "Avg Score", value: totalCalls > 0 ? avgCallScore + "%" : "—", color: totalCalls > 0 ? getScoreColor(avgCallScore) : "rgba(0,0,0,0.3)" },
-      ],
-      cta: totalCalls > 0 ? "View Clients →" : "Start Reviewing →",
-    },
-    {
-      id: "enablement",
-      title: "Enablement",
-      icon: "📄",
-      description: "Audit pitch decks, battle cards, email templates, and playbooks for quality, gaps, and buyer-centricity.",
-      color: "#3b82f6",
-      accent: "rgba(59,130,246,0.08)",
-      border: "rgba(59,130,246,0.2)",
-      stats: [
-        { label: "Documents", value: totalDocs },
-        { label: "Avg Quality", value: totalDocs > 0 ? avgDocScore + "%" : "—", color: totalDocs > 0 ? getScoreColor(avgDocScore) : "rgba(0,0,0,0.3)" },
-      ],
-      cta: totalDocs > 0 ? "View Docs →" : "Upload First Doc →",
-    },
-    {
-      id: "crm",
-      title: "CRM Health",
-      icon: "📊",
-      description: "Enter pipeline data per client and get AI-powered analysis of deal health, coverage ratios, and forecast quality.",
-      color: "#8b5cf6",
-      accent: "rgba(139,92,246,0.08)",
-      border: "rgba(139,92,246,0.2)",
-      stats: [
-        { label: "Snapshots", value: crmSnapshots.length },
-        { label: "Clients Tracked", value: crmClientCount },
-      ],
-      cta: crmSnapshots.length > 0 ? "View Pipeline →" : "Add Pipeline Data →",
-    },
+function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, tofAssessments, hiringAssessments, metricsAssessments, clients, onNavigate }) {
+  const latestScore = (arr) => arr.length > 0 ? (arr[0].overall_score || null) : null;
+  const avgScore = (arr) => {
+    const scores = arr.map(a => a.overall_score).filter(Boolean);
+    return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  };
+
+  const callScore = avgScore(savedCalls);
+  const enablementScore = avgScore(enablementDocs);
+  const crmScore = latestScore(crmSnapshots);
+  const gtmScore = latestScore(gtmAssessments);
+  const tofScore = latestScore(tofAssessments);
+  const hiringScore = latestScore(hiringAssessments);
+  const metricsScore = latestScore(metricsAssessments);
+
+  const allScores = [gtmScore, tofScore, callScore, enablementScore, crmScore, hiringScore, metricsScore].filter(s => s !== null);
+  const overallScore = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
+
+  const sections = [
+    { id: "gtm", label: "GTM Strategy", icon: "🎯", color: "#6366f1", accent: "rgba(99,102,241,0.08)", border: "rgba(99,102,241,0.2)", score: gtmScore, count: gtmAssessments.length, countLabel: "assessments", desc: "ICP definition, buyer personas, competitive positioning, channel strategy" },
+    { id: "tof", label: "Top of Funnel", icon: "📣", color: "#0ea5e9", accent: "rgba(14,165,233,0.08)", border: "rgba(14,165,233,0.2)", score: tofScore, count: tofAssessments.length, countLabel: "assessments", desc: "Lead gen channels, brand building, content, outbound conversion rates" },
+    { id: "calls", label: "Sales Readiness", icon: "📞", color: "#31CE81", accent: "rgba(49,206,129,0.08)", border: "rgba(49,206,129,0.2)", score: callScore, count: savedCalls.length, countLabel: "calls", desc: "Call quality, discovery, objection handling, next steps, deal qualification" },
+    { id: "enablement", label: "Sales Enablement", icon: "📄", color: "#3b82f6", accent: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", score: enablementScore, count: enablementDocs.length, countLabel: "documents", desc: "Pitch decks, battle cards, playbooks, onboarding, manager training" },
+    { id: "crm", label: "RevOps", icon: "📊", color: "#8b5cf6", accent: "rgba(139,92,246,0.08)", border: "rgba(139,92,246,0.2)", score: crmScore, count: crmSnapshots.length, countLabel: "snapshots", desc: "Pipeline health, forecast accuracy, CRM hygiene, reporting cadence" },
+    { id: "hiring", label: "Sales Hiring", icon: "👥", color: "#ec4899", accent: "rgba(236,72,153,0.08)", border: "rgba(236,72,153,0.2)", score: hiringScore, count: hiringAssessments.length, countLabel: "assessments", desc: "Interview process, candidate profiling, mock pitches, 30/60/90 plans" },
+    { id: "metrics", label: "Metrics & Benchmarks", icon: "📈", color: "#f59e0b", accent: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)", score: metricsScore, count: metricsAssessments.length, countLabel: "assessments", desc: "Quota attainment, pipeline coverage, win rate, SDR/AE benchmarks" },
   ];
 
-  // Per-client health grid
+  // Per-client cross-dimension health
   const clientHealth = clients.map(client => {
-    const clientCalls = savedCalls.filter(c => {
-      if (c.category_scores?.client === client) return true;
-      return (c.prospect_company || "").toLowerCase().includes(client.toLowerCase());
-    });
-    const callScore = clientCalls.length > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length) : null;
+    const clientCalls = savedCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()));
+    const cs = clientCalls.length > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length) : null;
     const clientDocs = enablementDocs.filter(d => d.client === client);
-    const docScore = clientDocs.length > 0 ? Math.round(clientDocs.reduce((s, d) => s + (d.overall_score || 0), 0) / clientDocs.length) : null;
+    const ds = clientDocs.length > 0 ? Math.round(clientDocs.reduce((s, d) => s + (d.overall_score || 0), 0) / clientDocs.length) : null;
     const latestCrm = crmSnapshots.filter(s => s.client === client).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-    const crmScore = latestCrm?.overall_score || null;
-    const scores = [callScore, docScore, crmScore].filter(s => s !== null);
-    const overallHealth = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-    return { client, callScore, docScore, crmScore, overallHealth, callCount: clientCalls.length, docCount: clientDocs.length };
-  }).filter(c => c.callCount > 0 || c.docCount > 0 || c.crmScore !== null);
+    const rs = latestCrm?.overall_score || null;
+    const latestGtm = gtmAssessments.filter(s => s.client === client).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    const gs = latestGtm?.overall_score || null;
+    const latestTof = tofAssessments.filter(s => s.client === client).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    const ts = latestTof?.overall_score || null;
+    const latestHiring = hiringAssessments.filter(s => s.client === client).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    const hs = latestHiring?.overall_score || null;
+    const latestMetrics = metricsAssessments.filter(s => s.client === client).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+    const ms = latestMetrics?.overall_score || null;
+    const allS = [gs, ts, cs, ds, rs, hs, ms].filter(s => s !== null);
+    const overall = allS.length > 0 ? Math.round(allS.reduce((a, b) => a + b, 0) / allS.length) : null;
+    return { client, gs, ts, cs, ds, rs, hs, ms, overall, hasData: allS.length > 0 };
+  }).filter(c => c.hasData);
 
-  const scoreCell = (score) => score !== null
-    ? <span style={{ fontSize: 13, fontWeight: 700, color: getScoreColor(score), fontFamily: "'Space Mono', monospace" }}>{score}%</span>
-    : <span style={{ fontSize: 12, color: "rgba(0,0,0,0.2)" }}>—</span>;
+  const sc = (score) => score !== null
+    ? <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(score), fontFamily: "'Space Mono', monospace" }}>{score}%</span>
+    : <span style={{ fontSize: 11, color: "rgba(0,0,0,0.18)" }}>—</span>;
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1A2B3C", margin: "0 0 6px" }}>GTM Audit Dashboard</h1>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Full-funnel visibility across calls, content, and pipeline</p>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1A2B3C", margin: "0 0 6px" }}>GTM Audit — Executive Summary</h1>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Full-funnel assessment of your sales organization's go-to-market execution</p>
+        </div>
+        {overallScore !== null && (
+          <div style={{ textAlign: "center", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 22px", flexShrink: 0 }}>
+            <div style={{ fontSize: 32, fontWeight: 800, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{overallScore}%</div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 6 }}>Overall GTM Score</div>
+            <AuditStatusBadge score={overallScore} />
+          </div>
+        )}
       </div>
 
-      {/* Module cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 32 }}>
-        {modules.map(mod => (
-          <div key={mod.id} onClick={() => onNavigate(mod.id)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 22, cursor: "pointer", transition: "box-shadow 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: mod.accent, border: `1px solid ${mod.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{mod.icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C" }}>{mod.title}</div>
+      {/* 7 Audit Area Cards — 2 columns + 1 */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
+        {sections.map(sec => (
+          <div key={sec.id} onClick={() => onNavigate(sec.id)} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: sec.accent, border: `1px solid ${sec.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{sec.icon}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{sec.label}</div>
+              </div>
+              {sec.score !== null
+                ? <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: getScoreColor(sec.score) }}>{sec.score}%</div>
+                : <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>—</div>}
             </div>
-            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", lineHeight: 1.6, margin: "0 0 16px", minHeight: 54 }}>{mod.description}</p>
-            <div style={{ display: "flex", gap: 20, marginBottom: 16 }}>
-              {mod.stats.map((stat, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: stat.color || "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{stat.value}</div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>{stat.label}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, background: mod.accent, border: `1px solid ${mod.border}`, color: mod.color, fontSize: 12, fontWeight: 700 }}>
-              {mod.cta}
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: 0, lineHeight: 1.55 }}>{sec.desc}</p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <AuditStatusBadge score={sec.score} />
+              <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>{sec.count > 0 ? `${sec.count} ${sec.countLabel}` : ""}</span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Client health overview */}
+      {/* Client Health Overview */}
       {clientHealth.length > 0 ? (
         <div>
-          <h3 style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Client Health Overview</h3>
-          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 90px)", gap: 0, padding: "10px 20px", fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1.2 }}>Client Health Overview</h3>
+          <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "9px 18px", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
               <span>Client</span>
-              <span style={{ textAlign: "center" }}>Calls</span>
-              <span style={{ textAlign: "center" }}>Docs</span>
-              <span style={{ textAlign: "center" }}>CRM</span>
-              <span style={{ textAlign: "center" }}>Health</span>
+              {["GTM","TOF","S.Ready","S.Enable","RevOps","Hiring","Metrics","Overall"].map(h => <span key={h} style={{ textAlign: "center" }}>{h}</span>)}
             </div>
             {clientHealth.map((ch, i) => (
-              <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(4, 90px)", gap: 0, padding: "13px 20px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{ch.client}</span>
-                <div style={{ textAlign: "center" }}>{scoreCell(ch.callScore)}</div>
-                <div style={{ textAlign: "center" }}>{scoreCell(ch.docScore)}</div>
-                <div style={{ textAlign: "center" }}>{scoreCell(ch.crmScore)}</div>
-                <div style={{ textAlign: "center" }}>{scoreCell(ch.overallHealth)}</div>
+              <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{ch.client}</span>
+                {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
+                  <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
+                ))}
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div style={{ textAlign: "center", padding: "48px 20px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
+        <div style={{ textAlign: "center", padding: "48px 20px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>🚀</div>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>Start your first GTM audit</h3>
-          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Review a sales call, upload an enablement doc, or add pipeline data to get started.</p>
-          <button onClick={() => onNavigate("calls")} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Review First Call</button>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Select any section from the navigation above to begin assessing your sales organization.</p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+            {[{ id: "calls", label: "Review a Call", color: "#31CE81" }, { id: "gtm", label: "Assess GTM Strategy", color: "#6366f1" }, { id: "crm", label: "Add Pipeline Data", color: "#8b5cf6" }].map(b => (
+              <button key={b.id} onClick={() => onNavigate(b.id)} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: b.color, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{b.label}</button>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -1549,7 +1547,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>CRM Health</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>RevOps</h2>
             <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Track pipeline health and get AI-powered deal analysis per client</p>
           </div>
           <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Add Snapshot</button>
@@ -1602,7 +1600,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
-        <span onClick={() => setMode("list")} style={{ color: "#8b5cf6", cursor: "pointer", fontWeight: 600 }}>CRM Health</span>
+        <span onClick={() => setMode("list")} style={{ color: "#8b5cf6", cursor: "pointer", fontWeight: 600 }}>RevOps</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{isViewMode ? `${selectedSnapshot.client} — ${selectedSnapshot.snapshot_date}` : "New Snapshot"}</span>
       </div>
@@ -1803,6 +1801,495 @@ async function findOrCreateRep(repName, orgId, token) {
   return null;
 }
 
+// ==================== SHARED HELPERS FOR ASSESSMENT PAGES ====================
+
+function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
+  if (!analysis) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Score + summary */}
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", alignItems: "flex-start", gap: 20 }}>
+        <CircularScore score={analysis.overall_score || 0} size={88} strokeWidth={6} label="score" />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Assessment Summary</div>
+          <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+        </div>
+      </div>
+      {/* Sub-scores */}
+      {analysis.sub_scores?.length > 0 && (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Dimension Scores</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {analysis.sub_scores.map((s, i) => {
+              const statusColor = s.score < 40 ? "#ef4444" : s.score < 50 ? "#f97316" : s.score < 65 ? "#eab308" : s.score < 80 ? "#22c55e" : "#31CE81";
+              return (
+                <div key={i}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{s.category}</span>
+                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: statusColor }}>{s.score}%</span>
+                  </div>
+                  <div style={{ height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 4, overflow: "hidden", marginBottom: 4 }}>
+                    <div style={{ width: `${s.score}%`, height: "100%", background: statusColor, borderRadius: 4, transition: "width 0.6s ease" }} />
+                  </div>
+                  {s.note && <p style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", margin: 0, lineHeight: 1.5 }}>{s.note}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* Key metrics (for metrics page) */}
+      {analysis.key_metrics?.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
+          {analysis.key_metrics.map((m, i) => (
+            <div key={i} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 19, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>{m.label}</div>
+              {m.benchmark && <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", marginTop: 4 }}>Benchmark: {m.benchmark}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Strengths */}
+      {analysis.strengths?.length > 0 && (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Strengths</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {analysis.strengths.map((s, i) => (
+              <div key={i} style={{ display: "flex", gap: 10 }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>✅</span>
+                <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 2 }}>{s.title}</div><p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{s.description}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Gaps */}
+      {analysis.gaps?.length > 0 && (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Critical Gaps</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {analysis.gaps.map((g, i) => (
+              <div key={i} style={{ padding: "12px 14px", background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{g.title}</div>
+                <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: "0 0 8px", lineHeight: 1.5 }}>{g.description}</p>
+                <div style={{ fontSize: 12, color: accentColor, fontWeight: 600 }}>Fix: {g.fix}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Recommendations */}
+      {analysis.recommendations?.length > 0 && (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Recommendations</h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {analysis.recommendations.map((r, i) => (
+              <div key={i} style={{ display: "flex", gap: 10 }}>
+                <span style={{ fontSize: 13, color: accentColor, fontWeight: 700, flexShrink: 0 }}>→</span>
+                <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 2 }}>{r.title}</div><p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{r.description}</p></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AssessmentListView({ title, emoji, accentColor, assessments, onNew, onView, gradient }) {
+  const byClient = {};
+  assessments.forEach(a => { if (!byClient[a.client]) byClient[a.client] = []; byClient[a.client].push(a); });
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>{title}</h2>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>AI-powered assessment against industry best practices</p>
+        </div>
+        <button onClick={onNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: gradient, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ New Assessment</button>
+      </div>
+      {assessments.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
+          <div style={{ fontSize: 40, marginBottom: 14 }}>{emoji}</div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>No assessments yet</h3>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Run an assessment to get AI-scored insights for this area of your GTM.</p>
+          <button onClick={onNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: gradient, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Run First Assessment</button>
+        </div>
+      ) : Object.entries(byClient).map(([client, items]) => (
+        <div key={client} style={{ marginBottom: 24 }}>
+          <h3 style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1.2 }}>{client}</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {items.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(item => (
+              <div key={item.id} onClick={() => onView(item)} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: `${accentColor}15`, border: `1px solid ${accentColor}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{emoji}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{client} — {title}</div>
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{item.assessment_date && new Date(item.assessment_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                </div>
+                {item.overall_score ? (
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(item.overall_score), fontFamily: "'Space Mono', monospace" }}>{item.overall_score}%</div>
+                    <AuditStatusBadge score={item.overall_score} />
+                  </div>
+                ) : <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>Not analyzed</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AssessmentFormShell({ title, emoji, accentColor, gradient, breadcrumb, client, setClient, clients, assessmentDate, setAssessmentDate, analyzing, saving, analysis, error, onAnalyze, onSave, onBack, analyzeLabel, children }) {
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
+        <span onClick={onBack} style={{ color: accentColor, cursor: "pointer", fontWeight: 600 }}>{title}</span>
+        <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
+        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{breadcrumb}</span>
+      </div>
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Client</label>
+            <select value={client} onChange={e => setClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid " + (!client ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: client ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+              <option value="">Select client...</option>
+              {clients.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Assessment Date</label>
+            <input type="date" value={assessmentDate} onChange={e => setAssessmentDate(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+          </div>
+        </div>
+        {children}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 16 }}>
+          <button onClick={onAnalyze} disabled={analyzing || !client} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !client ? "default" : "pointer", background: analyzing || !client ? "rgba(0,0,0,0.05)" : gradient, color: analyzing || !client ? "rgba(0,0,0,0.35)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+            {analyzing ? "Analyzing..." : analyzeLabel + " ✦"}
+          </button>
+          {analysis && <button onClick={onSave} disabled={saving} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "#fff", color: "#1A2B3C", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Assessment"}</button>}
+        </div>
+        {analyzing && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 8 }}>Analyzing... (10-20s)</p>}
+      </div>
+      {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
+    </div>
+  );
+}
+
+// ==================== GTM STRATEGY PAGE ====================
+
+function GtmStrategyPage({ assessments, getValidToken, profile, clients, onUpdate }) {
+  const [mode, setMode] = useState("list");
+  const [selected, setSelected] = useState(null);
+  const [client, setClient] = useState("");
+  const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState({ icp: "", personas: "", valueProposition: "", channels: "", competitive: "", notes: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => { setSelected(null); setClient(""); setAssessmentDate(new Date().toISOString().split("T")[0]); setData({ icp: "", personas: "", valueProposition: "", channels: "", competitive: "", notes: "" }); setAnalysis(null); setError(""); setMode("new"); };
+  const viewItem = (item) => { setSelected(item); setClient(item.client); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
+
+  const ta = (key, label, placeholder, rows = 3) => (
+    <div key={key} style={{ marginBottom: 16 }}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={rows} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+    </div>
+  );
+
+  const analyze = async () => {
+    if (!client) { setError("Select a client first."); return; }
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-gtm-strategy", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const save = async () => {
+    if (!client) { setError("Select a client."); return; }
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const row = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client, assessment_date: assessmentDate, input_data: data, overall_score: analysis?.overall_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("gtm_assessments", t);
+      if (selected?.id) { await table.update(row, `id=eq.${selected.id}`); } else { await table.insert(row); }
+      await onUpdate(); setMode("list");
+    } catch (e) { setError(e.message?.includes("exist") ? "The gtm_assessments table doesn't exist yet. Create it in Supabase." : "Save failed: " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (mode === "list") return <AssessmentListView title="GTM Strategy" emoji="🎯" accentColor="#6366f1" gradient="linear-gradient(135deg, #6366f1, #4f46e5)" assessments={assessments} onNew={startNew} onView={viewItem} />;
+
+  return (
+    <>
+      <AssessmentFormShell title="GTM Strategy" emoji="🎯" accentColor="#6366f1" gradient="linear-gradient(135deg, #6366f1, #4f46e5)" breadcrumb={selected ? `${selected.client} — ${selected.assessment_date}` : "New Assessment"} client={client} setClient={setClient} clients={clients} assessmentDate={assessmentDate} setAssessmentDate={setAssessmentDate} analyzing={analyzing} saving={saving} analysis={analysis} error={error} onAnalyze={analyze} onSave={save} onBack={() => setMode("list")} analyzeLabel="Assess GTM Strategy">
+        {ta("icp", "Ideal Customer Profile", "Describe your ICP: company size, industry, revenue range, tech stack, pain points they share...", 3)}
+        {ta("personas", "Buyer Personas", "List your target personas: their roles, seniority, KPIs, what they care about, how they evaluate vendors...", 3)}
+        {ta("valueProposition", "Value Proposition", "What is your core value proposition? How do you articulate the outcome you deliver vs. the problem you solve?", 3)}
+        {ta("channels", "Customer Acquisition Channels", "What channels are you using? (Outbound, Inbound, Referrals, Partnerships, Events) How is each performing?", 3)}
+        {ta("competitive", "Competitive Positioning", "Who are your main competitors? How do you position against them? What are your key differentiators?", 3)}
+        {ta("notes", "Additional Context", "Any other context: recent pivots, market shifts, experiments underway...", 2)}
+      </AssessmentFormShell>
+      <AuditAnalysisDisplay analysis={analysis} accentColor="#6366f1" />
+    </>
+  );
+}
+
+// ==================== TOP OF FUNNEL PAGE ====================
+
+function TopOfFunnelPage({ assessments, getValidToken, profile, clients, onUpdate }) {
+  const [mode, setMode] = useState("list");
+  const [selected, setSelected] = useState(null);
+  const [client, setClient] = useState("");
+  const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState({ inboundVolume: "", outboundVolume: "", inboundConvRate: "", outboundReplyRate: "", emailOpenRate: "", contentCadence: "", brandDescription: "", websiteNotes: "", notes: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => { setSelected(null); setClient(""); setAssessmentDate(new Date().toISOString().split("T")[0]); setData({ inboundVolume: "", outboundVolume: "", inboundConvRate: "", outboundReplyRate: "", emailOpenRate: "", contentCadence: "", brandDescription: "", websiteNotes: "", notes: "" }); setAnalysis(null); setError(""); setMode("new"); };
+  const viewItem = (item) => { setSelected(item); setClient(item.client); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
+
+  const numField = (key, label, placeholder) => (
+    <div key={key}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+    </div>
+  );
+  const ta = (key, label, placeholder) => (
+    <div key={key} style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+    </div>
+  );
+
+  const analyze = async () => {
+    if (!client) { setError("Select a client first."); return; }
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-tof", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const save = async () => {
+    if (!client) { setError("Select a client."); return; }
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const row = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client, assessment_date: assessmentDate, input_data: data, overall_score: analysis?.overall_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("tof_assessments", t);
+      if (selected?.id) { await table.update(row, `id=eq.${selected.id}`); } else { await table.insert(row); }
+      await onUpdate(); setMode("list");
+    } catch (e) { setError(e.message?.includes("exist") ? "The tof_assessments table doesn't exist yet." : "Save failed: " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (mode === "list") return <AssessmentListView title="Top of Funnel" emoji="📣" accentColor="#0ea5e9" gradient="linear-gradient(135deg, #0ea5e9, #0284c7)" assessments={assessments} onNew={startNew} onView={viewItem} />;
+
+  return (
+    <>
+      <AssessmentFormShell title="Top of Funnel" emoji="📣" accentColor="#0ea5e9" gradient="linear-gradient(135deg, #0ea5e9, #0284c7)" breadcrumb={selected ? `${selected.client} — ${selected.assessment_date}` : "New Assessment"} client={client} setClient={setClient} clients={clients} assessmentDate={assessmentDate} setAssessmentDate={setAssessmentDate} analyzing={analyzing} saving={saving} analysis={analysis} error={error} onAnalyze={analyze} onSave={save} onBack={() => setMode("list")} analyzeLabel="Assess Top of Funnel">
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Volume Metrics</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {numField("inboundVolume", "Inbound Leads/Month", "e.g. 120")}
+          {numField("outboundVolume", "Outbound Sequences/Month", "e.g. 500")}
+          {numField("inboundConvRate", "Inbound → Meeting Rate (%)", "e.g. 8")}
+          {numField("outboundReplyRate", "Outbound Reply Rate (%)", "e.g. 4")}
+          {numField("emailOpenRate", "Email Open Rate (%)", "e.g. 35")}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Strategy & Presence</div>
+        {ta("contentCadence", "Content Strategy & Cadence", "How often are you publishing? What types of content? LinkedIn posts, webinars, SEO, video...")}
+        {ta("brandDescription", "Brand Building Efforts", "What are you doing for thought leadership, brand awareness, community presence?")}
+        {ta("websiteNotes", "Website & Landing Pages", "Describe your website conversion performance, message clarity, SEO status, campaign pages...")}
+        {ta("notes", "Additional Context", "Any other context about your top-of-funnel motion...")}
+      </AssessmentFormShell>
+      <AuditAnalysisDisplay analysis={analysis} accentColor="#0ea5e9" />
+    </>
+  );
+}
+
+// ==================== SALES HIRING PAGE ====================
+
+function SalesHiringPage({ assessments, getValidToken, profile, clients, onUpdate }) {
+  const [mode, setMode] = useState("list");
+  const [selected, setSelected] = useState(null);
+  const [client, setClient] = useState("");
+  const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState({ profileCriteria: "", interviewProcess: "", hasScorecard: false, hasMockPitch: false, hasManagerPlan: false, timeToHire: "", offerAcceptRate: "", rampTime: "", notes: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => { setSelected(null); setClient(""); setAssessmentDate(new Date().toISOString().split("T")[0]); setData({ profileCriteria: "", interviewProcess: "", hasScorecard: false, hasMockPitch: false, hasManagerPlan: false, timeToHire: "", offerAcceptRate: "", rampTime: "", notes: "" }); setAnalysis(null); setError(""); setMode("new"); };
+  const viewItem = (item) => { setSelected(item); setClient(item.client); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
+
+  const toggle = (key, label) => (
+    <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: data[key] ? "rgba(34,197,94,0.06)" : "rgba(0,0,0,0.02)", border: `1px solid ${data[key] ? "rgba(34,197,94,0.2)" : "rgba(0,0,0,0.08)"}`, borderRadius: 8, cursor: "pointer" }} onClick={() => setData(p => ({ ...p, [key]: !p[key] }))}>
+      <div style={{ width: 18, height: 18, borderRadius: 4, background: data[key] ? "#22c55e" : "#fff", border: `2px solid ${data[key] ? "#22c55e" : "rgba(0,0,0,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, color: "#fff" }}>{data[key] ? "✓" : ""}</div>
+      <span style={{ fontSize: 13, color: "#1A2B3C", fontWeight: 500 }}>{label}</span>
+    </div>
+  );
+  const numField = (key, label, placeholder) => (
+    <div key={key}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+    </div>
+  );
+  const ta = (key, label, placeholder) => (
+    <div key={key} style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+    </div>
+  );
+
+  const analyze = async () => {
+    if (!client) { setError("Select a client first."); return; }
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-hiring", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const save = async () => {
+    if (!client) { setError("Select a client."); return; }
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const row = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client, assessment_date: assessmentDate, input_data: data, overall_score: analysis?.overall_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("hiring_assessments", t);
+      if (selected?.id) { await table.update(row, `id=eq.${selected.id}`); } else { await table.insert(row); }
+      await onUpdate(); setMode("list");
+    } catch (e) { setError(e.message?.includes("exist") ? "The hiring_assessments table doesn't exist yet." : "Save failed: " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (mode === "list") return <AssessmentListView title="Sales Hiring" emoji="👥" accentColor="#ec4899" gradient="linear-gradient(135deg, #ec4899, #db2777)" assessments={assessments} onNew={startNew} onView={viewItem} />;
+
+  return (
+    <>
+      <AssessmentFormShell title="Sales Hiring" emoji="👥" accentColor="#ec4899" gradient="linear-gradient(135deg, #ec4899, #db2777)" breadcrumb={selected ? `${selected.client} — ${selected.assessment_date}` : "New Assessment"} client={client} setClient={setClient} clients={clients} assessmentDate={assessmentDate} setAssessmentDate={setAssessmentDate} analyzing={analyzing} saving={saving} analysis={analysis} error={error} onAnalyze={analyze} onSave={save} onBack={() => setMode("list")} analyzeLabel="Assess Hiring Program">
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Program Checklist</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 18 }}>
+          {toggle("hasScorecard", "Standardized interview scorecard exists for SDRs and AEs")}
+          {toggle("hasMockPitch", "Mock pitch or role-play is a required part of the interview process")}
+          {toggle("hasManagerPlan", "Structured 30/60/90 onboarding plan exists for new managers")}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Hiring Metrics</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {numField("timeToHire", "Avg Time to Hire (days)", "e.g. 21")}
+          {numField("offerAcceptRate", "Offer Acceptance Rate (%)", "e.g. 85")}
+          {numField("rampTime", "AE Ramp Time (months)", "e.g. 4")}
+        </div>
+        {ta("profileCriteria", "SDR / AE Candidate Profile", "What does your ideal SDR or AE profile look like? Skills, backgrounds, traits, disqualifiers...")}
+        {ta("interviewProcess", "Interview Process Description", "Describe the stages: screening, technical, culture fit, mock pitch, panel... How many rounds?")}
+        {ta("notes", "Additional Context", "Any hiring challenges, recent changes to the process, or market conditions...")}
+      </AssessmentFormShell>
+      <AuditAnalysisDisplay analysis={analysis} accentColor="#ec4899" />
+    </>
+  );
+}
+
+// ==================== METRICS PAGE ====================
+
+function MetricsPage({ assessments, getValidToken, profile, clients, onUpdate }) {
+  const [mode, setMode] = useState("list");
+  const [selected, setSelected] = useState(null);
+  const [client, setClient] = useState("");
+  const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState({ quotaAttainment: "", pipelineCoverage: "", winRate: "", avgDealSize: "", saleCycleDays: "", sdrMeetings: "", outboundReplyRate: "", aeRampMonths: "", managerRatio: "", cac: "", ltv: "", notes: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => { setSelected(null); setClient(""); setAssessmentDate(new Date().toISOString().split("T")[0]); setData({ quotaAttainment: "", pipelineCoverage: "", winRate: "", avgDealSize: "", saleCycleDays: "", sdrMeetings: "", outboundReplyRate: "", aeRampMonths: "", managerRatio: "", cac: "", ltv: "", notes: "" }); setAnalysis(null); setError(""); setMode("new"); };
+  const viewItem = (item) => { setSelected(item); setClient(item.client); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
+
+  const numField = (key, label, placeholder) => (
+    <div key={key}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
+      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+    </div>
+  );
+
+  const analyze = async () => {
+    if (!client) { setError("Select a client first."); return; }
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-metrics", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const save = async () => {
+    if (!client) { setError("Select a client."); return; }
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const row = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client, assessment_date: assessmentDate, input_data: data, overall_score: analysis?.overall_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("metrics_assessments", t);
+      if (selected?.id) { await table.update(row, `id=eq.${selected.id}`); } else { await table.insert(row); }
+      await onUpdate(); setMode("list");
+    } catch (e) { setError(e.message?.includes("exist") ? "The metrics_assessments table doesn't exist yet." : "Save failed: " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (mode === "list") return <AssessmentListView title="Metrics & Benchmarks" emoji="📈" accentColor="#f59e0b" gradient="linear-gradient(135deg, #f59e0b, #d97706)" assessments={assessments} onNew={startNew} onView={viewItem} />;
+
+  return (
+    <>
+      <AssessmentFormShell title="Metrics & Benchmarks" emoji="📈" accentColor="#f59e0b" gradient="linear-gradient(135deg, #f59e0b, #d97706)" breadcrumb={selected ? `${selected.client} — ${selected.assessment_date}` : "New Assessment"} client={client} setClient={setClient} clients={clients} assessmentDate={assessmentDate} setAssessmentDate={setAssessmentDate} analyzing={analyzing} saving={saving} analysis={analysis} error={error} onAnalyze={analyze} onSave={save} onBack={() => setMode("list")} analyzeLabel="Benchmark Metrics">
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>AE / Sales Performance</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {numField("quotaAttainment", "% of Reps at Quota", "e.g. 55")}
+          {numField("winRate", "Win Rate (%)", "e.g. 22")}
+          {numField("saleCycleDays", "Avg Sales Cycle (days)", "e.g. 45")}
+          {numField("avgDealSize", "Avg Deal Size ($)", "e.g. 25000")}
+          {numField("aeRampMonths", "AE Ramp Time (months)", "e.g. 4")}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Pipeline & Outbound</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {numField("pipelineCoverage", "Pipeline Coverage (x quota)", "e.g. 3.2")}
+          {numField("sdrMeetings", "SDR Meetings/Month (per rep)", "e.g. 10")}
+          {numField("outboundReplyRate", "Outbound Reply Rate (%)", "e.g. 4")}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Revenue Efficiency</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {numField("cac", "CAC ($)", "e.g. 15000")}
+          {numField("ltv", "LTV ($)", "e.g. 75000")}
+          {numField("managerRatio", "Manager:Rep Ratio (1:X)", "e.g. 7")}
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Additional Context</label>
+          <textarea value={data.notes || ""} onChange={e => setData(p => ({ ...p, notes: e.target.value }))} placeholder="Market context, team size, recent changes, quota setting methodology..." rows={2} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+        </div>
+      </AssessmentFormShell>
+      <AuditAnalysisDisplay analysis={analysis} accentColor="#f59e0b" />
+    </>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -1810,6 +2297,10 @@ export default function CuotaCallReview() {
   const [savedCalls, setSavedCalls] = useState([]);
   const [enablementDocs, setEnablementDocs] = useState([]);
   const [crmSnapshots, setCrmSnapshots] = useState([]);
+  const [gtmAssessments, setGtmAssessments] = useState([]);
+  const [tofAssessments, setTofAssessments] = useState([]);
+  const [hiringAssessments, setHiringAssessments] = useState([]);
+  const [metricsAssessments, setMetricsAssessments] = useState([]);
   const [selectedCall, setSelectedCall] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -1936,6 +2427,26 @@ export default function CuotaCallReview() {
     }
   }, [getValidToken]);
 
+  const loadGtmAssessments = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try { const data = await (await supabase.from("gtm_assessments", t)).select("*"); if (Array.isArray(data)) setGtmAssessments(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("GTM assessments not available:", e.message); }
+  }, [getValidToken]);
+
+  const loadTofAssessments = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try { const data = await (await supabase.from("tof_assessments", t)).select("*"); if (Array.isArray(data)) setTofAssessments(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("TOF assessments not available:", e.message); }
+  }, [getValidToken]);
+
+  const loadHiringAssessments = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try { const data = await (await supabase.from("hiring_assessments", t)).select("*"); if (Array.isArray(data)) setHiringAssessments(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("Hiring assessments not available:", e.message); }
+  }, [getValidToken]);
+
+  const loadMetricsAssessments = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try { const data = await (await supabase.from("metrics_assessments", t)).select("*"); if (Array.isArray(data)) setMetricsAssessments(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("Metrics assessments not available:", e.message); }
+  }, [getValidToken]);
+
   // Validate stored session on mount
   const hasValidated = useRef(false);
   useEffect(() => {
@@ -1978,9 +2489,9 @@ export default function CuotaCallReview() {
   // Load all data whenever token changes
   useEffect(() => {
     if (token) {
-      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots()]).finally(() => setLoading(false));
+      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments()]).finally(() => setLoading(false));
     } else { setLoading(false); }
-  }, [token, loadCalls, loadDocs, loadCrmSnapshots]);
+  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments]);
 
   // Auto-refresh token every 50 minutes to prevent expiration during use
   useEffect(() => {
@@ -2056,6 +2567,10 @@ export default function CuotaCallReview() {
     setSavedCalls([]);
     setEnablementDocs([]);
     setCrmSnapshots([]);
+    setGtmAssessments([]);
+    setTofAssessments([]);
+    setHiringAssessments([]);
+    setMetricsAssessments([]);
     setPage("home");
     setFolderClient(null);
     setFolderAE(null);
@@ -2193,9 +2708,13 @@ export default function CuotaCallReview() {
         <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 16, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
         {[
           { id: "home", label: "Home", icon: "◼" },
-          { id: "calls", label: "Clients", icon: "\u{1F4C1}", badge: savedCalls.length },
-          { id: "enablement", label: "Enablement", icon: "📄" },
-          { id: "crm", label: "CRM", icon: "📊" },
+          { id: "gtm", label: "GTM Strategy", icon: "🎯" },
+          { id: "tof", label: "Top of Funnel", icon: "📣" },
+          { id: "calls", label: "Sales Readiness", icon: "\u{1F4DE}", badge: savedCalls.length },
+          { id: "enablement", label: "Sales Enablement", icon: "📄" },
+          { id: "crm", label: "RevOps", icon: "📊" },
+          { id: "hiring", label: "Hiring", icon: "👥" },
+          { id: "metrics", label: "Metrics", icon: "📈" },
           ...(profile?.role === "admin" ? [{ id: "integrations", label: "Integrations", icon: "\u2699\uFE0F" }] : []),
           ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
         ].map(nav => (
@@ -2210,18 +2729,30 @@ export default function CuotaCallReview() {
         <button onClick={handleLogout} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Logout</button>
       </div>
 
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
-        {/* HOME PAGE */}
-        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} />}
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
+        {/* HOME PAGE — Executive Summary */}
+        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} />}
 
-        {/* CLIENTS / CALL REVIEWS PAGE */}
+        {/* GTM STRATEGY */}
+        {page === "gtm" && <GtmStrategyPage assessments={gtmAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadGtmAssessments} />}
+
+        {/* TOP OF FUNNEL */}
+        {page === "tof" && <TopOfFunnelPage assessments={tofAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadTofAssessments} />}
+
+        {/* SALES READINESS */}
         {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} />}
 
-        {/* ENABLEMENT PAGE */}
+        {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
 
-        {/* CRM PAGE */}
+        {/* REVOPS */}
         {page === "crm" && <CrmPage snapshots={crmSnapshots} getValidToken={getValidToken} profile={profile} clients={clients} onSnapshotsUpdate={loadCrmSnapshots} />}
+
+        {/* HIRING */}
+        {page === "hiring" && <SalesHiringPage assessments={hiringAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadHiringAssessments} />}
+
+        {/* METRICS */}
+        {page === "metrics" && <MetricsPage assessments={metricsAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadMetricsAssessments} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
