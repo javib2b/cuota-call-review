@@ -1239,6 +1239,18 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
   );
 }
 
+// ==================== GTM ASSESSMENT DOC TYPES ====================
+const DOC_TYPES = [
+  "Sales Playbook / Methodology",
+  "Metrics & Performance Data",
+  "Org Chart / Team Structure",
+  "Marketing Materials / Pitch Deck",
+  "Call Transcripts",
+  "Job Descriptions",
+  "CRM / Pipeline Report",
+  "Other",
+];
+
 // ==================== ENABLEMENT PAGE ====================
 const ENABLEMENT_DOC_TYPES = [
   { id: "pitch_deck", name: "Pitch Deck" },
@@ -2290,6 +2302,415 @@ function MetricsPage({ assessments, getValidToken, profile, clients, onUpdate })
   );
 }
 
+// ==================== INTAKE PAGE ====================
+function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack }) {
+  const [selectedClient, setSelectedClient] = useState("");
+  const [docs, setDocs] = useState([]);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const addFile = async (file) => {
+    if (!file) return;
+    setExtracting(true);
+    try {
+      const content = await extractTextFromFile(file);
+      setDocs(prev => [...prev, { id: Date.now() + Math.random(), filename: file.name, docType: "Other", content }]);
+    } catch (e) {
+      setError(`Could not read ${file.name}: ${e.message}`);
+    } finally { setExtracting(false); }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault(); setDragOver(false);
+    for (const f of Array.from(e.dataTransfer.files)) await addFile(f);
+  };
+
+  const handleFileInput = async (e) => {
+    for (const f of Array.from(e.target.files)) await addFile(f);
+    e.target.value = "";
+  };
+
+  const removeDoc = (id) => setDocs(prev => prev.filter(d => d.id !== id));
+  const updateDocType = (id, docType) => setDocs(prev => prev.map(d => d.id === id ? { ...d, docType } : d));
+
+  const generate = async () => {
+    if (!selectedClient) { setError("Please select a client."); return; }
+    if (docs.length === 0) { setError("Please upload at least one document."); return; }
+    setGenerating(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({
+          type: "full_assessment",
+          client: selectedClient,
+          documents: docs.map(d => ({ docType: d.docType, filename: d.filename, content: d.content })),
+        }),
+      });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Generation failed"); }
+      const analysis = await r.json();
+      const reportDate = new Date().toISOString().split("T")[0];
+      const reportData = {
+        org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001",
+        client: selectedClient,
+        report_date: reportDate,
+        document_sources: docs.map(d => ({ docType: d.docType, filename: d.filename })),
+        overall_score: analysis.overall_score || null,
+        ai_analysis: analysis,
+      };
+      let savedReport = { ...reportData };
+      try {
+        const table = await supabase.from("gtm_reports", t);
+        const created = await table.insert(reportData);
+        if (Array.isArray(created) && created[0]) savedReport = created[0];
+      } catch (saveErr) {
+        console.warn("Could not save to gtm_reports (table may not exist yet):", saveErr.message);
+      }
+      onReportGenerated({ ...savedReport, ai_analysis: analysis });
+    } catch (e) {
+      setError("Generation failed: " + e.message);
+    } finally { setGenerating(false); }
+  };
+
+  const canGenerate = !generating && selectedClient && docs.length > 0 && !extracting;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
+        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Home</span>
+        <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
+        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>New GTM Assessment</span>
+      </div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1A2B3C", margin: "0 0 6px" }}>New GTM Assessment</h1>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Upload company documents and generate a board-ready McKinsey-style GTM assessment report</p>
+      </div>
+
+      {/* Client Selector */}
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "18px 20px", marginBottom: 14 }}>
+        <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 8, fontWeight: 700 }}>Client *</label>
+        <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} style={{ width: "100%", maxWidth: 340, padding: "10px 12px", background: "#fff", border: "1px solid " + (!selectedClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: selectedClient ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+          <option value="">Select client...</option>
+          {clients.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      {/* Document Upload */}
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "18px 20px", marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+          <div>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>Documents</h3>
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: 0 }}>Upload sales decks, playbooks, metrics reports, org charts, transcripts, CRM exports — the more context the better</p>
+          </div>
+          <button onClick={() => fileInputRef.current?.click()} disabled={extracting} style={{ padding: "8px 16px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#fff", color: "rgba(0,0,0,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
+            {extracting ? "Reading..." : "📎 Browse Files"}
+          </button>
+          <input ref={fileInputRef} type="file" multiple accept=".pdf,.docx,.txt,.md,.csv" style={{ display: "none" }} onChange={handleFileInput} />
+        </div>
+
+        {/* Drop Zone */}
+        <div
+          onDrop={handleDrop}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false); }}
+          onClick={() => !extracting && fileInputRef.current?.click()}
+          style={{ border: `2px dashed ${dragOver ? "#31CE81" : "rgba(0,0,0,0.12)"}`, borderRadius: 12, padding: "28px 20px", textAlign: "center", cursor: extracting ? "wait" : "pointer", background: dragOver ? "rgba(49,206,129,0.04)" : "rgba(0,0,0,0.01)", transition: "all 0.2s", marginBottom: docs.length > 0 ? 14 : 0 }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 8 }}>📂</div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: dragOver ? "#31CE81" : "rgba(0,0,0,0.4)", margin: "0 0 4px" }}>Drag & drop documents here</p>
+          <p style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", margin: 0 }}>PDF, DOCX, TXT, CSV supported</p>
+        </div>
+
+        {/* Document List */}
+        {docs.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {docs.map(doc => (
+              <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(49,206,129,0.04)", border: "1px solid rgba(49,206,129,0.15)", borderRadius: 10 }}>
+                <span style={{ fontSize: 14, flexShrink: 0 }}>📎</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.filename}</div>
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>{(doc.content.length / 1000).toFixed(1)}k chars</div>
+                </div>
+                <select value={doc.docType} onChange={e => updateDocType(doc.id, e.target.value)} onClick={e => e.stopPropagation()} style={{ padding: "5px 8px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, background: "#fff", color: "#1A2B3C", fontSize: 11, outline: "none", fontFamily: "inherit", cursor: "pointer", flexShrink: 0 }}>
+                  {DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <button onClick={() => removeDoc(doc.id)} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.35)", cursor: "pointer", fontSize: 16, padding: 0, lineHeight: 1, flexShrink: 0 }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {error && <div style={{ padding: "10px 14px", marginBottom: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <button onClick={onBack} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+        <button
+          onClick={generate}
+          disabled={!canGenerate}
+          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "linear-gradient(135deg, #31CE81, #28B870)" : "rgba(0,0,0,0.07)", color: canGenerate ? "#fff" : "rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
+        >
+          {generating ? "Analyzing documents..." : "Generate GTM Assessment ✦"}
+        </button>
+        {generating && <span style={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>(~30 seconds)</span>}
+      </div>
+    </div>
+  );
+}
+
+// ==================== REPORT PAGE ====================
+function ReportPage({ report, onBack }) {
+  const analysis = report?.ai_analysis || {};
+  const [expandedDim, setExpandedDim] = useState(null);
+  const [activeWave, setActiveWave] = useState("wave1");
+
+  const dimConfig = {
+    gtm_strategy: { label: "GTM Strategy", icon: "🎯", color: "#6366f1" },
+    tof: { label: "Top of Funnel", icon: "📣", color: "#0ea5e9" },
+    sales_readiness: { label: "Sales Readiness", icon: "📞", color: "#31CE81" },
+    enablement: { label: "Sales Enablement", icon: "📄", color: "#3b82f6" },
+    revops: { label: "RevOps", icon: "📊", color: "#8b5cf6" },
+    hiring: { label: "Hiring", icon: "👥", color: "#ec4899" },
+    metrics: { label: "Metrics", icon: "📈", color: "#f59e0b" },
+  };
+
+  const sevColor = (s) => s === "critical" ? "#ef4444" : s === "high" ? "#f97316" : "#eab308";
+  const sevBg = (s) => s === "critical" ? "rgba(239,68,68,0.08)" : s === "high" ? "rgba(249,115,22,0.08)" : "rgba(234,179,8,0.08)";
+  const findingColor = (t) => t === "critical" ? "#ef4444" : t === "warning" ? "#f97316" : "#22c55e";
+  const findingBg = (t) => t === "critical" ? "rgba(239,68,68,0.06)" : t === "warning" ? "rgba(249,115,22,0.06)" : "rgba(34,197,94,0.06)";
+  const findingBorder = (t) => t === "critical" ? "rgba(239,68,68,0.2)" : t === "warning" ? "rgba(249,115,22,0.2)" : "rgba(34,197,94,0.2)";
+
+  const execSummary = analysis.executive_summary || {};
+  const dimensions = analysis.dimensions || [];
+  const priorityGaps = analysis.priority_gaps || [];
+  const sow = analysis.scope_of_work || {};
+  const waves = [
+    { key: "wave1", icon: "🚀", label: "Quick Wins", timeline: "0-30 days" },
+    { key: "wave2", icon: "📋", label: "Strategic Initiatives", timeline: "30-90 days" },
+    { key: "wave3", icon: "🔄", label: "Transformation", timeline: "90-180 days" },
+  ].filter(w => sow[w.key]);
+
+  return (
+    <div>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-show-all { display: block !important; }
+          body { background: white !important; font-family: 'DM Sans', system-ui, sans-serif; }
+        }
+      `}</style>
+
+      {/* Top bar */}
+      <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.55)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>
+        <button onClick={() => window.print()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#fff", color: "rgba(0,0,0,0.55)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>🖨 Print Report</button>
+      </div>
+
+      {/* ── SECTION 1: Executive Summary ── */}
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "28px 32px", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: execSummary.top_findings?.length ? 24 : 0 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: "#31CE81", fontWeight: 700, marginBottom: 8 }}>GTM Assessment Report</div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", margin: "0 0 4px", lineHeight: 1.15 }}>{report.client}</h1>
+            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginBottom: 16 }}>
+              {report.report_date && new Date(report.report_date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              {report.document_sources?.length > 0 && ` · ${report.document_sources.length} document${report.document_sources.length !== 1 ? "s" : ""} analyzed`}
+            </div>
+            {execSummary.headline && <p style={{ fontSize: 17, fontWeight: 700, color: "#1A2B3C", margin: "0 0 12px", lineHeight: 1.45, fontStyle: "italic" }}>"{execSummary.headline}"</p>}
+            {execSummary.narrative && <p style={{ fontSize: 14, color: "rgba(0,0,0,0.6)", margin: 0, lineHeight: 1.7 }}>{execSummary.narrative}</p>}
+          </div>
+          {analysis.overall_score != null && (
+            <div style={{ flexShrink: 0, textAlign: "center" }}>
+              <CircularScore score={analysis.overall_score} size={120} strokeWidth={8} label="overall" />
+              <div style={{ marginTop: 8 }}><AuditStatusBadge score={analysis.overall_score} /></div>
+            </div>
+          )}
+        </div>
+        {execSummary.top_findings?.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+            {execSummary.top_findings.map((f, i) => (
+              <div key={i} style={{ padding: "14px 16px", background: findingBg(f.type), border: `1px solid ${findingBorder(f.type)}`, borderRadius: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                  <span style={{ fontSize: 12 }}>{f.type === "critical" ? "🔴" : f.type === "warning" ? "🟡" : "🟢"}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: findingColor(f.type), textTransform: "uppercase", letterSpacing: 0.5 }}>{f.type}</span>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", marginBottom: 4 }}>{f.title}</div>
+                <p style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", margin: 0, lineHeight: 1.5 }}>{f.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── SECTION 2: GTM Diagnostic ── */}
+      {dimensions.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 800, color: "rgba(0,0,0,0.4)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1.5 }}>GTM Diagnostic</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {dimensions.map(dim => {
+              const cfg = dimConfig[dim.id] || { label: dim.label, icon: "📊", color: "#6366f1" };
+              const isExpanded = expandedDim === dim.id;
+              const statusColor = dim.score < 40 ? "#ef4444" : dim.score < 50 ? "#f97316" : dim.score < 65 ? "#eab308" : dim.score < 80 ? "#22c55e" : "#31CE81";
+              return (
+                <div key={dim.id} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden" }}>
+                  <div onClick={() => setExpandedDim(isExpanded ? null : dim.id)} style={{ padding: "16px 18px", cursor: "pointer" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: cfg.color + "15", border: `1px solid ${cfg.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{cfg.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{dim.label}</div>
+                          <AuditStatusBadge score={dim.score} />
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: statusColor, fontFamily: "'Space Mono', monospace" }}>{dim.score}%</div>
+                        <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", marginTop: 2 }}>{isExpanded ? "▲" : "▼"}</div>
+                      </div>
+                    </div>
+                    {dim.summary && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", margin: 0, lineHeight: 1.55 }}>{dim.summary}</p>}
+                  </div>
+                  {isExpanded && (
+                    <div style={{ padding: "0 18px 18px", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+                      {dim.evidence && (
+                        <div style={{ padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, margin: "14px 0" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Evidence from Documents</div>
+                          <p style={{ fontSize: 12, color: "rgba(0,0,0,0.6)", margin: 0, lineHeight: 1.5, fontStyle: "italic" }}>{dim.evidence}</p>
+                        </div>
+                      )}
+                      {dim.sub_scores?.length > 0 && (
+                        <div style={{ marginBottom: 14 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Sub-Scores</div>
+                          {dim.sub_scores.map((ss, i) => {
+                            const ssColor = ss.score < 40 ? "#ef4444" : ss.score < 50 ? "#f97316" : ss.score < 65 ? "#eab308" : ss.score < 80 ? "#22c55e" : "#31CE81";
+                            return (
+                              <div key={i} style={{ marginBottom: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                                  <span style={{ fontSize: 12, color: "#1A2B3C" }}>{ss.category}</span>
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: ssColor, fontFamily: "'Space Mono', monospace" }}>{ss.score}%</span>
+                                </div>
+                                <div style={{ height: 3, background: "rgba(0,0,0,0.06)", borderRadius: 3 }}>
+                                  <div style={{ width: `${ss.score}%`, height: "100%", background: ssColor, borderRadius: 3 }} />
+                                </div>
+                                {ss.note && <p style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", margin: "3px 0 0", lineHeight: 1.4 }}>{ss.note}</p>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {dim.key_gaps?.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Key Gaps</div>
+                          {dim.key_gaps.map((gap, i) => (
+                            <div key={i} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 8, marginBottom: 6 }}>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{gap.title}</div>
+                              <div style={{ fontSize: 11, color: "#2563eb" }}>→ {gap.fix}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 3: Priority Gaps ── */}
+      {priorityGaps.length > 0 && (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "24px 28px", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 800, color: "rgba(0,0,0,0.4)", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1.5 }}>Priority Gaps</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {priorityGaps.map((gap, i) => (
+              <div key={i} style={{ display: "flex", gap: 14, padding: "14px 16px", background: sevBg(gap.severity), border: `1px solid ${sevColor(gap.severity)}30`, borderRadius: 12 }}>
+                <div style={{ fontWeight: 800, fontSize: 22, color: sevColor(gap.severity), fontFamily: "'Space Mono', monospace", lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>{gap.rank}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{gap.title}</span>
+                    <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: sevBg(gap.severity), color: sevColor(gap.severity), fontWeight: 700, border: `1px solid ${sevColor(gap.severity)}30`, textTransform: "uppercase", letterSpacing: 0.5 }}>{gap.severity}</span>
+                    {gap.dimension && dimConfig[gap.dimension] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "rgba(0,0,0,0.04)", color: "rgba(0,0,0,0.5)", fontWeight: 600 }}>{dimConfig[gap.dimension].label}</span>}
+                  </div>
+                  {gap.business_impact && <p style={{ fontSize: 13, color: "rgba(0,0,0,0.6)", margin: "0 0 6px", lineHeight: 1.55 }}>{gap.business_impact}</p>}
+                  {gap.root_cause && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 8px", lineHeight: 1.5 }}>Root cause: {gap.root_cause}</p>}
+                  {gap.fix && (
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#3b82f6", textTransform: "uppercase", letterSpacing: 0.5 }}>Fix</span>
+                      <span style={{ fontSize: 12, color: "#2563eb" }}>{gap.fix}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 4: Scope of Work ── */}
+      {waves.length > 0 && (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "24px 28px", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 800, color: "rgba(0,0,0,0.4)", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1.5 }}>Scope of Work</h2>
+
+          {/* Wave Tabs */}
+          <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: 4 }}>
+            {waves.map(w => (
+              <button key={w.key} onClick={() => setActiveWave(w.key)} style={{ flex: 1, padding: "8px 12px", border: "none", borderRadius: 8, cursor: "pointer", background: activeWave === w.key ? "#fff" : "transparent", color: activeWave === w.key ? "#1A2B3C" : "rgba(0,0,0,0.45)", fontFamily: "inherit", boxShadow: activeWave === w.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.15s" }}>
+                <div style={{ fontSize: 12, fontWeight: activeWave === w.key ? 700 : 500 }}>{w.icon} {w.label}</div>
+                <div style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{w.timeline}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Active wave content (tabs on screen, all waves on print) */}
+          {waves.map(w => (
+            <div key={w.key} className={activeWave !== w.key ? "no-print" : ""} style={{ display: activeWave === w.key ? "block" : "none" }}>
+              {/* Print header */}
+              <div className="print-show-all" style={{ display: "none", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{w.icon} {w.label}</span>
+                <span style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginLeft: 8 }}>{w.timeline}</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {(sow[w.key]?.initiatives || []).map((init, i) => {
+                  const effortColor = init.effort === "High" ? "#f97316" : init.effort === "Medium" ? "#eab308" : "#22c55e";
+                  const impactColor = init.impact === "High" ? "#6366f1" : init.impact === "Medium" ? "#0ea5e9" : "#64748b";
+                  return (
+                    <div key={i} style={{ padding: "16px 18px", background: "#f8fafc", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{init.title}</div>
+                        <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                          {init.owner && <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(99,102,241,0.08)", color: "#6366f1", fontWeight: 700, border: "1px solid rgba(99,102,241,0.2)" }}>{init.owner}</span>}
+                          {init.effort && <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: effortColor + "15", color: effortColor, fontWeight: 700 }}>Effort: {init.effort}</span>}
+                          {init.impact && <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: impactColor + "15", color: impactColor, fontWeight: 700 }}>Impact: {init.impact}</span>}
+                        </div>
+                      </div>
+                      {init.description && <p style={{ fontSize: 13, color: "rgba(0,0,0,0.55)", margin: "0 0 8px", lineHeight: 1.55 }}>{init.description}</p>}
+                      {init.success_metric && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#31CE81", textTransform: "uppercase", letterSpacing: 0.5 }}>✓ Success</span>
+                          <span style={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}>{init.success_metric}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Print footer */}
+      <div style={{ textAlign: "center", padding: "16px 0 8px", fontSize: 11, color: "rgba(0,0,0,0.3)" }}>
+        Generated by CUOTA/ GTM Assessment Platform
+      </div>
+    </div>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -2301,6 +2722,8 @@ export default function CuotaCallReview() {
   const [tofAssessments, setTofAssessments] = useState([]);
   const [hiringAssessments, setHiringAssessments] = useState([]);
   const [metricsAssessments, setMetricsAssessments] = useState([]);
+  const [gtmReports, setGtmReports] = useState([]);
+  const [currentReport, setCurrentReport] = useState(null);
   const [selectedCall, setSelectedCall] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -2448,6 +2871,11 @@ export default function CuotaCallReview() {
     try { const data = await (await supabase.from("metrics_assessments", t)).select("*"); if (Array.isArray(data)) setMetricsAssessments(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("Metrics assessments not available:", e.message); }
   }, [getValidToken]);
 
+  const loadGtmReports = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try { const data = await (await supabase.from("gtm_reports", t)).select("*"); if (Array.isArray(data)) setGtmReports(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("GTM reports not available:", e.message); }
+  }, [getValidToken]);
+
   // Validate stored session on mount
   const hasValidated = useRef(false);
   useEffect(() => {
@@ -2490,9 +2918,9 @@ export default function CuotaCallReview() {
   // Load all data whenever token changes
   useEffect(() => {
     if (token) {
-      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments()]).finally(() => setLoading(false));
+      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments(), loadGtmReports()]).finally(() => setLoading(false));
     } else { setLoading(false); }
-  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments]);
+  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments, loadGtmReports]);
 
   // Auto-refresh token every 50 minutes to prevent expiration during use
   useEffect(() => {
@@ -2572,6 +3000,8 @@ export default function CuotaCallReview() {
     setTofAssessments([]);
     setHiringAssessments([]);
     setMetricsAssessments([]);
+    setGtmReports([]);
+    setCurrentReport(null);
     setPage("home");
     setFolderClient(null);
     setFolderAE(null);
@@ -2713,6 +3143,16 @@ export default function CuotaCallReview() {
           ◼ Home
         </button>
 
+        {/* New Assessment CTA */}
+        <button onClick={() => { setPage("intake"); }} style={{ padding: "7px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700, background: page === "intake" || page === "report" ? "linear-gradient(135deg, #28B870, #22a062)" : "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
+          + New Assessment
+        </button>
+
+        {/* Call Reviews direct link */}
+        <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === "calls" || page === "review" ? "rgba(0,0,0,0.06)" : "transparent", color: page === "calls" || page === "review" ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
+          📞 Call Reviews {savedCalls.length > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(49,206,129,0.15)", color: "#31CE81" }}>{savedCalls.length}</span>}
+        </button>
+
         {/* Audit dropdown */}
         <div style={{ position: "relative", flexShrink: 0 }}>
           <button onClick={() => setNavOpen(o => !o)} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: ["gtm","tof","calls","enablement","crm","hiring","metrics"].includes(page) ? "rgba(0,0,0,0.06)" : "transparent", color: ["gtm","tof","calls","enablement","crm","hiring","metrics"].includes(page) ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
@@ -2759,6 +3199,12 @@ export default function CuotaCallReview() {
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
         {/* HOME PAGE — Executive Summary */}
         {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} />}
+
+        {/* INTAKE PAGE — New Assessment */}
+        {page === "intake" && <IntakePage clients={clients} getValidToken={getValidToken} profile={profile} onBack={() => setPage("home")} onReportGenerated={(report) => { setCurrentReport(report); setPage("report"); loadGtmReports(); }} />}
+
+        {/* REPORT PAGE — Full GTM Assessment Report */}
+        {page === "report" && currentReport && <ReportPage report={currentReport} onBack={() => setPage("home")} />}
 
         {/* GTM STRATEGY */}
         {page === "gtm" && <GtmStrategyPage assessments={gtmAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadGtmAssessments} />}

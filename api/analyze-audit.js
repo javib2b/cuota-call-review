@@ -151,6 +151,165 @@ Respond ONLY with valid JSON:
   ]
 }`,
 
+  full_assessment: `You are a McKinsey senior GTM consultant conducting a comprehensive Go-To-Market assessment for {CLIENT}. You have been provided with the following company documents:
+
+{DATA}
+
+Analyze ONLY what is evidenced in these documents. Score lower where evidence is absent — do not assume. Be direct, specific, and quantitative.
+
+SCORING SCALE (0-100):
+- Needs Improvement: 0-39 (critical gaps, minimal evidence)
+- Below Average: 40-49 (exists but weak or inconsistent)
+- Average: 50-64 (functional but generic, lacks depth)
+- Great: 65-79 (solid, clear, mostly well-executed)
+- Excellent: 80-100 (best-in-class, precise, differentiated)
+
+ASSESS THESE 7 DIMENSIONS:
+1. gtm_strategy — GTM hypothesis clarity, ICP precision, value proposition, competitive differentiation, channel strategy
+2. tof — Top-of-funnel motion, demand gen strategy, outbound/inbound performance, brand building
+3. sales_readiness — Call methodology, discovery process, objection handling, deal qualification rigor
+4. enablement — Sales materials quality, playbooks, battle cards, training content, onboarding
+5. revops — CRM process, pipeline visibility, metrics tracking, forecast rigor, process adherence
+6. hiring — Talent strategy, candidate profiling, interview process, onboarding structure
+7. metrics — Performance vs industry benchmarks, quota attainment, pipeline coverage, revenue efficiency
+
+Respond ONLY with valid JSON (no markdown, no preamble, no text after closing brace):
+{
+  "overall_score": <integer 0-100, weighted average of 7 dimensions>,
+  "executive_summary": {
+    "headline": "<1 bold sentence capturing the single most important insight>",
+    "narrative": "<3-4 sentence executive narrative — direct, specific, what they do well and where the biggest leverage is>",
+    "top_findings": [
+      {"type": "critical", "title": "<finding title>", "description": "<1-2 sentences specific to their documents>"},
+      {"type": "warning", "title": "<finding title>", "description": "<1-2 sentences>"},
+      {"type": "strength", "title": "<finding title>", "description": "<1-2 sentences>"}
+    ]
+  },
+  "dimensions": [
+    {
+      "id": "gtm_strategy",
+      "label": "GTM Strategy",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences based on what's in the docs>",
+      "evidence": "<specific reference from documents that informed this score>",
+      "sub_scores": [
+        {"category": "<subcategory name>", "score": <0-100>, "note": "<1 sentence>"},
+        {"category": "<subcategory name>", "score": <0-100>, "note": "<1 sentence>"}
+      ],
+      "key_gaps": [
+        {"title": "<gap>", "fix": "<specific action>"},
+        {"title": "<gap>", "fix": "<specific action>"}
+      ]
+    },
+    {
+      "id": "tof",
+      "label": "Top of Funnel",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences>",
+      "evidence": "<specific reference>",
+      "sub_scores": [{"category": "<name>", "score": <0-100>, "note": "<1 sentence>"}],
+      "key_gaps": [{"title": "<gap>", "fix": "<action>"}]
+    },
+    {
+      "id": "sales_readiness",
+      "label": "Sales Readiness",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences>",
+      "evidence": "<specific reference>",
+      "sub_scores": [{"category": "<name>", "score": <0-100>, "note": "<1 sentence>"}],
+      "key_gaps": [{"title": "<gap>", "fix": "<action>"}]
+    },
+    {
+      "id": "enablement",
+      "label": "Sales Enablement",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences>",
+      "evidence": "<specific reference>",
+      "sub_scores": [{"category": "<name>", "score": <0-100>, "note": "<1 sentence>"}],
+      "key_gaps": [{"title": "<gap>", "fix": "<action>"}]
+    },
+    {
+      "id": "revops",
+      "label": "RevOps",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences>",
+      "evidence": "<specific reference>",
+      "sub_scores": [{"category": "<name>", "score": <0-100>, "note": "<1 sentence>"}],
+      "key_gaps": [{"title": "<gap>", "fix": "<action>"}]
+    },
+    {
+      "id": "hiring",
+      "label": "Hiring",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences>",
+      "evidence": "<specific reference>",
+      "sub_scores": [{"category": "<name>", "score": <0-100>, "note": "<1 sentence>"}],
+      "key_gaps": [{"title": "<gap>", "fix": "<action>"}]
+    },
+    {
+      "id": "metrics",
+      "label": "Metrics & Benchmarks",
+      "score": <0-100>,
+      "status": "<needs_improvement|below_average|average|great|excellent>",
+      "summary": "<2-3 sentences>",
+      "evidence": "<specific reference>",
+      "sub_scores": [{"category": "<name>", "score": <0-100>, "note": "<1 sentence>"}],
+      "key_gaps": [{"title": "<gap>", "fix": "<action>"}]
+    }
+  ],
+  "priority_gaps": [
+    {
+      "rank": 1,
+      "title": "<issue title>",
+      "dimension": "<gtm_strategy|tof|sales_readiness|enablement|revops|hiring|metrics>",
+      "severity": "critical",
+      "business_impact": "<1-2 sentences on revenue/growth impact>",
+      "root_cause": "<1 sentence>",
+      "fix": "<specific actionable recommendation>"
+    },
+    {"rank": 2, "title": "<title>", "dimension": "<id>", "severity": "critical|high|medium", "business_impact": "<text>", "root_cause": "<text>", "fix": "<text>"},
+    {"rank": 3, "title": "<title>", "dimension": "<id>", "severity": "high|medium", "business_impact": "<text>", "root_cause": "<text>", "fix": "<text>"},
+    {"rank": 4, "title": "<title>", "dimension": "<id>", "severity": "high|medium", "business_impact": "<text>", "root_cause": "<text>", "fix": "<text>"},
+    {"rank": 5, "title": "<title>", "dimension": "<id>", "severity": "medium", "business_impact": "<text>", "root_cause": "<text>", "fix": "<text>"}
+  ],
+  "scope_of_work": {
+    "wave1": {
+      "label": "Quick Wins",
+      "timeline": "0-30 days",
+      "initiatives": [
+        {
+          "title": "<initiative title>",
+          "description": "<what to do and why>",
+          "owner": "<CRO|VP Sales|RevOps|Marketing|HR|CEO>",
+          "effort": "<Low|Medium|High>",
+          "impact": "<Low|Medium|High>",
+          "success_metric": "<how to measure success>"
+        }
+      ]
+    },
+    "wave2": {
+      "label": "Strategic Initiatives",
+      "timeline": "30-90 days",
+      "initiatives": [
+        {"title": "<title>", "description": "<text>", "owner": "<owner>", "effort": "<L/M/H>", "impact": "<L/M/H>", "success_metric": "<metric>"}
+      ]
+    },
+    "wave3": {
+      "label": "Transformation",
+      "timeline": "90-180 days",
+      "initiatives": [
+        {"title": "<title>", "description": "<text>", "owner": "<owner>", "effort": "<L/M/H>", "impact": "<L/M/H>", "success_metric": "<metric>"}
+      ]
+    }
+  }
+}`,
+
   metrics: `You are an expert B2B SaaS revenue operations analyst. Benchmark the following sales metrics for {CLIENT} against industry standards and evaluate performance across 5 dimensions.
 
 SCORING SCALE:
@@ -280,22 +439,36 @@ export default async function handler(req, res) {
     const auth = await authenticateUser(token);
     if (!auth) return res.status(401).json({ error: "Unauthorized" });
 
-    const { type, client, data = {} } = req.body || {};
-    if (!type || !PROMPTS[type]) return res.status(400).json({ error: "Invalid or missing type. Must be: gtm_strategy, tof, hiring, metrics" });
+    const { type, client, data = {}, documents = [] } = req.body || {};
+    if (!type || !PROMPTS[type]) return res.status(400).json({ error: "Invalid or missing type. Must be: gtm_strategy, tof, hiring, metrics, full_assessment" });
     if (!client) return res.status(400).json({ error: "Client name is required" });
 
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (!anthropicKey) return res.status(400).json({ error: "No API key configured." });
 
-    const dataStr = buildDataLines(type, data);
-    if (!dataStr) return res.status(400).json({ error: "No data provided." });
+    let dataStr;
+    let truncated = false;
+    if (type === "full_assessment") {
+      if (!Array.isArray(documents) || documents.length === 0) return res.status(400).json({ error: "At least one document is required for full_assessment." });
+      const MAX_CHARS = 60000;
+      let combined = documents.map((d) => `=== DOCUMENT: ${d.filename} (${d.docType}) ===\n${d.content || ""}`).join("\n\n");
+      if (combined.length > MAX_CHARS) {
+        combined = combined.slice(0, MAX_CHARS) + "\n\n[NOTE: Document content truncated at 60,000 characters due to length]";
+        truncated = true;
+      }
+      dataStr = combined;
+    } else {
+      dataStr = buildDataLines(type, data);
+      if (!dataStr) return res.status(400).json({ error: "No data provided." });
+    }
 
     const prompt = PROMPTS[type].replace(/{CLIENT}/g, client).replace("{DATA}", dataStr);
+    const maxTokens = type === "full_assessment" ? 4096 : 2048;
 
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2048, messages: [{ role: "user", content: prompt }] }),
+      body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: maxTokens, messages: [{ role: "user", content: prompt }] }),
     });
 
     if (!claudeRes.ok) {
@@ -305,7 +478,9 @@ export default async function handler(req, res) {
 
     const result = await claudeRes.json();
     const text = result.content.map((c) => c.text || "").join("");
-    return res.status(200).json(JSON.parse(text.replace(/```json|```/g, "").trim()));
+    const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+    if (truncated) parsed._truncated = true;
+    return res.status(200).json(parsed);
   } catch (err) {
     console.error("Analyze-audit error:", err);
     return res.status(500).json({ error: err.message || "Internal server error" });
