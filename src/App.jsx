@@ -169,6 +169,69 @@ function CircularScore({ score, size = 120, strokeWidth = 8, label }) {
   );
 }
 
+// ==================== FILE DROP ZONE ====================
+function FileDropZone({ value, onChange, placeholder, minHeight = 220, accept = ".txt,.vtt,.srt,.md,.csv" }) {
+  const [dragging, setDragging] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef(null);
+
+  const readFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => { onChange(e.target.result); setFileName(file.name); };
+    reader.onerror = () => setFileName("");
+    reader.readAsText(file);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); setDragging(true); };
+  const handleDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); };
+
+  const clear = () => { onChange(""); setFileName(""); };
+
+  return (
+    <div onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave} style={{ position: "relative" }}>
+      {dragging && (
+        <div style={{ position: "absolute", inset: 0, background: "rgba(49,206,129,0.08)", border: "2px dashed #31CE81", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10, pointerEvents: "none" }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 28, marginBottom: 6 }}>📂</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#31CE81" }}>Drop to load file</div>
+          </div>
+        </div>
+      )}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div>
+          {fileName ? (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.25)", borderRadius: 20 }}>
+              <span style={{ fontSize: 12 }}>📎</span>
+              <span style={{ fontSize: 11, color: "#1a7a42", fontWeight: 600, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fileName}</span>
+              <button onClick={clear} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.35)", cursor: "pointer", fontSize: 12, padding: 0, lineHeight: 1 }}>✕</button>
+            </div>
+          ) : (
+            <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>Drag a file here or paste text below</span>
+          )}
+        </div>
+        <button onClick={() => fileInputRef.current?.click()} style={{ padding: "5px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", color: "rgba(0,0,0,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}>
+          <span>📎</span> Browse file
+        </button>
+        <input ref={fileInputRef} type="file" accept={accept} style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) readFile(f); e.target.value = ""; }} />
+      </div>
+      <textarea
+        value={value}
+        onChange={e => { onChange(e.target.value); if (!e.target.value) setFileName(""); }}
+        placeholder={placeholder}
+        style={{ width: "100%", minHeight, background: dragging ? "rgba(49,206,129,0.02)" : "#FFFFFF", border: "1px solid " + (dragging ? "rgba(49,206,129,0.4)" : "rgba(0,0,0,0.06)"), borderRadius: 12, padding: 16, fontSize: 13, color: "#1A2B3C", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.2s" }}
+      />
+    </div>
+  );
+}
+
 // ==================== AUTH SCREEN ====================
 function AuthScreen({ onAuth }) {
   const [mode, setMode] = useState("login");
@@ -1289,7 +1352,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
             {analyzing ? "Analyzing..." : "Analyze with AI ✦"}
           </button>
         </div>
-        <textarea value={docContent} onChange={e => setDocContent(e.target.value)} placeholder="Paste your document content here — pitch deck text, email template, battle card, playbook, etc." style={{ width: "100%", minHeight: 200, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: 14, fontSize: 13, color: "#1A2B3C", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+        <FileDropZone value={docContent} onChange={setDocContent} placeholder="Paste your document content here, or drag and drop a .txt / .md file above — pitch deck, email template, battle card, playbook, etc." minHeight={200} accept=".txt,.md,.html,.csv" />
         {analyzing && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", textAlign: "center", marginTop: 10 }}>Analyzing document quality... (10-20s)</p>}
       </div>
       {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
@@ -2184,7 +2247,7 @@ export default function CuotaCallReview() {
                   </button>
                 </div>
                 {error && <div style={{ padding: "10px 14px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
-                <textarea value={transcript} onChange={e => setTranscript(e.target.value)} placeholder="Paste your call transcript here..." style={{ width: "100%", minHeight: 350, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: 16, fontSize: 13, color: "#1A2B3C", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                <FileDropZone value={transcript} onChange={setTranscript} placeholder="Paste your call transcript here, or drag and drop a .txt / .vtt / .srt file above..." minHeight={350} accept=".txt,.vtt,.srt,.md" />
                 {analyzing && <div style={{ marginTop: 16, padding: 20, textAlign: "center", background: "#FFFFFF", borderRadius: 12 }}><p style={{ fontSize: 14, color: "rgba(0,0,0,0.5)" }}>Analyzing transcript... (15-30s)</p></div>}
               </div>
             )}
