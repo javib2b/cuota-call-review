@@ -2304,6 +2304,7 @@ export default function CuotaCallReview() {
   const [selectedCall, setSelectedCall] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [folderClient, setFolderClient] = useState(null);
   const [folderAE, setFolderAE] = useState(null);
   const [clients, setClients] = useState(loadClients);
@@ -2704,25 +2705,51 @@ export default function CuotaCallReview() {
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
 
       {/* NAV */}
-      <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "0 24px", display: "flex", alignItems: "center", gap: 8, height: 56, overflowX: "auto" }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 16, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
-        {[
-          { id: "home", label: "Home", icon: "◼" },
-          { id: "gtm", label: "GTM Strategy", icon: "🎯" },
-          { id: "tof", label: "Top of Funnel", icon: "📣" },
-          { id: "calls", label: "Sales Readiness", icon: "\u{1F4DE}", badge: savedCalls.length },
-          { id: "enablement", label: "Sales Enablement", icon: "📄" },
-          { id: "crm", label: "RevOps", icon: "📊" },
-          { id: "hiring", label: "Hiring", icon: "👥" },
-          { id: "metrics", label: "Metrics", icon: "📈" },
-          ...(profile?.role === "admin" ? [{ id: "integrations", label: "Integrations", icon: "\u2699\uFE0F" }] : []),
-          ...(profile?.role === "admin" ? [{ id: "admin", label: "Admin", icon: "\u{1F451}" }] : []),
-        ].map(nav => (
-          <button key={nav.id} onClick={() => { setPage(nav.id); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === nav.id ? "rgba(0,0,0,0.06)" : "transparent", color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
-            <span>{nav.icon}</span> {nav.label}
-            {nav.badge > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#31CE81" }}>{nav.badge}</span>}
+      <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "0 24px", display: "flex", alignItems: "center", gap: 8, height: 56 }}>
+        <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 8, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
+
+        {/* Home */}
+        <button onClick={() => setPage("home")} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === "home" ? "rgba(0,0,0,0.06)" : "transparent", color: page === "home" ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
+          ◼ Home
+        </button>
+
+        {/* Audit dropdown */}
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <button onClick={() => setNavOpen(o => !o)} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: ["gtm","tof","calls","enablement","crm","hiring","metrics"].includes(page) ? "rgba(0,0,0,0.06)" : "transparent", color: ["gtm","tof","calls","enablement","crm","hiring","metrics"].includes(page) ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
+            📋 Sections <span style={{ fontSize: 10, opacity: 0.6 }}>{navOpen ? "▲" : "▼"}</span>
           </button>
-        ))}
+          {navOpen && (
+            <div onMouseLeave={() => setNavOpen(false)} style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 200, minWidth: 210, padding: "6px 0" }}>
+              {[
+                { id: "gtm", label: "GTM Strategy", icon: "🎯" },
+                { id: "tof", label: "Top of Funnel", icon: "📣" },
+                { id: "calls", label: "Sales Readiness", icon: "📞", badge: savedCalls.length },
+                { id: "enablement", label: "Sales Enablement", icon: "📄" },
+                { id: "crm", label: "RevOps", icon: "📊" },
+                { id: "hiring", label: "Hiring", icon: "👥" },
+                { id: "metrics", label: "Metrics", icon: "📈" },
+              ].map(nav => (
+                <button key={nav.id} onClick={() => { setPage(nav.id); setNavOpen(false); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", border: "none", background: page === nav.id ? "rgba(0,0,0,0.04)" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: page === nav.id ? 700 : 500, color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.65)", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}>
+                  <span style={{ width: 20, textAlign: "center" }}>{nav.icon}</span>
+                  <span style={{ flex: 1 }}>{nav.label}</span>
+                  {nav.badge > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#31CE81" }}>{nav.badge}</span>}
+                </button>
+              ))}
+              {profile?.role === "admin" && (
+                <>
+                  <div style={{ height: 1, background: "rgba(0,0,0,0.06)", margin: "6px 0" }} />
+                  {[{ id: "integrations", label: "Integrations", icon: "⚙️" }, { id: "admin", label: "Admin", icon: "👑" }].map(nav => (
+                    <button key={nav.id} onClick={() => { setPage(nav.id); setNavOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", border: "none", background: page === nav.id ? "rgba(0,0,0,0.04)" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: page === nav.id ? 700 : 500, color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.65)", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}>
+                      <span style={{ width: 20, textAlign: "center" }}>{nav.icon}</span>
+                      <span>{nav.label}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
         <div style={{ flex: 1 }} />
         {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setShowInvite(true)} style={{ padding: "6px 12px", border: "1px solid rgba(49,206,129,0.3)", borderRadius: 8, background: "rgba(49,206,129,0.08)", color: "#31CE81", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Invite</button>}
         <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{session.user?.email}</span>
