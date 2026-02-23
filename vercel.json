@@ -3,10 +3,7 @@
     "api/analyze.js": { "maxDuration": 60 },
     "api/analyze-crm.js": { "maxDuration": 60 },
     "api/analyze-doc.js": { "maxDuration": 60 },
-    "api/analyze-gtm-strategy.js": { "maxDuration": 60 },
-    "api/analyze-tof.js": { "maxDuration": 60 },
-    "api/analyze-hiring.js": { "maxDuration": 60 },
-    "api/analyze-metrics.js": { "maxDuration": 60 },
+    "api/analyze-audit.js": { "maxDuration": 60 },
     "api/gong/webhook.js": { "maxDuration": 60 },
     "api/gong/sync.js": { "maxDuration": 60 }
   },

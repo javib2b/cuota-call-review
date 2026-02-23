@@ -2006,7 +2006,7 @@ function GtmStrategyPage({ assessments, getValidToken, profile, clients, onUpdat
     setAnalyzing(true); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/analyze-gtm-strategy", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      const r = await fetch("/api/analyze-audit", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ type: "gtm_strategy", client, data }) });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
       setAnalysis(await r.json());
     } catch (e) { setError("Analysis failed: " + e.message); }
@@ -2077,7 +2077,7 @@ function TopOfFunnelPage({ assessments, getValidToken, profile, clients, onUpdat
     setAnalyzing(true); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/analyze-tof", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      const r = await fetch("/api/analyze-audit", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ type: "tof", client, data }) });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
       setAnalysis(await r.json());
     } catch (e) { setError("Analysis failed: " + e.message); }
@@ -2161,7 +2161,7 @@ function SalesHiringPage({ assessments, getValidToken, profile, clients, onUpdat
     setAnalyzing(true); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/analyze-hiring", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      const r = await fetch("/api/analyze-audit", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ type: "hiring", client, data }) });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
       setAnalysis(await r.json());
     } catch (e) { setError("Analysis failed: " + e.message); }
@@ -2235,7 +2235,7 @@ function MetricsPage({ assessments, getValidToken, profile, clients, onUpdate })
     setAnalyzing(true); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/analyze-metrics", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ client, data }) });
+      const r = await fetch("/api/analyze-audit", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ type: "metrics", client, data }) });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
       setAnalysis(await r.json());
     } catch (e) { setError("Analysis failed: " + e.message); }
