@@ -985,21 +985,290 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   );
 }
 
+// ==================== DIIO SETTINGS MODAL ====================
+function DiioSettingsModal({ getValidToken, onClose, client }) {
+  const [subdomain, setSubdomain] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [configured, setConfigured] = useState(false);
+  const [currentSubdomain, setCurrentSubdomain] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const t = await getValidToken();
+        const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+        const r = await fetch(`/api/diio/settings${qs}`, { headers: { Authorization: `Bearer ${t}` } });
+        if (r.ok) {
+          const data = await r.json();
+          if (data.configured) {
+            setConfigured(true);
+            setCurrentSubdomain(data.subdomain || "");
+          }
+        }
+      } catch (e) { console.error("Load diio settings:", e); }
+      setLoading(false);
+    })();
+  }, [getValidToken, client]);
+
+  const handleSave = async () => {
+    if (!subdomain || !clientId || !clientSecret || !refreshToken) {
+      setError("All four fields are required"); return;
+    }
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/diio/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ subdomain, clientId, clientSecret, refreshToken, client: client || "Other" }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Save failed");
+      setConfigured(true);
+      setCurrentSubdomain(subdomain);
+      if (data.tokenObtained) {
+        setSuccess("Credentials saved and connection verified!");
+      } else {
+        setSuccess(`Credentials saved. Note: ${data.tokenError || "Could not verify connection — check your credentials."}`);
+      }
+      setSubdomain(""); setClientId(""); setClientSecret(""); setRefreshToken("");
+      setTimeout(() => setSuccess(""), 6000);
+    } catch (e) { setError(e.message); } finally { setSaving(false); }
+  };
+
+  const handleTest = async () => {
+    setTesting(true); setError(""); setSuccess("");
+    try {
+      const t = await getValidToken();
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      const r = await fetch(`/api/diio/sync${qs}`, { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Test failed");
+      setSuccess(`Connection successful! Found ${data.calls?.length || 0} recent transcribed calls.`);
+      setTimeout(() => setSuccess(""), 5000);
+    } catch (e) { setError(e.message); } finally { setTesting(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Remove Diio integration${client ? ` for ${client}` : ""}? This won't delete already-processed calls.`)) return;
+    try {
+      const t = await getValidToken();
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      await fetch(`/api/diio/settings${qs}`, { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
+      setConfigured(false); setCurrentSubdomain("");
+      setSuccess("Integration removed."); setTimeout(() => setSuccess(""), 3000);
+    } catch (e) { setError(e.message); }
+  };
+
+  const inputStyle = { width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const labelStyle = { fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 480, maxHeight: "85vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Diio Integration{client ? ` \u2014 ${client}` : ""}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>Loading...</p>
+        ) : (
+          <>
+            {configured && (
+              <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 13, color: "#1a7a42" }}>
+                Diio is connected ({currentSubdomain}.diio.com). Enter new credentials below to update.
+              </div>
+            )}
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Subdomain</label>
+              <input value={subdomain} onChange={e => setSubdomain(e.target.value)} placeholder={configured ? currentSubdomain : "yourcompany (for yourcompany.diio.com)"} style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Client ID</label>
+              <input value={clientId} onChange={e => setClientId(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Diio client ID"} style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Client Secret</label>
+              <input type="password" value={clientSecret} onChange={e => setClientSecret(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Diio client secret"} style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Refresh Token</label>
+              <input type="password" value={refreshToken} onChange={e => setRefreshToken(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Diio refresh token"} style={inputStyle} />
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>Obtain your credentials from the Diio API settings dashboard.</div>
+            </div>
+
+            {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+            {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
+              {configured && (
+                <button onClick={handleTest} disabled={testing} style={{ padding: "10px 16px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{testing ? "Testing..." : "Test"}</button>
+              )}
+            </div>
+            {configured && (
+              <button onClick={handleDelete} style={{ width: "100%", marginTop: 12, padding: "8px", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Remove Integration</button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==================== DIIO SYNC MODAL ====================
+function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
+  const [calls, setCalls] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(null);
+  const [error, setError] = useState("");
+  const [sellerFilter, setSellerFilter] = useState("");
+
+  const loadDiioCalls = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const t = await getValidToken();
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      const r = await fetch(`/api/diio/sync${qs}`, { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed to load calls");
+      setCalls(data.calls || []);
+    } catch (e) { setError(e.message); } finally { setLoading(false); }
+  }, [getValidToken, client]);
+
+  useEffect(() => { loadDiioCalls(); }, [loadDiioCalls]);
+
+  const processCall = async (diioCallId, rawId, callType) => {
+    if (!diioCallId) { setError("Cannot process call: missing call ID"); return; }
+    setProcessing(diioCallId); setError("");
+    try {
+      const t = await getValidToken();
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      const r = await fetch(`/api/diio/sync${qs}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ callId: String(rawId), callType, client: client || "Other" }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Processing failed");
+      setCalls(prev => prev.map(c => c.diioCallId === diioCallId ? { ...c, status: "completed", overallScore: data.overallScore } : c));
+      if (onCallProcessed) onCallProcessed();
+    } catch (e) {
+      setError(e.message);
+      setCalls(prev => prev.map(c => c.diioCallId === diioCallId ? { ...c, status: "failed", errorMessage: e.message } : c));
+    } finally { setProcessing(null); }
+  };
+
+  const statusBadge = (status) => {
+    const s = { new: { bg: "rgba(59,130,246,0.1)", color: "#3b82f6", text: "New" }, processing: { bg: "rgba(234,179,8,0.1)", color: "#eab308", text: "Processing..." }, completed: { bg: "rgba(49,206,129,0.1)", color: "#31CE81", text: "Reviewed" }, failed: { bg: "rgba(239,68,68,0.1)", color: "#ef4444", text: "Failed" } }[status] || { bg: "rgba(59,130,246,0.1)", color: "#3b82f6", text: "New" };
+    return <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: s.bg, color: s.color, fontWeight: 600 }}>{s.text}</span>;
+  };
+
+  const typeBadge = (callType) => {
+    const isPhone = callType === "phone_call";
+    return <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 6, fontWeight: 600, background: isPhone ? "rgba(249,115,22,0.1)" : "rgba(59,130,246,0.1)", color: isPhone ? "#ea580c" : "#3b82f6" }}>{isPhone ? "Phone" : "Meeting"}</span>;
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 580, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Sync Diio Calls{client ? ` \u2014 ${client}` : ""}</h3>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={loadDiioCalls} disabled={loading} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{loading ? "..." : "Refresh"}</button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
+          </div>
+        </div>
+
+        {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>Loading Diio calls...</p>
+        ) : calls.length === 0 ? (
+          <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>No transcribed calls found in the last 30 days.</p>
+        ) : (() => {
+          const sellerNames = [...new Set(calls.map(c => c.sellerName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+          const filtered = sellerFilter ? calls.filter(c => c.sellerName === sellerFilter) : calls;
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}{sellerFilter ? ` for ${sellerFilter}` : " from last 30 days"}</div>
+                {sellerNames.length > 1 && (
+                  <select value={sellerFilter} onChange={e => setSellerFilter(e.target.value)} style={{ padding: "5px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "#FFFFFF", color: "#1A2B3C", fontSize: 12, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+                    <option value="">All Sellers</option>
+                    {sellerNames.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                )}
+              </div>
+              {filtered.map(call => (
+                <div key={call.diioCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
+                      {typeBadge(call.callType)}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+                      {call.date ? new Date(call.date).toLocaleDateString() : ""}
+                    </div>
+                    {(call.sellerName || call.customerName) && (
+                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", marginTop: 3 }}>
+                        {call.sellerName && <span style={{ fontWeight: 600 }}>Seller: {call.sellerName}</span>}
+                        {call.sellerName && call.customerName && <span> &middot; </span>}
+                        {call.customerName && <span>Customer: {call.customerName}</span>}
+                      </div>
+                    )}
+                    {call.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{call.errorMessage}</div>}
+                  </div>
+                  {statusBadge(call.status)}
+                  {(call.status === "new" || call.status === "failed") && (
+                    <button onClick={() => processCall(call.diioCallId, call.rawId, call.callType)} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.diioCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                      {processing === call.diioCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
 // ==================== INTEGRATIONS PAGE ====================
 function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
-  const [configs, setConfigs] = useState([]);
+  const [gongConfigs, setGongConfigs] = useState([]);
+  const [diioConfigs, setDiioConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [settingsClient, setSettingsClient] = useState(null);
-  const [syncClient, setSyncClient] = useState(null);
+  const [gongSettingsClient, setGongSettingsClient] = useState(null);
+  const [gongSyncClient, setGongSyncClient] = useState(null);
+  const [diioSettingsClient, setDiioSettingsClient] = useState(null);
+  const [diioSyncClient, setDiioSyncClient] = useState(null);
 
   const loadConfigs = useCallback(async () => {
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/gong/settings", { headers: { Authorization: `Bearer ${t}` } });
-      if (r.ok) {
-        const data = await r.json();
-        setConfigs(data.configs || []);
+      const [gongRes, diioRes] = await Promise.all([
+        fetch("/api/gong/settings", { headers: { Authorization: `Bearer ${t}` } }),
+        fetch("/api/diio/settings", { headers: { Authorization: `Bearer ${t}` } }),
+      ]);
+      if (gongRes.ok) {
+        const data = await gongRes.json();
+        setGongConfigs(data.configs || []);
+      }
+      if (diioRes.ok) {
+        const data = await diioRes.json();
+        setDiioConfigs(data.configs || []);
       }
     } catch (e) { console.error("Load integrations:", e); }
     setLoading(false);
@@ -1007,16 +1276,22 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
 
   useEffect(() => { loadConfigs(); }, [loadConfigs]);
 
-  const configMap = {};
-  configs.forEach(c => { configMap[c.client] = c; });
+  const gongMap = {};
+  gongConfigs.forEach(c => { gongMap[c.client] = c; });
+  const diioMap = {};
+  diioConfigs.forEach(c => { diioMap[c.client] = c; });
 
   // Detail view for a specific client
   if (selectedClient) {
-    const cfg = configMap[selectedClient];
+    const gongCfg = gongMap[selectedClient];
+    const diioCfg = diioMap[selectedClient];
     return (
       <div>
-        {settingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={settingsClient} onClose={() => { setSettingsClient(null); loadConfigs(); }} />}
-        {syncClient && <GongSyncModal getValidToken={getValidToken} client={syncClient} onClose={() => setSyncClient(null)} onCallProcessed={loadCalls} />}
+        {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => { setGongSettingsClient(null); loadConfigs(); }} />}
+        {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
+        {diioSettingsClient && <DiioSettingsModal getValidToken={getValidToken} client={diioSettingsClient} onClose={() => { setDiioSettingsClient(null); loadConfigs(); }} />}
+        {diioSyncClient && <DiioSyncModal getValidToken={getValidToken} client={diioSyncClient} onClose={() => setDiioSyncClient(null)} onCallProcessed={loadCalls} />}
+
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
           <span onClick={() => setSelectedClient(null)} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
           <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
@@ -1024,45 +1299,61 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
         </div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>{selectedClient} &mdash; Integrations</h2>
 
-        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <span style={{ fontSize: 24 }}>{"\uD83D\uDD17"}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>Gong</div>
-              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
-                {cfg ? "Connected" : "Not connected"}
-                {cfg?.updated_at ? ` \u00B7 Updated ${new Date(cfg.updated_at).toLocaleDateString()}` : ""}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Gong card */}
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 24 }}>{"\uD83D\uDD17"}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>Gong</div>
+                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
+                  {gongCfg ? "Connected" : "Not connected"}
+                  {gongCfg?.updated_at ? ` \u00B7 Updated ${new Date(gongCfg.updated_at).toLocaleDateString()}` : ""}
+                </div>
               </div>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: gongCfg ? "#31CE81" : "rgba(0,0,0,0.2)", display: "inline-block" }} />
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              {cfg && (
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
-              )}
-              {!cfg && (
-                <span style={{ width: 8, height: 8, borderRadius: "50%", background: "rgba(0,0,0,0.2)", display: "inline-block" }} />
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setSettingsClient(selectedClient)} style={{ padding: "10px 20px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-              {cfg ? "Edit Credentials" : "Connect Gong"}
-            </button>
-            {cfg && (
-              <button onClick={() => setSyncClient(selectedClient)} style={{ padding: "10px 20px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                Sync Calls
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setGongSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                {gongCfg ? "Edit Credentials" : "Connect Gong"}
               </button>
+              {gongCfg && (
+                <button onClick={() => setGongSyncClient(selectedClient)} style={{ padding: "9px 18px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  Sync Calls
+                </button>
+              )}
+            </div>
+            {gongCfg && (
+              <div style={{ marginTop: 12, padding: "10px 14px", background: "rgba(0,0,0,0.02)", borderRadius: 8, fontSize: 12, color: "rgba(0,0,0,0.6)" }}>
+                Base URL: {gongCfg.gong_base_url} &middot; Auto-review: {gongCfg.auto_review ? "On" : "Off"}
+              </div>
             )}
           </div>
 
-          {cfg && (
-            <div style={{ marginTop: 16, padding: "12px 14px", background: "rgba(0,0,0,0.02)", borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 4 }}>Configuration</div>
-              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.6)" }}>
-                Base URL: {cfg.gong_base_url} &middot; Auto-review: {cfg.auto_review ? "On" : "Off"}
+          {/* Diio card */}
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 24 }}>{"📞"}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>Diio</div>
+                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
+                  {diioCfg ? `Connected · ${diioCfg.subdomain}.diio.com` : "Not connected"}
+                  {diioCfg?.updated_at ? ` \u00B7 Updated ${new Date(diioCfg.updated_at).toLocaleDateString()}` : ""}
+                </div>
               </div>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: diioCfg ? "#31CE81" : "rgba(0,0,0,0.2)", display: "inline-block" }} />
             </div>
-          )}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setDiioSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                {diioCfg ? "Edit Credentials" : "Connect Diio"}
+              </button>
+              {diioCfg && (
+                <button onClick={() => setDiioSyncClient(selectedClient)} style={{ padding: "9px 18px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  Sync Calls
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1076,18 +1367,30 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
       ) : (
         <>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Integrations</h2>
-          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "-12px 0 20px" }}>Configure Gong credentials per client. Synced calls will be filed under the corresponding client folder.</p>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "-12px 0 20px" }}>Configure Gong or Diio credentials per client to automatically import and review recorded calls.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {clients.map(name => {
-              const cfg = configMap[name];
+              const gongCfg = gongMap[name];
+              const diioCfg = diioMap[name];
+              const connectedCount = (gongCfg ? 1 : 0) + (diioCfg ? 1 : 0);
               return (
                 <div key={name} onClick={() => setSelectedClient(name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{"\u2699\uFE0F"}</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C", marginBottom: 8 }}>{name}</div>
-                  {cfg ? (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
-                      <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>Gong connected</span>
+                  {connectedCount > 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                      {gongCfg && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
+                          <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>Gong</span>
+                        </div>
+                      )}
+                      {diioCfg && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
+                          <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>Diio</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>Not configured</div>

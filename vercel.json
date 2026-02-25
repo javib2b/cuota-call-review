@@ -5,7 +5,9 @@
     "api/analyze-doc.js": { "maxDuration": 60 },
     "api/analyze-audit.js": { "maxDuration": 60 },
     "api/gong/webhook.js": { "maxDuration": 60 },
-    "api/gong/sync.js": { "maxDuration": 60 }
+    "api/gong/sync.js": { "maxDuration": 60 },
+    "api/diio/settings.js": { "maxDuration": 60 },
+    "api/diio/sync.js": { "maxDuration": 60 }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
