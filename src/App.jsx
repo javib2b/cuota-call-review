@@ -472,31 +472,51 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
   // ---- AE FOLDERS VIEW ----
   if (folderClient && !folderAE) {
     const aes = grouped[folderClient] || {};
-    const aeEntries = Object.entries(aes).map(([name, aeCalls]) => {
+    const allEntries = Object.entries(aes).map(([name, aeCalls]) => {
       const avg = aeCalls.length > 0 ? Math.round(aeCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / aeCalls.length) : 0;
-      return { name, calls: aeCalls, avg };
+      // Determine rep type from calls — if any call is tagged SDR, treat the rep as SDR
+      const isSdr = aeCalls.some(c => c.category_scores?.rep_type === "SDR");
+      return { name, calls: aeCalls, avg, isSdr };
     }).sort((a, b) => b.avg - a.avg);
+
+    const aeEntries = allEntries.filter(e => !e.isSdr);
+    const sdrEntries = allEntries.filter(e => e.isSdr);
+
+    const repRow = (ae) => (
+      <div key={ae.name} onClick={() => setFolderAE(ae.name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
+        <CircularScore score={ae.avg} size={50} strokeWidth={4} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "#1A2B3C" }}>{ae.name}</div>
+          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{ae.calls.length} call{ae.calls.length !== 1 ? "s" : ""}</div>
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(ae.avg), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(ae.avg)}</div>
+      </div>
+    );
 
     return (
       <div>
         {breadcrumb}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>{folderClient} &mdash; Account Executives</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>{folderClient}</h2>
           {newReviewBtn}
         </div>
-        {aeEntries.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls for this client.</p>}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {aeEntries.map(ae => (
-            <div key={ae.name} onClick={() => setFolderAE(ae.name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
-              <CircularScore score={ae.avg} size={50} strokeWidth={4} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#1A2B3C" }}>{ae.name}</div>
-                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{ae.calls.length} call{ae.calls.length !== 1 ? "s" : ""}</div>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(ae.avg), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(ae.avg)}</div>
+        {allEntries.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls for this client.</p>}
+        {aeEntries.length > 0 && (
+          <div style={{ marginBottom: sdrEntries.length > 0 ? 28 : 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Account Executives</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {aeEntries.map(repRow)}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+        {sdrEntries.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>SDR Prospecting</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {sdrEntries.map(repRow)}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -3061,7 +3081,7 @@ export default function CuotaCallReview() {
   const [gongSyncClient, setGongSyncClient] = useState(null);
 
   // Review state
-  const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
+  const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "", repType: "AE" });
   const [scores, setScores] = useState({});
   const [notes, setNotes] = useState("");
   const [activeTab, setActiveTab] = useState("transcript");
@@ -3371,7 +3391,7 @@ export default function CuotaCallReview() {
         call_type: callInfo.callType,
         deal_stage: callInfo.dealStage,
         deal_value: callInfo.dealValue ? Number(callInfo.dealValue) : null,
-        category_scores: { ...scores, rep_name: callInfo.repName, prospect_name: aiAnalysis?.metadata?.prospect_name || "", client: callInfo.client },
+        category_scores: { ...scores, rep_name: callInfo.repName, prospect_name: aiAnalysis?.metadata?.prospect_name || "", client: callInfo.client, rep_type: callInfo.repType || "AE" },
         overall_score: overallScore,
         momentum_score: null,
         close_probability: null,
@@ -3400,7 +3420,7 @@ export default function CuotaCallReview() {
 
   const loadCallIntoReview = (call) => {
     setSelectedCall(call);
-    setCallInfo({ client: call.category_scores?.client || "", repName: call.category_scores?.rep_name || "", prospectCompany: call.prospect_company || "", callDate: call.call_date || "", callType: call.call_type || "Discovery", dealStage: call.deal_stage || "Early", dealValue: call.deal_value || "" });
+    setCallInfo({ client: call.category_scores?.client || "", repName: call.category_scores?.rep_name || "", prospectCompany: call.prospect_company || "", callDate: call.call_date || "", callType: call.call_type || "Discovery", dealStage: call.deal_stage || "Early", dealValue: call.deal_value || "", repType: call.category_scores?.rep_type || "AE" });
     // Detect old format (boolean criteria) vs new format ({ score, details })
     const cs = call.category_scores || {};
     const isOld = OLD_CATEGORY_IDS.some(id => cs[id] && typeof Object.values(cs[id])[0] === "boolean");
@@ -3419,7 +3439,7 @@ export default function CuotaCallReview() {
 
   const startNewReview = () => {
     setSelectedCall(null);
-    setCallInfo({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "" });
+    setCallInfo({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "", repType: "AE" });
     setScores({}); setNotes(""); setTranscript(""); setAiAnalysis(null); setError("");
     setPage("review"); setActiveTab("transcript");
   };
@@ -3546,6 +3566,7 @@ export default function CuotaCallReview() {
                 {[
                   { key: "client", label: "Client", options: clients, required: true },
                   { key: "repName", label: "Rep Name", placeholder: "e.g. Sarah Chen" },
+                  { key: "repType", label: "Rep Type", options: ["AE", "SDR"] },
                   { key: "prospectCompany", label: "Prospect Company", placeholder: "e.g. Meijer" },
                   { key: "callDate", label: "Call Date", type: "date" },
                   { key: "callType", label: "Call Type", options: ["Discovery", "Demo", "Follow-up", "Negotiation", "Closing"] },
