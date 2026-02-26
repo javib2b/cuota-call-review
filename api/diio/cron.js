@@ -6,8 +6,8 @@ import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DAYS_BACK = 14;   // scan last 14 days for new calls
-const MAX_PER_ORG = 3;  // max calls to process per org per run (stay within 60s timeout)
+const DAYS_BACK = 14;    // scan last 14 days for new calls
+const MAX_PER_AE = 5;    // max calls to process per account executive per run
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
@@ -201,15 +201,18 @@ export default async function handler(req, res) {
           processed.filter((p) => p.status === "completed" || p.status === "processing").map((p) => p.diio_call_id)
         );
 
+        // Build queue with seller info for grouping
         const queue = [];
         for (const m of meetings) {
           if (m.id && m.last_transcript_id && !doneIds.has(`meeting_${m.id}`)) {
-            queue.push({ callId: m.id, callType: "meeting" });
+            const seller = (m.attendees?.sellers?.[0]?.name || m.attendees?.sellers?.[0]?.email || "unknown").trim();
+            queue.push({ callId: m.id, callType: "meeting", seller });
           }
         }
         for (const p of phoneCalls) {
           if (p.id && p.last_transcript_id && !doneIds.has(`phone_${p.id}`)) {
-            queue.push({ callId: p.id, callType: "phone_call" });
+            const seller = (p.attendees?.sellers?.[0]?.name || p.attendees?.sellers?.[0]?.email || "unknown").trim();
+            queue.push({ callId: p.id, callType: "phone_call", seller });
           }
         }
 
@@ -218,10 +221,18 @@ export default async function handler(req, res) {
           continue;
         }
 
-        summary.orgsProcessed++;
-        console.log(`[cron] ${queue.length} new calls for ${client}, processing up to ${MAX_PER_ORG}`);
+        // Group by AE, cap at MAX_PER_AE per seller
+        const byAE = {};
+        for (const item of queue) {
+          if (!byAE[item.seller]) byAE[item.seller] = [];
+          if (byAE[item.seller].length < MAX_PER_AE) byAE[item.seller].push(item);
+        }
+        const toProcess = Object.values(byAE).flat();
 
-        for (const { callId, callType } of queue.slice(0, MAX_PER_ORG)) {
+        summary.orgsProcessed++;
+        console.log(`[cron] ${queue.length} new calls for ${client} across ${Object.keys(byAE).length} AEs, processing ${toProcess.length}`);
+
+        for (const { callId, callType } of toProcess) {
           const ok = await processOneCall(diio, settings, callId, callType, orgId, client, apiKey);
           if (ok) summary.callsProcessed++;
           else summary.callsFailed++;
