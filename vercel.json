@@ -11,7 +11,7 @@
     "api/diio/cron.js": { "maxDuration": 60 }
   },
   "crons": [
-    { "path": "/api/diio/cron", "schedule": "0 * * * *" }
+    { "path": "/api/diio/cron", "schedule": "0 8 * * *" }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
