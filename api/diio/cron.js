@@ -64,10 +64,15 @@ async function processOneCall(diio, settings, callId, callType, orgId, client, a
     await processedTable.update({ status: "processing", error_message: null }, `org_id=eq.${orgId}&diio_call_id=eq.${diioId}`);
   }
 
+  const pt = Date.now();
+  const pe = () => `+${((Date.now() - pt) / 1000).toFixed(1)}s`;
+
   try {
     const endpoint = callType === "meeting" ? "meetings" : "phone_calls";
+    console.log(`[cron] ${diioId}: fetching metadata ${pe()}`);
     const r = await fetch(`https://${settings.subdomain}.diio.com/api/external/v1/${endpoint}/${callId}`, {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.access_token}` },
+      signal: AbortSignal.timeout(15000),
     });
     if (!r.ok) throw new Error(`Diio ${endpoint}/${callId} returned ${r.status}`);
     const callMeta = await r.json();
@@ -75,6 +80,7 @@ async function processOneCall(diio, settings, callId, callType, orgId, client, a
     const transcriptId = callMeta.last_transcript_id;
     if (!transcriptId) throw new Error("No transcript available yet");
 
+    console.log(`[cron] ${diioId}: fetching transcript ${transcriptId} ${pe()}`);
     const transcriptData = await diio.getTranscript(transcriptId);
     const rawRaw = transcriptData.transcript;
     const rawTranscript = Array.isArray(rawRaw)
@@ -89,11 +95,13 @@ async function processOneCall(diio, settings, callId, callType, orgId, client, a
       ? transcriptText.slice(0, MAX_TRANSCRIPT_CHARS) + "\n\n[TRANSCRIPT TRUNCATED FOR LENGTH]"
       : transcriptText;
 
+    console.log(`[cron] ${diioId}: calling Claude (${transcriptForAnalysis.length} chars) ${pe()}`);
     // Race Claude against a timeout so we get a clean error instead of Vercel's hard cutoff
     const aiResult = await Promise.race([
       analyzeTranscript(transcriptForAnalysis, apiKey),
       new Promise((_, reject) => setTimeout(() => reject(new Error(`Claude analysis timed out after ${CLAUDE_TIMEOUT_MS / 1000}s`)), CLAUDE_TIMEOUT_MS)),
     ]);
+    console.log(`[cron] ${diioId}: Claude done ${pe()}`);
     const computed = computeScores(aiResult);
 
     const sellers = callMeta.attendees?.sellers || [];
@@ -155,11 +163,16 @@ export default async function handler(req, res) {
 
   const summary = { orgsChecked: 0, orgsProcessed: 0, callsProcessed: 0, callsFailed: 0 };
 
+  const t0 = Date.now();
+  const elapsed = () => `+${((Date.now() - t0) / 1000).toFixed(1)}s`;
+
   try {
+    console.log(`[cron] start`);
     const allSettings = await adminTable("diio_settings").select("*");
     if (!Array.isArray(allSettings) || allSettings.length === 0) {
       return res.status(200).json({ message: "No Diio integrations configured", ...summary });
     }
+    console.log(`[cron] settings loaded ${elapsed()}`);
 
     for (const settings of allSettings) {
       const { org_id: orgId, client } = settings;
@@ -167,6 +180,7 @@ export default async function handler(req, res) {
 
       try {
         const apiKey = await getOrgApiKey(orgId);
+        console.log(`[cron] apiKey ${apiKey ? "ok" : "missing"} ${elapsed()}`);
         if (!apiKey) {
           console.warn(`[cron] No API key for org ${orgId} (${client}), skipping`);
           continue;
@@ -183,6 +197,7 @@ export default async function handler(req, res) {
         }
 
         const onRefresh = async () => {
+          console.log(`[cron] token refresh triggered ${elapsed()}`);
           try {
             const tokenData = await refreshDiioToken(
               settings.subdomain, settings.client_id, settings.client_secret, settings.refresh_token
@@ -190,8 +205,12 @@ export default async function handler(req, res) {
             settings.access_token = tokenData.access_token;
             settings.refresh_token = tokenData.refresh_token || settings.refresh_token;
             await saveTokens(orgId, client, settings.access_token, settings.refresh_token);
+            console.log(`[cron] token refreshed ${elapsed()}`);
             return settings.access_token;
-          } catch { return null; }
+          } catch (e) {
+            console.warn(`[cron] token refresh failed: ${e.message} ${elapsed()}`);
+            return null;
+          }
         };
 
         const diio = createDiioClient(settings.subdomain, settings.access_token, onRefresh);
@@ -199,10 +218,12 @@ export default async function handler(req, res) {
         // Fetch one page of recent calls in parallel — newest-first, 50 items each
         // One page is enough since the 7-day window fits well within the first 50 results
         const cutoffMs = Date.now() - DAYS_BACK * 24 * 60 * 60 * 1000;
+        console.log(`[cron] listing calls ${elapsed()}`);
         const [meetingPage, phoneCallPage] = await Promise.all([
-          diio.listMeetings(1, 50).catch(() => ({ meetings: [] })),
-          diio.listPhoneCalls(1, 50).catch(() => ({ phone_calls: [] })),
+          diio.listMeetings(1, 50).catch((e) => { console.warn(`[cron] meetings list err: ${e.message}`); return { meetings: [] }; }),
+          diio.listPhoneCalls(1, 50).catch((e) => { console.warn(`[cron] phonecalls list err: ${e.message}`); return { phone_calls: [] }; }),
         ]);
+        console.log(`[cron] listed: ${meetingPage.meetings?.length ?? 0} meetings, ${phoneCallPage.phone_calls?.length ?? 0} phone calls ${elapsed()}`);
         const meetings = (meetingPage.meetings || []).filter((m) => {
           const d = new Date(m.scheduled_at || m.occurred_at || m.created_at).getTime();
           return d > cutoffMs;
