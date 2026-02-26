@@ -192,13 +192,22 @@ export default async function handler(req, res) {
         // Find which are already processed
         let processed = [];
         try {
-          processed = await adminTable("diio_processed_calls").select("diio_call_id,status", `org_id=eq.${orgId}`);
+          processed = await adminTable("diio_processed_calls").select("diio_call_id,status,created_at", `org_id=eq.${orgId}`);
           if (!Array.isArray(processed)) processed = [];
         } catch { processed = []; }
 
-        // Exclude completed and in-progress; retry failed ones
+        // Exclude completed; retry failed ones
+        // Treat "processing" as stuck (and retryable) if older than 10 minutes — handles cron timeouts
+        const TEN_MIN = 10 * 60 * 1000;
         const doneIds = new Set(
-          processed.filter((p) => p.status === "completed" || p.status === "processing").map((p) => p.diio_call_id)
+          processed.filter((p) => {
+            if (p.status === "completed") return true;
+            if (p.status === "processing") {
+              const age = Date.now() - new Date(p.created_at).getTime();
+              return age < TEN_MIN; // still actively processing (recent)
+            }
+            return false; // failed → retryable
+          }).map((p) => p.diio_call_id)
         );
 
         // Build queue with seller info for grouping
