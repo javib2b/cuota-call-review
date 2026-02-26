@@ -78,23 +78,41 @@ const RISK_INDICATORS = [
   { id: "no_next_steps", label: "No Clear Next Steps", severity: "high" },
 ];
 
-const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Planimatik", "Rapido", "Xepelin"];
+const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Planimatik", "Xepelin"];
+const DEFAULT_PAST_CLIENTS = ["Rapido"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://logo.clearbit.com/${domain}` : null; }
 
+function loadPastClients() {
+  try {
+    const stored = localStorage.getItem("cuota_past_clients");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) return Array.from(new Set([...DEFAULT_PAST_CLIENTS, ...parsed])).sort((a, b) => a.localeCompare(b));
+    }
+  } catch {}
+  return [...DEFAULT_PAST_CLIENTS];
+}
+
+function savePastClients(list) {
+  localStorage.setItem("cuota_past_clients", JSON.stringify(list));
+}
+
 function loadClients() {
+  const past = loadPastClients();
   try {
     const stored = localStorage.getItem("cuota_clients");
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Always merge with DEFAULT_CLIENTS so new defaults are never missed
-        const merged = Array.from(new Set([...DEFAULT_CLIENTS, ...parsed]));
+        // Exclude any names that are now in past clients
+        const merged = Array.from(new Set([...DEFAULT_CLIENTS, ...parsed])).filter(c => !past.includes(c));
         return merged.sort((a, b) => a.localeCompare(b));
       }
     }
   } catch {}
-  return [...DEFAULT_CLIENTS];
+  return [...DEFAULT_CLIENTS].filter(c => !past.includes(c));
 }
 
 function saveClients(clients) {
@@ -382,8 +400,8 @@ function CategoryBar({ category, scores, onScoreChange }) {
 }
 
 // ==================== SAVED CALLS ====================
-function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient }) {
-  const grouped = groupCallsByClientAndAE(calls, clients);
+function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient, pastClients, onArchiveClient, onRestoreClient }) {
+  const grouped = groupCallsByClientAndAE(calls, [...clients, ...(pastClients || [])]);
 
   const breadcrumb = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
@@ -405,6 +423,50 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
   // ---- CLIENT FOLDERS VIEW ----
   if (!folderClient) {
+    const renderClientCard = (client, isPast) => {
+      const aes = grouped[client] || {};
+      const aeCount = Object.keys(aes).length;
+      const clientCalls = Object.values(aes).flat();
+      const callCount = clientCalls.length;
+      const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
+      const isEmpty = callCount === 0;
+      const logoUrl = getClientLogo(client);
+      return (
+        <div key={client} style={{ position: "relative", background: isPast ? "#fafafa" : "#FFFFFF", border: `1px solid ${isPast ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.08)"}`, borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isPast ? 0.65 : (isEmpty ? 0.5 : 1), transition: "all 0.2s", boxShadow: isEmpty || isPast ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && setFolderClient(client)}>
+          <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
+            {isPast ? (
+              onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.1)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
+            ) : (
+              onArchiveClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) onArchiveClient(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }} title="Archive client">Archive</button>
+            )}
+          </div>
+          <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+              {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
+              <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#31CE81", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.45)" : "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
+              {callCount > 0 ? (
+                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{callCount} call{callCount !== 1 ? "s" : ""} · {aeCount} rep{aeCount !== 1 ? "s" : ""}</div>
+              ) : (
+                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.25)", marginTop: 2 }}>No calls</div>
+              )}
+            </div>
+          </div>
+          {callCount > 0 && (
+            <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <CircularScore score={avgScore} size={40} strokeWidth={3} />
+                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>avg score</div>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(avgScore), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(avgScore)}</div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
     return (
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -419,43 +481,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         )}
         {calls.length === 0 && !error && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls reviewed yet. Click "+ New Review" to get started.</p>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
-          {clients.map(client => {
-            const aes = grouped[client] || {};
-            const aeCount = Object.keys(aes).length;
-            const clientCalls = Object.values(aes).flat();
-            const callCount = clientCalls.length;
-            const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
-            const isEmpty = callCount === 0;
-            const logoUrl = getClientLogo(client);
-            return (
-              <div key={client} style={{ position: "relative", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isEmpty ? 0.5 : 1, transition: "all 0.2s", boxShadow: isEmpty ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && setFolderClient(client)}>
-                {onDeleteClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Remove "${client}" folder?`)) onDeleteClient(client); }} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 12, cursor: "pointer", padding: "2px 6px", borderRadius: 6, lineHeight: 1, zIndex: 2 }} title="Remove client">{"\u2715"}</button>}
-                <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                    {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-                    <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "#31CE81", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
-                    {callCount > 0 ? (
-                      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{callCount} call{callCount !== 1 ? "s" : ""} · {aeCount} rep{aeCount !== 1 ? "s" : ""}</div>
-                    ) : (
-                      <div style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>No calls yet</div>
-                    )}
-                  </div>
-                </div>
-                {callCount > 0 && (
-                  <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <CircularScore score={avgScore} size={40} strokeWidth={3} />
-                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)" }}>avg score</div>
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(avgScore), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(avgScore)}</div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {clients.map(client => renderClientCard(client, false))}
           {onAddClient && (
             <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "#FFFFFF", border: "2px dashed rgba(0,0,0,0.1)", borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
               <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(49,206,129,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
@@ -465,6 +491,14 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             </div>
           )}
         </div>
+        {pastClients && pastClients.length > 0 && (
+          <div style={{ marginTop: 36 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Past Clients</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
+              {pastClients.map(client => renderClientCard(client, true))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -3058,6 +3092,7 @@ export default function CuotaCallReview() {
   const [folderClient, setFolderClient] = useState(null);
   const [folderAE, setFolderAE] = useState(null);
   const [clients, setClients] = useState(loadClients);
+  const [pastClients, setPastClients] = useState(loadPastClients);
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -3071,6 +3106,34 @@ export default function CuotaCallReview() {
   const deleteClient = useCallback((name) => {
     setClients(prev => {
       const next = prev.filter(c => c !== name);
+      saveClients(next);
+      return next;
+    });
+  }, []);
+
+  const archiveClient = useCallback((name) => {
+    setClients(prev => {
+      const next = prev.filter(c => c !== name);
+      saveClients(next);
+      return next;
+    });
+    setPastClients(prev => {
+      if (prev.includes(name)) return prev;
+      const next = [...prev, name].sort((a, b) => a.localeCompare(b));
+      savePastClients(next);
+      return next;
+    });
+  }, []);
+
+  const restoreClient = useCallback((name) => {
+    setPastClients(prev => {
+      const next = prev.filter(c => c !== name);
+      savePastClients(next);
+      return next;
+    });
+    setClients(prev => {
+      if (prev.includes(name)) return prev;
+      const next = [...prev, name].sort((a, b) => a.localeCompare(b));
       saveClients(next);
       return next;
     });
@@ -3540,7 +3603,7 @@ export default function CuotaCallReview() {
         {page === "tof" && <TopOfFunnelPage assessments={tofAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadTofAssessments} />}
 
         {/* SALES READINESS */}
-        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} />}
+        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} />}
 
         {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
