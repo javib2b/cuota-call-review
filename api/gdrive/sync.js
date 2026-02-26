@@ -48,8 +48,8 @@ export default async function handler(req, res) {
   const redirectUri = getRedirectUri(req);
   const appBase = redirectUri.replace(/\/api\/gdrive\/sync$/, "");
 
-  // ── OAuth callback (GET ?action=callback) ── no user JWT available; state = orgId UUID
-  if (req.method === "GET" && req.query.action === "callback") {
+  // ── OAuth callback — Google redirects here with ?code=...&state=...  (no action param)
+  if (req.method === "GET" && req.query.code) {
     const { code, state, error: oauthError } = req.query;
     if (oauthError) return res.redirect(302, `${appBase}/?gdrive_error=${encodeURIComponent(oauthError)}`);
     if (!code || !state) return res.redirect(302, `${appBase}/?gdrive_error=missing_params`);
