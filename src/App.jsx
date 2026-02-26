@@ -87,7 +87,11 @@ function loadClients() {
     const stored = localStorage.getItem("cuota_clients");
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed.sort((a, b) => a.localeCompare(b));
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Always merge with DEFAULT_CLIENTS so new defaults are never missed
+        const merged = Array.from(new Set([...DEFAULT_CLIENTS, ...parsed]));
+        return merged.sort((a, b) => a.localeCompare(b));
+      }
     }
   } catch {}
   return [...DEFAULT_CLIENTS];
