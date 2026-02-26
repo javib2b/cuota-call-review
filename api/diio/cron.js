@@ -6,8 +6,9 @@ import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DAYS_BACK = 14;    // scan last 14 days for new calls
-const MAX_PER_AE = 5;    // max calls to process per account executive per run
+const DAYS_BACK = 30;    // scan last 30 days for new calls
+const MAX_PER_AE = 1;    // 1 call per AE per daily run (~20s each, stays within 60s Vercel limit)
+                         // With 5 AEs this reviews 5 calls/day → each AE gets 5 reviews over 5 days
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
