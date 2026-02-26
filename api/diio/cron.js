@@ -9,8 +9,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DAYS_BACK = 7;       // scan last 7 days
 const MAX_PER_AE = 1;      // 1 call per AE per run for fair distribution
 const MAX_TOTAL = 2;       // 2 calls per run: listing ~3s + overhead ~5s + 2×Claude ~20s = ~48s, safely under 60s limit
-const MAX_TRANSCRIPT_CHARS = 40000; // truncate long transcripts to keep Claude under ~20s
-const CLAUDE_TIMEOUT_MS = 45000;    // abort Claude if it takes longer than 45s
+const MAX_TRANSCRIPT_CHARS = 30000; // truncate transcripts to keep Claude under ~15s
+const CLAUDE_TIMEOUT_MS = 30000;    // abort Claude if it takes longer than 30s — leaves time for 2nd call
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {

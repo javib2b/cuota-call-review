@@ -1,5 +1,7 @@
 // Diio API client for fetching meetings, phone calls, and transcripts
 
+const FETCH_TIMEOUT_MS = 15000; // 15s per individual Diio HTTP call
+
 // Refresh an expired Diio access token using long-lived credentials
 export async function refreshDiioToken(subdomain, clientId, clientSecret, refreshToken) {
   const baseUrl = `https://${subdomain}.diio.com/api/external`;
@@ -7,6 +9,7 @@ export async function refreshDiioToken(subdomain, clientId, clientSecret, refres
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!r.ok) {
     const body = await r.text().catch(() => "");
@@ -24,6 +27,7 @@ export function createDiioClient(subdomain, accessToken, onRefresh) {
   async function diioFetch(path, options = {}, isRetry = false) {
     const r = await fetch(`${baseUrl}${path}`, {
       ...options,
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${currentToken}`,
