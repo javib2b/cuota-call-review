@@ -48,16 +48,19 @@ export default async function handler(req, res) {
   const redirectUri = getRedirectUri(req);
   const appBase = redirectUri.replace(/\/api\/gdrive\/sync$/, "");
 
-  // ── OAuth callback (GET ?action=callback) ── no user JWT available yet
+  // ── OAuth callback (GET ?action=callback) ── no user JWT available; state = orgId UUID
   if (req.method === "GET" && req.query.action === "callback") {
     const { code, state, error: oauthError } = req.query;
     if (oauthError) return res.redirect(302, `${appBase}/?gdrive_error=${encodeURIComponent(oauthError)}`);
     if (!code || !state) return res.redirect(302, `${appBase}/?gdrive_error=missing_params`);
 
+    // Validate state is a UUID (org_id)
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(state)) {
+      return res.redirect(302, `${appBase}/?gdrive_error=invalid_state`);
+    }
+
     try {
-      const jwt = Buffer.from(state, "base64url").toString("utf8");
-      const auth = await authenticateUser(jwt);
-      if (!auth) return res.redirect(302, `${appBase}/?gdrive_error=auth_failed`);
+      const orgId = state;
 
       const tokenRes = await fetchWithTimeout("https://oauth2.googleapis.com/token", {
         method: "POST",
@@ -79,8 +82,6 @@ export default async function handler(req, res) {
 
       const emailRes = await driveGet("https://www.googleapis.com/oauth2/v2/userinfo", tokens.access_token);
       const { email = "" } = emailRes.ok ? await emailRes.json() : {};
-
-      const orgId = auth.profile.org_id;
       const sourcesTable = adminTable("doc_sources");
       const existing = await sourcesTable.select("id,config", `org_id=eq.${orgId}&provider=eq.gdrive`);
       const exRow = Array.isArray(existing) && existing.length > 0 ? existing[0] : null;
@@ -139,7 +140,8 @@ export default async function handler(req, res) {
     // GET ?action=auth_url — generate OAuth URL
     if (req.method === "GET" && req.query.action === "auth_url") {
       if (!GOOGLE_CLIENT_ID) return res.status(500).json({ error: "GOOGLE_CLIENT_ID not configured in Vercel env vars" });
-      const state = Buffer.from(authToken).toString("base64url");
+      // Use orgId (short UUID) as state — JWT is too long and causes Google "malformed request"
+      const state = orgId;
       const url = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
         client_id: GOOGLE_CLIENT_ID,
         redirect_uri: redirectUri,
