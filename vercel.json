@@ -8,7 +8,9 @@
     "api/gong/sync.js": { "maxDuration": 60 },
     "api/diio/settings.js": { "maxDuration": 60 },
     "api/diio/sync.js": { "maxDuration": 60 },
-    "api/diio/cron.js": { "maxDuration": 60 }
+    "api/diio/cron.js": { "maxDuration": 60 },
+    "api/notion/sync.js": { "maxDuration": 60 },
+    "api/gdrive/sync.js": { "maxDuration": 60 }
   },
   "crons": [
     { "path": "/api/diio/cron", "schedule": "0 8 * * *" }

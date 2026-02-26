@@ -3213,6 +3213,331 @@ function ReportPage({ report, onBack }) {
   );
 }
 
+// ==================== DOC SYNC PAGE ====================
+function parseNotionId(input) {
+  const clean = (input || "").replace(/-/g, "");
+  const match = clean.match(/[a-f0-9]{32}/i);
+  if (!match) return null;
+  const h = match[0].toLowerCase();
+  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+}
+
+function parseGDriveId(url) {
+  url = url || "";
+  const folder = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+  if (folder) return { id: folder[1], type: "folder" };
+  const file = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (file) return { id: file[1], type: "file" };
+  return null;
+}
+
+function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
+  const blank = { loading: true, connected: false, sources: [], last_synced_at: null, synced_count: 0 };
+  const [notion, setNotion] = useState({ ...blank });
+  const [gdrive, setGdrive] = useState({ ...blank });
+  const [notionToken, setNotionToken] = useState("");
+  const [connecting, setConnecting] = useState(null);
+  const [syncing, setSyncing] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [successes, setSuccesses] = useState({});
+  const [addingTo, setAddingTo] = useState(null); // 'notion' | 'gdrive'
+  const [newSrc, setNewSrc] = useState({ url: "", name: "", client: "", docType: "playbook", type: "page" });
+  const [addErr, setAddErr] = useState("");
+
+  const setErr = (k, v) => setErrors(e => ({ ...e, [k]: v }));
+  const setOk = (k, v) => setSuccesses(s => ({ ...s, [k]: v }));
+
+  useEffect(() => {
+    // Check for GDrive OAuth callback result
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("gdrive_connected") === "1") setOk("gdrive", "Google Drive connected!");
+    if (params.get("gdrive_error")) setErr("gdrive", `Connection failed: ${params.get("gdrive_error")}`);
+    loadStatus("notion");
+    loadStatus("gdrive");
+  }, []);
+
+  async function loadStatus(provider) {
+    try {
+      const t = await getValidToken();
+      const r = await fetch(`/api/${provider}/sync`, { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (provider === "notion") setNotion(prev => ({ ...prev, loading: false, ...data }));
+      else setGdrive(prev => ({ ...prev, loading: false, ...data }));
+    } catch {
+      if (provider === "notion") setNotion(prev => ({ ...prev, loading: false }));
+      else setGdrive(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  async function connectNotion() {
+    if (!notionToken.trim()) return;
+    setConnecting("notion"); setErr("notion", "");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/notion/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ action: "connect", token: notionToken.trim() }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Connection failed");
+      setNotionToken("");
+      setOk("notion", `Connected to ${data.workspace}`);
+      await loadStatus("notion");
+    } catch (e) { setErr("notion", e.message); }
+    setConnecting(null);
+  }
+
+  async function connectGDrive() {
+    setErr("gdrive", "");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gdrive/sync?action=auth_url", { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed");
+      window.location.href = data.url;
+    } catch (e) { setErr("gdrive", e.message); }
+  }
+
+  async function disconnect(provider) {
+    if (!window.confirm(`Disconnect ${provider === "notion" ? "Notion" : "Google Drive"}? Synced documents will remain.`)) return;
+    try {
+      const t = await getValidToken();
+      await fetch(`/api/${provider}/sync`, { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
+      if (provider === "notion") setNotion({ ...blank, loading: false });
+      else setGdrive({ ...blank, loading: false });
+    } catch (e) { setErr(provider, e.message); }
+  }
+
+  async function sync(provider) {
+    setSyncing(provider); setErr(provider, ""); setOk(provider, "");
+    try {
+      const t = await getValidToken();
+      const r = await fetch(`/api/${provider}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ action: "sync" }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Sync failed");
+      setOk(provider, `Synced ${data.syncedCount} document${data.syncedCount !== 1 ? "s" : ""}`);
+      await loadStatus(provider);
+      onDocsUpdate?.();
+    } catch (e) { setErr(provider, e.message); }
+    setSyncing(null);
+  }
+
+  async function addSource(provider) {
+    setAddErr("");
+    const isNotion = provider === "notion";
+    let source;
+    if (isNotion) {
+      const id = parseNotionId(newSrc.url);
+      if (!id) { setAddErr("Invalid Notion URL or page ID"); return; }
+      source = { id, type: newSrc.type, name: newSrc.name || id, client: newSrc.client, docType: newSrc.docType };
+    } else {
+      const parsed = parseGDriveId(newSrc.url);
+      if (!parsed) { setAddErr("Invalid Google Drive URL"); return; }
+      source = { ...parsed, name: newSrc.name || parsed.id, client: newSrc.client, docType: newSrc.docType };
+    }
+    const current = isNotion ? notion.sources : gdrive.sources;
+    const sources = [...current, source];
+    try {
+      const t = await getValidToken();
+      const r = await fetch(`/api/${provider}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ action: "update_sources", sources }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || "Save failed");
+      if (isNotion) setNotion(n => ({ ...n, sources }));
+      else setGdrive(g => ({ ...g, sources }));
+      setAddingTo(null);
+      setNewSrc({ url: "", name: "", client: "", docType: "playbook", type: "page" });
+    } catch (e) { setAddErr(e.message); }
+  }
+
+  async function removeSource(provider, idx) {
+    const isNotion = provider === "notion";
+    const sources = (isNotion ? notion.sources : gdrive.sources).filter((_, i) => i !== idx);
+    try {
+      const t = await getValidToken();
+      await fetch(`/api/${provider}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ action: "update_sources", sources }),
+      });
+      if (isNotion) setNotion(n => ({ ...n, sources }));
+      else setGdrive(g => ({ ...g, sources }));
+    } catch (e) { setErr(provider, e.message); }
+  }
+
+  const docTypeOptions = ENABLEMENT_DOC_TYPES.map(t => ({ value: t.id, label: t.name }));
+
+  const ProviderCard = ({ provider, state, icon, name, color, accent, connectForm, identifierLabel, identifierPlaceholder, extraSourceFields }) => {
+    const isNotion = provider === "notion";
+    return (
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
+              {state.connected && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>
+                {isNotion ? (state.workspace || "Connected") : (state.email || "Connected")}
+                {state.last_synced_at && ` · Last synced ${new Date(state.last_synced_at).toLocaleDateString()}`}
+              </div>}
+            </div>
+          </div>
+          {state.connected ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <button onClick={() => sync(provider)} disabled={syncing === provider} style={{ padding: "7px 14px", border: "none", borderRadius: 8, background: color, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                {syncing === provider ? "Syncing..." : "↺ Sync Now"}
+              </button>
+              <button onClick={() => disconnect(provider)} style={{ padding: "7px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.4)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Disconnect</button>
+            </div>
+          ) : (
+            <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", fontStyle: "italic" }}>Not connected</span>
+          )}
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "16px 20px" }}>
+          {errors[provider] && <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#ef4444", marginBottom: 12 }}>{errors[provider]}</div>}
+          {successes[provider] && <div style={{ background: "rgba(49,206,129,0.08)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#31CE81", marginBottom: 12 }}>{successes[provider]}</div>}
+
+          {/* Connect form if not connected */}
+          {!state.connected && !state.loading && connectForm}
+
+          {/* Sources list */}
+          {state.connected && (
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>
+                {identifierLabel}s to sync {state.synced_count > 0 && <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, color: "rgba(0,0,0,0.4)" }}>· {state.synced_count} docs synced</span>}
+              </div>
+              {state.sources.length === 0 && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: "0 0 12px" }}>No sources added yet. Click "+ Add Source" to connect a {identifierLabel.toLowerCase()}.</p>}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+                {state.sources.map((src, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, padding: "9px 12px" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{src.name}</div>
+                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>
+                        {src.type === "folder" ? "Folder" : src.type === "database" ? "Database" : "Page"} · {src.client || "No client"} · {ENABLEMENT_DOC_TYPES.find(t => t.id === src.docType)?.name || src.docType}
+                      </div>
+                    </div>
+                    <button onClick={() => removeSource(provider, i)} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 14, cursor: "pointer", padding: "2px 4px", flexShrink: 0 }}>✕</button>
+                  </div>
+                ))}
+              </div>
+
+              {addingTo === provider ? (
+                <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "14px 16px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5 }}>{identifierLabel} URL or ID</label>
+                      <input value={newSrc.url} onChange={e => setNewSrc(s => ({ ...s, url: e.target.value }))} placeholder={identifierPlaceholder} style={{ width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 7, fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5 }}>Display Name</label>
+                      <input value={newSrc.name} onChange={e => setNewSrc(s => ({ ...s, name: e.target.value }))} placeholder="e.g. Sales Playbook" style={{ width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 7, fontSize: 12, fontFamily: "inherit", boxSizing: "border-box" }} />
+                    </div>
+                    {extraSourceFields}
+                    <div>
+                      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5 }}>Client</label>
+                      <select value={newSrc.client} onChange={e => setNewSrc(s => ({ ...s, client: e.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 7, fontSize: 12, fontFamily: "inherit", background: "#fff", boxSizing: "border-box" }}>
+                        <option value="">All clients</option>
+                        {clients.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5 }}>Document Type</label>
+                      <select value={newSrc.docType} onChange={e => setNewSrc(s => ({ ...s, docType: e.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 7, fontSize: 12, fontFamily: "inherit", background: "#fff", boxSizing: "border-box" }}>
+                        {docTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  {addErr && <div style={{ fontSize: 12, color: "#ef4444", marginBottom: 8 }}>{addErr}</div>}
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => addSource(provider)} style={{ padding: "7px 16px", border: "none", borderRadius: 7, background: color, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Add</button>
+                    <button onClick={() => { setAddingTo(null); setAddErr(""); }} style={{ padding: "7px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 7, background: "#fff", color: "rgba(0,0,0,0.5)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => { setAddingTo(provider); setAddErr(""); setNewSrc({ url: "", name: "", client: "", docType: "playbook", type: isNotion ? "page" : "file" }); }} style={{ padding: "7px 14px", border: `1px dashed ${color}`, borderRadius: 8, background: "transparent", color, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>+ Add Source</button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>Document Sources</h2>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Connect Notion and Google Drive to automatically sync documents into client profiles</p>
+      </div>
+
+      {/* Notion */}
+      <ProviderCard
+        provider="notion" state={notion} icon="◻" name="Notion" color="#000" accent="rgba(0,0,0,0.06)"
+        identifierLabel="Page"
+        identifierPlaceholder="https://notion.so/... or page ID"
+        extraSourceFields={
+          <div>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5 }}>Source Type</label>
+            <select value={newSrc.type} onChange={e => setNewSrc(s => ({ ...s, type: e.target.value }))} style={{ width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 7, fontSize: 12, fontFamily: "inherit", background: "#fff", boxSizing: "border-box" }}>
+              <option value="page">Page</option>
+              <option value="database">Database (all pages)</option>
+            </select>
+          </div>
+        }
+        connectForm={
+          <div>
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px", lineHeight: 1.6 }}>
+              Create a Notion integration at <strong>notion.so/my-integrations</strong>, then share your pages with it. Paste the Internal Integration Token below.
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input value={notionToken} onChange={e => setNotionToken(e.target.value)} placeholder="secret_xxxx..." type="password" style={{ flex: 1, padding: "9px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, fontSize: 13, fontFamily: "inherit" }} />
+              <button onClick={connectNotion} disabled={connecting === "notion" || !notionToken.trim()} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "#000", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                {connecting === "notion" ? "Connecting..." : "Connect"}
+              </button>
+            </div>
+          </div>
+        }
+      />
+
+      {/* Google Drive */}
+      <ProviderCard
+        provider="gdrive" state={gdrive} icon="▲" name="Google Drive" color="#1a73e8" accent="rgba(26,115,232,0.08)"
+        identifierLabel="File/Folder"
+        identifierPlaceholder="https://drive.google.com/..."
+        extraSourceFields={null}
+        connectForm={
+          <div>
+            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px", lineHeight: 1.6 }}>
+              Connect your Google Drive account to sync Google Docs and text files. Requires <strong>GOOGLE_CLIENT_ID</strong> and <strong>GOOGLE_CLIENT_SECRET</strong> set in Vercel environment variables.
+            </p>
+            <button onClick={connectGDrive} style={{ padding: "9px 20px", border: "none", borderRadius: 8, background: "#1a73e8", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              Connect Google Drive
+            </button>
+          </div>
+        }
+      />
+
+      {/* Setup notes */}
+      <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "14px 16px", fontSize: 12, color: "rgba(0,0,0,0.45)", lineHeight: 1.7 }}>
+        <strong style={{ color: "rgba(0,0,0,0.6)" }}>Setup notes</strong><br />
+        <strong>Notion:</strong> Go to notion.so/my-integrations → New integration → copy the token → share each page with the integration (Share → Connections → your integration name).<br />
+        <strong>Google Drive:</strong> Set <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 5px", borderRadius: 4 }}>GOOGLE_CLIENT_ID</code>, <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 5px", borderRadius: 4 }}>GOOGLE_CLIENT_SECRET</code>, and <code style={{ background: "rgba(0,0,0,0.06)", padding: "1px 5px", borderRadius: 4 }}>GDRIVE_REDIRECT_URI=https://your-app.vercel.app/api/gdrive/sync</code> in Vercel project settings. Create OAuth credentials at console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application), add the redirect URI above.<br />
+        <strong>Supported file types:</strong> Google Docs, plain text, Markdown. PDFs and other formats are skipped (use the manual upload in Enablement instead).
+      </div>
+    </div>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -3446,6 +3771,15 @@ export default function CuotaCallReview() {
     };
     validateSession();
   }, [refreshSessionToken]);
+
+  // Handle OAuth callbacks (e.g. Google Drive redirect back to app)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("gdrive_connected") === "1" || params.get("gdrive_error")) {
+      window.history.replaceState({}, "", window.location.pathname);
+      setPage("docsync");
+    }
+  }, []);
 
   // Load all data whenever token changes
   useEffect(() => {
@@ -3710,7 +4044,7 @@ export default function CuotaCallReview() {
               {profile?.role === "admin" && (
                 <>
                   <div style={{ height: 1, background: "rgba(0,0,0,0.06)", margin: "6px 0" }} />
-                  {[{ id: "integrations", label: "Integrations", icon: "⚙️" }, { id: "admin", label: "Admin", icon: "👑" }].map(nav => (
+                  {[{ id: "integrations", label: "Integrations", icon: "⚙️" }, { id: "docsync", label: "Document Sources", icon: "🔄" }, { id: "admin", label: "Admin", icon: "👑" }].map(nav => (
                     <button key={nav.id} onClick={() => { setPage(nav.id); setNavOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", border: "none", background: page === nav.id ? "rgba(0,0,0,0.04)" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: page === nav.id ? 700 : 500, color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.65)", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}>
                       <span style={{ width: 20, textAlign: "center" }}>{nav.icon}</span>
                       <span>{nav.label}</span>
@@ -3771,6 +4105,7 @@ export default function CuotaCallReview() {
         {page === "metrics" && <MetricsPage assessments={metricsAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadMetricsAssessments} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
+        {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients]} onDocsUpdate={loadDocs} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
 
         {/* REVIEW PAGE */}
