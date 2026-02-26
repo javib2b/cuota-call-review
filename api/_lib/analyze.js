@@ -59,14 +59,16 @@ RESPOND ONLY WITH VALID JSON:
 {"metadata":{"rep_name":"...","prospect_company":"...","prospect_name":"...","call_type":"...","deal_stage":"..."},"scores":{"pre_call_research":{"score":7,"details":"..."},"intro_opening":{"score":8,"details":"..."},"agenda":{"score":6,"details":"..."},"discovery":{"score":7,"details":"..."},"pitch":{"score":5,"details":"..."},"services_product":{"score":6,"details":"..."},"pricing":{"score":4,"details":"..."},"next_steps":{"score":8,"details":"..."},"objection_handling":{"score":7,"details":"..."}},"risks":{"meddpicc_gaps":{"flagged":true,"details":"..."},"single_threaded":{"flagged":false,"details":"..."},"no_decision_maker":{"flagged":true,"details":"..."},"engagement_gap":{"flagged":false,"details":"..."},"no_next_steps":{"flagged":false,"details":"..."}},"gut_check":"...","strengths":[{"title":"...","description":"..."},{"title":"...","description":"..."},{"title":"...","description":"..."}],"areas_of_opportunity":[{"description":"...","fix":"..."},{"description":"...","fix":"..."}]}`;
 
 // Call Claude API and parse the analysis result
-export async function analyzeTranscript(transcript) {
-  if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
+// apiKey param overrides the env var (used by cron which has no user session)
+export async function analyzeTranscript(transcript, apiKey = null) {
+  const key = apiKey || ANTHROPIC_API_KEY;
+  if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
+      "x-api-key": key,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
