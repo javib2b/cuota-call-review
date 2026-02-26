@@ -107,7 +107,12 @@ async function processDiioCall(diio, settings, callId, callType, orgId, client) 
 
     // Fetch transcript
     const transcriptData = await diio.getTranscript(transcriptId);
-    const rawTranscript = transcriptData.transcript || "";
+    const rawTranscriptRaw = transcriptData.transcript;
+    const rawTranscript = Array.isArray(rawTranscriptRaw)
+      ? rawTranscriptRaw.map(t => `${t.speaker || t.name || ""}: ${t.text || t.content || ""}`.trim()).filter(Boolean).join("\n")
+      : typeof rawTranscriptRaw === "string"
+        ? rawTranscriptRaw
+        : rawTranscriptRaw != null ? String(rawTranscriptRaw) : "";
     if (!rawTranscript.trim()) {
       throw new Error("Transcript is empty — call may not have been fully transcribed yet");
     }
