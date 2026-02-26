@@ -8,9 +8,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.s
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DAYS_BACK = 7;       // scan last 7 days
 const MAX_PER_AE = 1;      // 1 call per AE per run for fair distribution
-const MAX_TOTAL = 2;       // 2 calls per run: refresh ~3s + listing ~2s + 2×Claude ~20s ≈ 45s, under 60s limit
-const MAX_TRANSCRIPT_CHARS = 30000; // truncate transcripts to keep Claude under ~15s
-const CLAUDE_TIMEOUT_MS = 25000;    // 25s Claude timeout: leaves room for 2 calls + overhead in 60s
+const MAX_TOTAL = 1;       // 1 call per run: setup ~9s + Claude up to 40s + DB ~4s ≈ 53s, under 60s limit
+const MAX_TRANSCRIPT_CHARS = 20000; // truncate to ~3500 words — enough for analysis, faster Claude
+const CLAUDE_TIMEOUT_MS = 40000;    // 40s Claude timeout with MAX_TOTAL=1: 9+40+4=53s, under watchdog
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
@@ -56,6 +56,17 @@ function buildTranscriptText(callMeta, rawTranscript) {
 async function processOneCall(diio, settings, callId, callType, orgId, client, apiKey) {
   const processedTable = adminTable("diio_processed_calls");
   const diioId = `${callType}_${callId}`;
+
+  // Check if a review was already created for this call (cron timed out after insert but before status update)
+  // If so, just mark completed and skip re-processing to avoid duplicate reviews
+  try {
+    const existing = await processedTable.select("call_review_id,status", `org_id=eq.${orgId}&diio_call_id=eq.${diioId}&limit=1`);
+    if (Array.isArray(existing) && existing[0]?.call_review_id) {
+      console.log(`[cron] ${diioId}: review already exists (${existing[0].call_review_id}), marking completed`);
+      await processedTable.update({ status: "completed" }, `org_id=eq.${orgId}&diio_call_id=eq.${diioId}`).catch(() => {});
+      return true;
+    }
+  } catch { /* non-blocking */ }
 
   // Mark as processing
   try {
