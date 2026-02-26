@@ -6,9 +6,9 @@ import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DAYS_BACK = 30;    // scan last 30 days for new calls
-const MAX_PER_AE = 1;    // 1 call per AE per daily run (~20s each, stays within 60s Vercel limit)
-                         // With 5 AEs this reviews 5 calls/day → each AE gets 5 reviews over 5 days
+const DAYS_BACK = 7;     // scan last 7 days (keeps listing fast — ~2-4 API pages)
+const MAX_PER_AE = 1;    // 1 call per AE per run for fair distribution
+const MAX_TOTAL = 1;     // hard cap: 1 call total per run (listing ~30s + Claude ~20s ≈ 50s < 60s limit)
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
@@ -243,6 +243,7 @@ export default async function handler(req, res) {
         console.log(`[cron] ${queue.length} new calls for ${client} across ${Object.keys(byAE).length} AEs, processing ${toProcess.length}`);
 
         for (const { callId, callType } of toProcess) {
+          if (summary.callsProcessed + summary.callsFailed >= MAX_TOTAL) break;
           const ok = await processOneCall(diio, settings, callId, callType, orgId, client, apiKey);
           if (ok) summary.callsProcessed++;
           else summary.callsFailed++;
