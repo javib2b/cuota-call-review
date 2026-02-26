@@ -1,5 +1,5 @@
 // Gong settings CRUD — admin only, per-client
-import { authenticateUser, adminTable } from "../lib/supabase.js";
+import { authenticateUser, adminTable } from "../_lib/supabase.js";
 
 export default async function handler(req, res) {
   // CORS

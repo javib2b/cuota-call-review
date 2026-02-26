@@ -1,9 +1,9 @@
 // Manual Gong sync endpoint — per-client
 // GET /api/gong/sync?client=11x — list recent Gong calls with processing status
 // POST /api/gong/sync — process a single call (body: { callId, client })
-import { authenticateUser, adminTable } from "../lib/supabase.js";
-import { createGongClient, buildSpeakerMap, formatTranscript } from "../lib/gong.js";
-import { analyzeTranscript, computeScores, buildCallData } from "../lib/analyze.js";
+import { authenticateUser, adminTable } from "../_lib/supabase.js";
+import { createGongClient, buildSpeakerMap, formatTranscript } from "../_lib/gong.js";
+import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze.js";
 
 async function getGongSettings(orgId, client) {
   const table = adminTable("gong_settings");

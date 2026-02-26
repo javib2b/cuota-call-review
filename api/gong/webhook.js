@@ -1,9 +1,9 @@
 // Gong webhook handler — receives call completion notifications
 // Uses waitUntil for background processing so we can return 200 immediately to Gong
 import { waitUntil } from "@vercel/functions";
-import { adminTable } from "../lib/supabase.js";
-import { createGongClient, buildSpeakerMap, formatTranscript } from "../lib/gong.js";
-import { analyzeTranscript, computeScores, buildCallData } from "../lib/analyze.js";
+import { adminTable } from "../_lib/supabase.js";
+import { createGongClient, buildSpeakerMap, formatTranscript } from "../_lib/gong.js";
+import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze.js";
 
 async function findOrCreateRep(repName, orgId) {
   if (!repName || !orgId) return null;

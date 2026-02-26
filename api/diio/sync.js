@@ -1,9 +1,9 @@
 // Diio sync endpoint — per-client
 // GET /api/diio/sync?client=Acme — list recent meetings + phone calls with processing status
 // POST /api/diio/sync — process a single call (body: { callId, callType, client })
-import { authenticateUser, adminTable } from "../lib/supabase.js";
-import { createDiioClient, refreshDiioToken } from "../lib/diio.js";
-import { analyzeTranscript, computeScores, buildCallData } from "../lib/analyze.js";
+import { authenticateUser, adminTable } from "../_lib/supabase.js";
+import { createDiioClient, refreshDiioToken } from "../_lib/diio.js";
+import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze.js";
 
 async function getDiioSettings(orgId, client) {
   const table = adminTable("diio_settings");

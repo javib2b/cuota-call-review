@@ -1,7 +1,7 @@
 // POST /api/analyze — analyze a transcript with Claude (server-side)
 // Body: { transcript, apiKey? }
 // Uses ANTHROPIC_API_KEY env var, falls back to user-provided apiKey
-import { authenticateUser } from "./lib/supabase.js";
+import { authenticateUser } from "./_lib/supabase.js";
 
 const ANALYSIS_PROMPT = `You are an expert sales call reviewer using the Cuota scoring rubric. Analyze the following sales call transcript.
 

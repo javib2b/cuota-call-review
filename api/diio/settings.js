@@ -1,6 +1,6 @@
 // Diio settings CRUD — admin only, per-client
-import { authenticateUser, adminTable } from "../lib/supabase.js";
-import { refreshDiioToken } from "../lib/diio.js";
+import { authenticateUser, adminTable } from "../_lib/supabase.js";
+import { refreshDiioToken } from "../_lib/diio.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");

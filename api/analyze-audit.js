@@ -1,7 +1,7 @@
 // POST /api/analyze-audit — consolidated audit analysis endpoint
 // Body: { type, client, data }
 // type: "gtm_strategy" | "tof" | "hiring" | "metrics"
-import { authenticateUser } from "./lib/supabase.js";
+import { authenticateUser } from "./_lib/supabase.js";
 
 const PROMPTS = {
   gtm_strategy: `You are an expert B2B GTM strategist. Evaluate the following GTM strategy inputs for {CLIENT} and score each dimension of their go-to-market strategy.

@@ -1,6 +1,6 @@
 // POST /api/analyze-doc — analyze a sales enablement document with Claude
 // Body: { content, docType, title? }
-import { authenticateUser } from "./lib/supabase.js";
+import { authenticateUser } from "./_lib/supabase.js";
 
 const DOC_ANALYSIS_PROMPT = `You are an expert sales enablement consultant. Analyze the following sales document and provide a thorough quality audit.
 

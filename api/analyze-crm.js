@@ -1,6 +1,6 @@
 // POST /api/analyze-crm — analyze CRM pipeline data with Claude
 // Body: { client, crmData, snapshotDate }
-import { authenticateUser } from "./lib/supabase.js";
+import { authenticateUser } from "./_lib/supabase.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
