@@ -161,24 +161,37 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const summary = { orgsChecked: 0, orgsProcessed: 0, callsProcessed: 0, callsFailed: 0 };
+  const summary = { orgsChecked: 0, orgsProcessed: 0, callsProcessed: 0, callsFailed: 0, lastStep: "init" };
 
   const t0 = Date.now();
   const elapsed = () => `+${((Date.now() - t0) / 1000).toFixed(1)}s`;
 
+  // Watchdog: respond at 55s with whatever we have rather than letting Vercel kill at 60s
+  let responded = false;
+  const watchdog = setTimeout(() => {
+    if (!responded) {
+      responded = true;
+      console.error(`[cron] WATCHDOG triggered at ${elapsed()} — lastStep: ${summary.lastStep}`);
+      res.status(200).json({ ok: false, timedOut: true, ...summary });
+    }
+  }, 55000);
+
   try {
     console.log(`[cron] start`);
+    summary.lastStep = "loading settings";
     const allSettings = await adminTable("diio_settings").select("*");
     if (!Array.isArray(allSettings) || allSettings.length === 0) {
       return res.status(200).json({ message: "No Diio integrations configured", ...summary });
     }
     console.log(`[cron] settings loaded ${elapsed()}`);
+    summary.lastStep = "settings loaded";
 
     for (const settings of allSettings) {
       const { org_id: orgId, client } = settings;
       summary.orgsChecked++;
 
       try {
+        summary.lastStep = `getOrgApiKey:${orgId}`;
         const apiKey = await getOrgApiKey(orgId);
         console.log(`[cron] apiKey ${apiKey ? "ok" : "missing"} ${elapsed()}`);
         if (!apiKey) {
@@ -190,6 +203,7 @@ export default async function handler(req, res) {
         // Without this, both parallel listing calls can hit 401 simultaneously,
         // triggering concurrent onRefresh calls that race + double the latency (40s+ just for listing).
         // Proactive refresh is ~3s once and prevents any 401 mid-listing.
+        summary.lastStep = `tokenRefresh:${client}`;
         try {
           console.log(`[cron] refreshing token ${elapsed()}`);
           const tokenData = await refreshDiioToken(
@@ -225,6 +239,7 @@ export default async function handler(req, res) {
         // Fetch one page of recent calls in parallel — newest-first, 50 items each
         // One page is enough since the 7-day window fits well within the first 50 results
         const cutoffMs = Date.now() - DAYS_BACK * 24 * 60 * 60 * 1000;
+        summary.lastStep = `listing:${client}`;
         console.log(`[cron] listing calls ${elapsed()}`);
         const [meetingPage, phoneCallPage] = await Promise.all([
           diio.listMeetings(1, 50).catch((e) => { console.warn(`[cron] meetings list err: ${e.message}`); return { meetings: [] }; }),
@@ -303,9 +318,11 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ ok: true, ...summary });
+    clearTimeout(watchdog);
+    if (!responded) { responded = true; return res.status(200).json({ ok: true, ...summary }); }
   } catch (err) {
     console.error("[cron] Fatal:", err.message);
-    return res.status(500).json({ error: err.message, ...summary });
+    clearTimeout(watchdog);
+    if (!responded) { responded = true; return res.status(500).json({ error: err.message, ...summary }); }
   }
 }
