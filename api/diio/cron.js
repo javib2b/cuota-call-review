@@ -8,9 +8,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.s
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DAYS_BACK = 7;       // scan last 7 days
 const MAX_PER_AE = 1;      // 1 call per AE per run for fair distribution
-const MAX_TOTAL = 2;       // 2 calls per run: listing ~3s + overhead ~5s + 2×Claude ~20s = ~48s, safely under 60s limit
+const MAX_TOTAL = 2;       // 2 calls per run: refresh ~3s + listing ~2s + 2×Claude ~20s ≈ 45s, under 60s limit
 const MAX_TRANSCRIPT_CHARS = 30000; // truncate transcripts to keep Claude under ~15s
-const CLAUDE_TIMEOUT_MS = 30000;    // abort Claude if it takes longer than 30s — leaves time for 2nd call
+const CLAUDE_TIMEOUT_MS = 25000;    // 25s Claude timeout: leaves room for 2 calls + overhead in 60s
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
@@ -186,18 +186,26 @@ export default async function handler(req, res) {
           continue;
         }
 
-        // Ensure valid access token
-        if (!settings.access_token) {
+        // Always proactively refresh the token before listing.
+        // Without this, both parallel listing calls can hit 401 simultaneously,
+        // triggering concurrent onRefresh calls that race + double the latency (40s+ just for listing).
+        // Proactive refresh is ~3s once and prevents any 401 mid-listing.
+        try {
+          console.log(`[cron] refreshing token ${elapsed()}`);
           const tokenData = await refreshDiioToken(
             settings.subdomain, settings.client_id, settings.client_secret, settings.refresh_token
           );
           settings.access_token = tokenData.access_token;
           settings.refresh_token = tokenData.refresh_token || settings.refresh_token;
           await saveTokens(orgId, client, settings.access_token, settings.refresh_token);
+          console.log(`[cron] token refreshed ${elapsed()}`);
+        } catch (e) {
+          console.warn(`[cron] proactive token refresh failed: ${e.message} — using stored token`);
+          // Fall through: stored token might still be valid; onRefresh handles per-call 401s
         }
 
         const onRefresh = async () => {
-          console.log(`[cron] token refresh triggered ${elapsed()}`);
+          console.log(`[cron] reactive token refresh ${elapsed()}`);
           try {
             const tokenData = await refreshDiioToken(
               settings.subdomain, settings.client_id, settings.client_secret, settings.refresh_token
@@ -205,10 +213,9 @@ export default async function handler(req, res) {
             settings.access_token = tokenData.access_token;
             settings.refresh_token = tokenData.refresh_token || settings.refresh_token;
             await saveTokens(orgId, client, settings.access_token, settings.refresh_token);
-            console.log(`[cron] token refreshed ${elapsed()}`);
             return settings.access_token;
           } catch (e) {
-            console.warn(`[cron] token refresh failed: ${e.message} ${elapsed()}`);
+            console.warn(`[cron] reactive refresh failed: ${e.message}`);
             return null;
           }
         };
