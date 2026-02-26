@@ -6,6 +6,15 @@ import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// AbortController-based fetch with timeout (setTimeout is universally supported)
+function fetchWithTimeout(url, options, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error(`Fetch timed out after ${ms}ms`)), ms);
+  return fetch(url, { ...options, signal: controller.signal })
+    .then((r) => { clearTimeout(timer); return r; })
+    .catch((e) => { clearTimeout(timer); throw e; });
+}
 const DAYS_BACK = 7;       // scan last 7 days
 const MAX_PER_AE = 1;      // 1 call per AE per run for fair distribution
 const MAX_TOTAL = 1;       // 1 call per run: setup ~9s + Claude up to 40s + DB ~4s ≈ 53s, under 60s limit
@@ -18,9 +27,9 @@ async function getOrgApiKey(orgId) {
   try {
     const profiles = await adminTable("profiles").select("id", `org_id=eq.${orgId}&role=in.(admin,manager)&order=created_at.asc&limit=1`);
     if (!Array.isArray(profiles) || profiles.length === 0) return null;
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${profiles[0].id}`, {
+    const r = await fetchWithTimeout(`${SUPABASE_URL}/auth/v1/admin/users/${profiles[0].id}`, {
       headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-    });
+    }, 8000);
     if (!r.ok) return null;
     const user = await r.json();
     return user.user_metadata?.api_key || null;
@@ -81,10 +90,9 @@ async function processOneCall(diio, settings, callId, callType, orgId, client, a
   try {
     const endpoint = callType === "meeting" ? "meetings" : "phone_calls";
     console.log(`[cron] ${diioId}: fetching metadata ${pe()}`);
-    const r = await fetch(`https://${settings.subdomain}.diio.com/api/external/v1/${endpoint}/${callId}`, {
+    const r = await fetchWithTimeout(`https://${settings.subdomain}.diio.com/api/external/v1/${endpoint}/${callId}`, {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${settings.access_token}` },
-      signal: AbortSignal.timeout(15000),
-    });
+    }, 10000);
     if (!r.ok) throw new Error(`Diio ${endpoint}/${callId} returned ${r.status}`);
     const callMeta = await r.json();
 

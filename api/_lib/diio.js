@@ -1,16 +1,24 @@
 // Diio API client for fetching meetings, phone calls, and transcripts
 
-const FETCH_TIMEOUT_MS = 15000; // 15s per individual Diio HTTP call
+const FETCH_TIMEOUT_MS = 10000; // 10s per individual Diio HTTP call
+
+// AbortController-based fetch timeout (more reliable than AbortSignal.timeout in some runtimes)
+function fetchWithTimeout(url, options, ms) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error(`Fetch timed out after ${ms}ms: ${url}`)), ms);
+  return fetch(url, { ...options, signal: controller.signal })
+    .then((r) => { clearTimeout(timer); return r; })
+    .catch((e) => { clearTimeout(timer); throw e; });
+}
 
 // Refresh an expired Diio access token using long-lived credentials
 export async function refreshDiioToken(subdomain, clientId, clientSecret, refreshToken) {
   const baseUrl = `https://${subdomain}.diio.com/api/external`;
-  const r = await fetch(`${baseUrl}/refresh_token`, {
+  const r = await fetchWithTimeout(`${baseUrl}/refresh_token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken }),
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
+  }, FETCH_TIMEOUT_MS);
   if (!r.ok) {
     const body = await r.text().catch(() => "");
     throw new Error(`Diio token refresh failed (${r.status}): ${body || r.statusText}`);
@@ -25,15 +33,14 @@ export function createDiioClient(subdomain, accessToken, onRefresh) {
   let currentToken = accessToken;
 
   async function diioFetch(path, options = {}, isRetry = false) {
-    const r = await fetch(`${baseUrl}${path}`, {
+    const r = await fetchWithTimeout(`${baseUrl}${path}`, {
       ...options,
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${currentToken}`,
         ...options.headers,
       },
-    });
+    }, FETCH_TIMEOUT_MS);
 
     if (r.status === 401 && !isRetry && onRefresh) {
       const newToken = await onRefresh();
