@@ -400,7 +400,7 @@ function CategoryBar({ category, scores, onScoreChange }) {
 }
 
 // ==================== SAVED CALLS ====================
-function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient, pastClients, onArchiveClient, onRestoreClient }) {
+function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient, pastClients, onArchiveClient, onRestoreClient, onClientClick }) {
   const grouped = groupCallsByClientAndAE(calls, [...clients, ...(pastClients || [])]);
 
   const breadcrumb = (
@@ -432,7 +432,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       const isEmpty = callCount === 0;
       const logoUrl = getClientLogo(client);
       return (
-        <div key={client} style={{ position: "relative", background: isPast ? "#fafafa" : "#FFFFFF", border: `1px solid ${isPast ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.08)"}`, borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isPast ? 0.65 : (isEmpty ? 0.5 : 1), transition: "all 0.2s", boxShadow: isEmpty || isPast ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && setFolderClient(client)}>
+        <div key={client} style={{ position: "relative", background: isPast ? "#fafafa" : "#FFFFFF", border: `1px solid ${isPast ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.08)"}`, borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isPast ? 0.65 : (isEmpty ? 0.5 : 1), transition: "all 0.2s", boxShadow: isEmpty || isPast ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
           <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
             {isPast ? (
               onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.1)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
@@ -1474,7 +1474,7 @@ function AuditStatusBadge({ score }) {
   return <span style={{ fontSize: 11, fontWeight: 600, color, background: bg, padding: "2px 8px", borderRadius: 6 }}>{label}</span>;
 }
 
-function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, tofAssessments, hiringAssessments, metricsAssessments, clients, onNavigate }) {
+function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, tofAssessments, hiringAssessments, metricsAssessments, clients, onNavigate, onClientClick }) {
   const latestScore = (arr) => arr.length > 0 ? (arr[0].overall_score || null) : null;
   const avgScore = (arr) => {
     const scores = arr.map(a => a.overall_score).filter(Boolean);
@@ -1576,7 +1576,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
             </div>
             {clientHealth.map((ch, i) => (
               <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{ch.client}</span>
+                <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#31CE81" : "#1A2B3C", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
                 {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
                   <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
                 ))}
@@ -1614,13 +1614,22 @@ const DOC_TYPES = [
 
 // ==================== ENABLEMENT PAGE ====================
 const ENABLEMENT_DOC_TYPES = [
-  { id: "pitch_deck", name: "Pitch Deck" },
-  { id: "battle_card", name: "Battle Card" },
-  { id: "email_template", name: "Email Template" },
-  { id: "call_script", name: "Call Script" },
-  { id: "playbook", name: "Sales Playbook" },
-  { id: "case_study", name: "Case Study" },
-  { id: "proposal", name: "Proposal Template" },
+  // Enablement
+  { id: "pitch_deck", name: "Pitch Deck", category: "enablement" },
+  { id: "battle_card", name: "Battle Card", category: "enablement" },
+  { id: "email_template", name: "Email Template", category: "enablement" },
+  { id: "call_script", name: "Call Script", category: "enablement" },
+  { id: "playbook", name: "Sales Playbook", category: "enablement" },
+  { id: "proposal", name: "Proposal Template", category: "enablement" },
+  // Marketing
+  { id: "case_study", name: "Case Study", category: "marketing" },
+  { id: "one_pager", name: "One-Pager", category: "marketing" },
+  { id: "marketing_deck", name: "Marketing Deck", category: "marketing" },
+  { id: "customer_story", name: "Customer Story", category: "marketing" },
+  // Training
+  { id: "training_doc", name: "Training Document", category: "training" },
+  { id: "onboarding", name: "Onboarding Guide", category: "training" },
+  { id: "certification", name: "Certification / Quiz", category: "training" },
 ];
 
 function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate }) {
@@ -1849,6 +1858,138 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
         <button onClick={() => setMode("list")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
         <button onClick={saveDoc} disabled={saving} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", opacity: saving ? 0.7 : 1 }}>{saving ? "Saving..." : isViewMode ? "Update Doc" : "Save Doc"}</button>
       </div>
+    </div>
+  );
+}
+
+// ==================== CLIENT PROFILE PAGE ====================
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate }) {
+  const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
+  const docCategory = (docType) => ENABLEMENT_DOC_TYPES.find(t => t.id === docType)?.category || "enablement";
+
+  const clientCalls = savedCalls
+    .filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()))
+    .sort((a, b) => new Date(b.call_date || b.created_at) - new Date(a.call_date || a.created_at));
+
+  const clientDocs = enablementDocs.filter(d => d.client === client);
+  const enablementList = clientDocs.filter(d => docCategory(d.doc_type) === "enablement");
+  const marketingList = clientDocs.filter(d => docCategory(d.doc_type) === "marketing");
+  const trainingList = clientDocs.filter(d => docCategory(d.doc_type) === "training");
+
+  const avgCallScore = clientCalls.length > 0
+    ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length)
+    : null;
+
+  const logoUrl = getClientLogo(client);
+
+  const docRow = (doc) => (
+    <div key={doc.id} onClick={() => onNavigate("enablement")} style={{ background: "#fafafa", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📄</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</div>
+        <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>{docTypeLabel(doc.doc_type)}{doc.created_at ? ` · ${new Date(doc.created_at).toLocaleDateString()}` : ""}</div>
+      </div>
+      {doc.overall_score
+        ? <div style={{ fontSize: 14, fontWeight: 700, color: getScoreColor(doc.overall_score), fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>{doc.overall_score}%</div>
+        : <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", flexShrink: 0 }}>Not scored</span>}
+    </div>
+  );
+
+  const Section = ({ title, icon, accent, items, emptyText, children, action }) => (
+    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: items.length > 0 ? 14 : 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 16 }}>{icon}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{title}</span>
+          {items.length > 0 && <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", background: "rgba(0,0,0,0.05)", borderRadius: 10, padding: "2px 8px" }}>{items.length}</span>}
+        </div>
+        {action}
+      </div>
+      {items.length === 0
+        ? <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: items.length === 0 ? "10px 0 0" : 0, textAlign: "center", padding: "12px 0" }}>{emptyText}</p>
+        : <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{children}</div>}
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Breadcrumb */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
+        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Clients</span>
+        <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
+        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{client}</span>
+      </div>
+
+      {/* Header card */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 22px" }}>
+        <div style={{ width: 56, height: 56, borderRadius: 14, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+          {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 38, height: 38, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} /> : null}
+          <span style={{ fontSize: 22, fontWeight: 700, color: "#31CE81" }}>{client.charAt(0)}</span>
+        </div>
+        <div style={{ flex: 1 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1A2B3C", margin: "0 0 4px" }}>{client}</h2>
+          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>
+            {clientCalls.length} call{clientCalls.length !== 1 ? "s" : ""} · {clientDocs.length} document{clientDocs.length !== 1 ? "s" : ""}
+          </div>
+        </div>
+        {avgCallScore !== null && (
+          <div style={{ textAlign: "center", flexShrink: 0 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: getScoreColor(avgCallScore), fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{avgCallScore}%</div>
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", marginTop: 4 }}>Avg Call Score</div>
+          </div>
+        )}
+      </div>
+
+      {/* Call Reviews */}
+      <Section
+        title="Call Reviews" icon="📞" items={clientCalls}
+        emptyText="No call reviews yet for this client."
+        action={clientCalls.length > 0 && <button onClick={onBrowseByRep} style={{ fontSize: 12, fontWeight: 600, color: "#31CE81", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Browse by Rep →</button>}
+      >
+        {clientCalls.map(call => (
+          <div key={call.id} onClick={() => onViewCall(call)} style={{ background: "#fafafa", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+            <CircularScore score={call.overall_score || 0} size={40} strokeWidth={3} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", display: "flex", alignItems: "center", gap: 6 }}>
+                {call.category_scores?.rep_name || call.rep_name || "Unknown Rep"}
+                {call.category_scores?.rep_type === "SDR" && <span style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 4 }}>SDR</span>}
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+                {call.category_scores?.call_type || call.call_type || "Call"}
+                {call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}
+              </div>
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0), textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 0 }}>{getScoreLabel(call.overall_score || 0)}</div>
+          </div>
+        ))}
+      </Section>
+
+      {/* Enablement Documents */}
+      <Section
+        title="Enablement Documents" icon="📄" items={enablementList}
+        emptyText="No enablement documents uploaded yet."
+        action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
+      >
+        {enablementList.map(docRow)}
+      </Section>
+
+      {/* Marketing Materials */}
+      <Section
+        title="Marketing Materials" icon="📣" items={marketingList}
+        emptyText="No marketing materials uploaded yet."
+        action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
+      >
+        {marketingList.map(docRow)}
+      </Section>
+
+      {/* Training Documents */}
+      <Section
+        title="Training Documents" icon="🎓" items={trainingList}
+        emptyText="No training documents uploaded yet."
+        action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#8b5cf6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
+      >
+        {trainingList.map(docRow)}
+      </Section>
     </div>
   );
 }
@@ -3093,6 +3234,7 @@ export default function CuotaCallReview() {
   const [folderAE, setFolderAE] = useState(null);
   const [clients, setClients] = useState(loadClients);
   const [pastClients, setPastClients] = useState(loadPastClients);
+  const [selectedClientProfile, setSelectedClientProfile] = useState(null);
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -3588,7 +3730,7 @@ export default function CuotaCallReview() {
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
         {/* HOME PAGE — Executive Summary */}
-        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} />}
+        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} />}
 
         {/* INTAKE PAGE — New Assessment */}
         {page === "intake" && <IntakePage clients={clients} getValidToken={getValidToken} profile={profile} onBack={() => setPage("home")} onReportGenerated={(report) => { setCurrentReport(report); setPage("report"); loadGtmReports(); }} />}
@@ -3602,8 +3744,19 @@ export default function CuotaCallReview() {
         {/* TOP OF FUNNEL */}
         {page === "tof" && <TopOfFunnelPage assessments={tofAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadTofAssessments} />}
 
+        {/* CLIENT PROFILE */}
+        {page === "client" && selectedClientProfile && <ClientProfilePage
+          client={selectedClientProfile}
+          savedCalls={savedCalls}
+          enablementDocs={enablementDocs}
+          onBack={() => { setPage("calls"); setSelectedClientProfile(null); setFolderClient(null); setFolderAE(null); }}
+          onViewCall={(call) => { loadCallIntoReview(call); }}
+          onBrowseByRep={() => { setPage("calls"); setFolderClient(selectedClientProfile); setFolderAE(null); }}
+          onNavigate={(p) => setPage(p)}
+        />}
+
         {/* SALES READINESS */}
-        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} />}
+        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} />}
 
         {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
