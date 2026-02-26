@@ -6,9 +6,11 @@ import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DAYS_BACK = 7;     // scan last 7 days (keeps listing fast — ~2-4 API pages)
-const MAX_PER_AE = 1;    // 1 call per AE per run for fair distribution
-const MAX_TOTAL = 1;     // hard cap: 1 call total per run (listing ~30s + Claude ~20s ≈ 50s < 60s limit)
+const DAYS_BACK = 7;       // scan last 7 days
+const MAX_PER_AE = 1;      // 1 call per AE per run for fair distribution
+const MAX_TOTAL = 2;       // 2 calls per run: listing ~3s + overhead ~5s + 2×Claude ~20s = ~48s, safely under 60s limit
+const MAX_TRANSCRIPT_CHARS = 40000; // truncate long transcripts to keep Claude under ~20s
+const CLAUDE_TIMEOUT_MS = 45000;    // abort Claude if it takes longer than 45s
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
@@ -81,7 +83,17 @@ async function processOneCall(diio, settings, callId, callType, orgId, client, a
     if (!rawTranscript.trim()) throw new Error("Transcript is empty");
 
     const transcriptText = buildTranscriptText(callMeta, rawTranscript);
-    const aiResult = await analyzeTranscript(transcriptText, apiKey);
+
+    // Truncate very long transcripts to keep Claude under time budget
+    const transcriptForAnalysis = transcriptText.length > MAX_TRANSCRIPT_CHARS
+      ? transcriptText.slice(0, MAX_TRANSCRIPT_CHARS) + "\n\n[TRANSCRIPT TRUNCATED FOR LENGTH]"
+      : transcriptText;
+
+    // Race Claude against a timeout so we get a clean error instead of Vercel's hard cutoff
+    const aiResult = await Promise.race([
+      analyzeTranscript(transcriptForAnalysis, apiKey),
+      new Promise((_, reject) => setTimeout(() => reject(new Error(`Claude analysis timed out after ${CLAUDE_TIMEOUT_MS / 1000}s`)), CLAUDE_TIMEOUT_MS)),
+    ]);
     const computed = computeScores(aiResult);
 
     const sellers = callMeta.attendees?.sellers || [];
@@ -184,11 +196,21 @@ export default async function handler(req, res) {
 
         const diio = createDiioClient(settings.subdomain, settings.access_token, onRefresh);
 
-        // List recent calls in parallel
-        const [meetings, phoneCalls] = await Promise.all([
-          diio.listAllMeetings(DAYS_BACK).catch(() => []),
-          diio.listAllPhoneCalls(DAYS_BACK).catch(() => []),
+        // Fetch one page of recent calls in parallel — newest-first, 50 items each
+        // One page is enough since the 7-day window fits well within the first 50 results
+        const cutoffMs = Date.now() - DAYS_BACK * 24 * 60 * 60 * 1000;
+        const [meetingPage, phoneCallPage] = await Promise.all([
+          diio.listMeetings(1, 50).catch(() => ({ meetings: [] })),
+          diio.listPhoneCalls(1, 50).catch(() => ({ phone_calls: [] })),
         ]);
+        const meetings = (meetingPage.meetings || []).filter((m) => {
+          const d = new Date(m.scheduled_at || m.occurred_at || m.created_at).getTime();
+          return d > cutoffMs;
+        });
+        const phoneCalls = (phoneCallPage.phone_calls || []).filter((p) => {
+          const d = new Date(p.occurred_at || p.scheduled_at || p.created_at).getTime();
+          return d > cutoffMs;
+        });
 
         // Find which are already processed
         let processed = [];
@@ -197,12 +219,12 @@ export default async function handler(req, res) {
           if (!Array.isArray(processed)) processed = [];
         } catch { processed = []; }
 
-        // Exclude completed; retry failed ones
-        // Treat "processing" as stuck (and retryable) if older than 10 minutes — handles cron timeouts
+        // Exclude completed/skipped; retry failed ones
+        // Treat "processing" as stuck (retryable) if older than 10 minutes — handles cron timeouts
         const TEN_MIN = 10 * 60 * 1000;
         const doneIds = new Set(
           processed.filter((p) => {
-            if (p.status === "completed") return true;
+            if (p.status === "completed" || p.status === "skipped") return true;
             if (p.status === "processing") {
               const age = Date.now() - new Date(p.created_at).getTime();
               return age < TEN_MIN; // still actively processing (recent)
