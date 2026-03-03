@@ -319,7 +319,7 @@ function FileDropZone({ value, onChange, placeholder, minHeight = 220, accept = 
         value={value}
         onChange={e => { onChange(e.target.value); if (!e.target.value) setFileName(""); }}
         placeholder={placeholder}
-        style={{ width: "100%", minHeight, background: dragging ? "rgba(49,206,129,0.02)" : "#FFFFFF", border: "1px solid " + (dragging ? "rgba(49,206,129,0.4)" : "rgba(0,0,0,0.06)"), borderRadius: 12, padding: 16, fontSize: 13, color: "#1A2B3C", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.2s" }}
+        style={{ width: "100%", minHeight, background: dragging ? "rgba(49,206,129,0.02)" : "#FFFFFF", border: "1px solid " + (dragging ? "rgba(49,206,129,0.4)" : "rgba(0,0,0,0.06)"), borderRadius: 12, padding: 16, fontSize: 13, color: "#012441", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.2s" }}
       />
     </div>
   );
@@ -361,28 +361,28 @@ function AuthScreen({ onAuth }) {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
       <div style={{ width: 400, padding: 40 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", letterSpacing: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#012441", letterSpacing: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
           <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 4, letterSpacing: 1 }}>GTM Audit Engine</div>
         </div>
         <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 28 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "#FFFFFF", borderRadius: 10, padding: 4 }}>
             {["login", "signup"].map(m => (
-              <button key={m} onClick={() => { setMode(m); setError(""); setMessage(""); }} style={{ flex: 1, padding: "8px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, background: mode === m ? "rgba(0,0,0,0.06)" : "transparent", color: mode === m ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit" }}>{m === "login" ? "Log In" : "Sign Up"}</button>
+              <button key={m} onClick={() => { setMode(m); setError(""); setMessage(""); }} style={{ flex: 1, padding: "8px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, background: mode === m ? "rgba(0,0,0,0.06)" : "transparent", color: mode === m ? "#012441" : "rgba(0,0,0,0.35)", fontFamily: "inherit" }}>{m === "login" ? "Log In" : "Sign Up"}</button>
             ))}
           </div>
           {mode === "signup" && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Full Name</label>
-              <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Javier Ramirez" style={{ width: "100%", padding: "12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+              <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Javier Ramirez" style={{ width: "100%", padding: "12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
           )}
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" style={{ width: "100%", padding: "12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" style={{ width: "100%", padding: "12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <div style={{ marginBottom: 24 }}>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" onKeyDown={e => e.key === "Enter" && handleSubmit()} style={{ width: "100%", padding: "12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" onKeyDown={e => e.key === "Enter" && handleSubmit()} style={{ width: "100%", padding: "12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
           {message && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: "#1a7a42" }}>{message}</div>}
@@ -405,7 +405,7 @@ function CategoryBar({ category, scores, onScoreChange }) {
       <div onClick={() => setExpanded(!expanded)} style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", gap: 12 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{category.name}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{category.name}</span>
             <span style={{ fontSize: 12, padding: "2px 10px", borderRadius: 20, background: getScoreColor10(score) + "22", color: getScoreColor10(score), fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{score}/10</span>
           </div>
           <div style={{ height: 4, background: "rgba(0,0,0,0.08)", borderRadius: 4 }}><div style={{ height: "100%", width: pct + "%", background: getScoreColor10(score), borderRadius: 4, transition: "width 0.5s" }} /></div>
@@ -443,14 +443,14 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
   const breadcrumb = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#6366F1" : "#1A2B3C", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Clients</span>
+      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#6366F1" : "#012441", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Clients</span>
       {folderClient && <>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span onClick={() => setFolderAE(null)} style={{ color: folderAE ? "#6366F1" : "#1A2B3C", cursor: folderAE ? "pointer" : "default", fontWeight: 600 }}>{folderClient}</span>
+        <span onClick={() => setFolderAE(null)} style={{ color: folderAE ? "#6366F1" : "#012441", cursor: folderAE ? "pointer" : "default", fontWeight: 600 }}>{folderClient}</span>
       </>}
       {folderAE && <>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{folderAE}</span>
+        <span style={{ color: "#012441", fontWeight: 600 }}>{folderAE}</span>
       </>}
     </div>
   );
@@ -484,7 +484,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
               <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#6366F1", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.45)" : "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.45)" : "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
               {callCount > 0 ? (
                 <div style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{callCount} call{callCount !== 1 ? "s" : ""} · {aeCount} rep{aeCount !== 1 ? "s" : ""}</div>
               ) : (
@@ -518,7 +518,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
     return (
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Clients</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: 0 }}>Clients</h2>
         </div>
         {(() => {
           const totalCalls = calls.length;
@@ -527,7 +527,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           const activeClientCount = clients.length;
           return totalCalls > 0 ? (
             <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginBottom: 18, display: "flex", gap: 6, flexWrap: "wrap" }}>
-              <span style={{ fontWeight: 600, color: "#1A2B3C" }}>{activeClientCount} {activeClientCount === 1 ? "Client" : "Clients"}</span>
+              <span style={{ fontWeight: 600, color: "#012441" }}>{activeClientCount} {activeClientCount === 1 ? "Client" : "Clients"}</span>
               <span style={{ color: "rgba(0,0,0,0.2)" }}>·</span>
               <span>{totalCalls} {totalCalls === 1 ? "Review" : "Reviews"}</span>
               <span style={{ color: "rgba(0,0,0,0.2)" }}>·</span>
@@ -656,7 +656,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" }} onClick={() => setOpen(v => !v)}>
             <CircularScore score={ae.avg} size={44} strokeWidth={4} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C" }}>{ae.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#012441" }}>{ae.name}</div>
               <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{ae.calls.length} call{ae.calls.length !== 1 ? "s" : ""} · avg {getScoreLabel(ae.avg)}</div>
             </div>
             <button onClick={(e) => { e.stopPropagation(); setFolderAE(ae.name); }} style={{ padding: "5px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Rep Profile →</button>
@@ -669,7 +669,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 <div key={call.id} onClick={() => onSelect(call)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 16px 11px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.02)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <CircularScore score={call.overall_score || 0} size={38} strokeWidth={3} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>{call.call_type} · {call.call_date}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -688,7 +688,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       <div>
         {breadcrumb}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>{folderClient}</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: 0 }}>{folderClient}</h2>
           {newReviewBtn}
         </div>
         {allEntries.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls for this client.</p>}
@@ -760,7 +760,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 24, marginBottom: 16, display: "flex", alignItems: "center", gap: 20 }}>
         <CircularScore score={latestScore} size={80} strokeWidth={6} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C" }}>{folderAE}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#012441" }}>{folderAE}</div>
           <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", marginTop: 4 }}>
             {sortedAeCalls.length} call{sortedAeCalls.length !== 1 ? "s" : ""} reviewed
           </div>
@@ -854,7 +854,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           <div key={call.id} onClick={() => onSelect(call)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
             <CircularScore score={call.overall_score || 0} size={50} strokeWidth={4} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{call.prospect_company || "Unknown Company"}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{call.prospect_company || "Unknown Company"}</div>
               <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{call.call_type} | {call.call_date}</div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -903,12 +903,12 @@ function InviteModal({ token, profile, onClose }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 440, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Invite Team Members</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#012441", margin: 0 }}>Invite Team Members</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>\u2715</button>
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="colleague@company.com" style={{ flex: 1, padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-          <select value={role} onChange={e => setRole(e.target.value)} style={{ padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none" }}>
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="colleague@company.com" style={{ flex: 1, padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
+          <select value={role} onChange={e => setRole(e.target.value)} style={{ padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none" }}>
             <option value="rep" style={{ background: "#FFFFFF" }}>Rep</option>
             <option value="manager" style={{ background: "#FFFFFF" }}>Manager</option>
           </select>
@@ -921,7 +921,7 @@ function InviteModal({ token, profile, onClose }) {
             <h4 style={{ fontSize: 12, fontWeight: 600, color: "rgba(0,0,0,0.45)", margin: "16px 0 8px", textTransform: "uppercase", letterSpacing: 1 }}>Pending Invites</h4>
             {invites.map(inv => (
               <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #FFFFFF" }}>
-                <span style={{ fontSize: 13, color: "#1A2B3C" }}>{inv.email}</span>
+                <span style={{ fontSize: 13, color: "#012441" }}>{inv.email}</span>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: inv.accepted ? "rgba(49,206,129,0.15)" : "rgba(234,179,8,0.15)", color: inv.accepted ? "#31CE81" : "#eab308" }}>{inv.accepted ? "Joined" : "Pending"}</span>
                   <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{inv.role}</span>
@@ -1013,7 +1013,7 @@ function GongSettingsModal({ token, getValidToken, onClose, client }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 460, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Gong Integration{client ? ` \u2014 ${client}` : ""}</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#012441", margin: 0 }}>Gong Integration{client ? ` \u2014 ${client}` : ""}</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
         </div>
 
@@ -1029,19 +1029,19 @@ function GongSettingsModal({ token, getValidToken, onClose, client }) {
 
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Access Key</label>
-              <input value={accessKey} onChange={e => setAccessKey(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Gong access key"} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+              <input value={accessKey} onChange={e => setAccessKey(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Gong access key"} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Access Key Secret</label>
-              <input type="password" value={accessKeySecret} onChange={e => setAccessKeySecret(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Gong access key secret"} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+              <input type="password" value={accessKeySecret} onChange={e => setAccessKeySecret(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Gong access key secret"} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Gong API Base URL</label>
-              <input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+              <input value={baseUrl} onChange={e => setBaseUrl(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, cursor: "pointer" }}>
               <input type="checkbox" checked={autoReview} onChange={() => setAutoReview(!autoReview)} style={{ accentColor: "#31CE81", width: 16, height: 16 }} />
-              <span style={{ fontSize: 13, color: "#1A2B3C" }}>Auto-review new calls via webhook</span>
+              <span style={{ fontSize: 13, color: "#012441" }}>Auto-review new calls via webhook</span>
             </label>
 
             {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
@@ -1126,7 +1126,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 560, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Sync Gong Calls{client ? ` \u2014 ${client}` : ""}</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#012441", margin: 0 }}>Sync Gong Calls{client ? ` \u2014 ${client}` : ""}</h3>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={loadGongCalls} disabled={loading} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{loading ? "..." : "Refresh"}</button>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
@@ -1156,7 +1156,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
             <div key={call.gongCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FAFAFA", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, marginBottom: 4 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#012441", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
                   {call.callType && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 6, fontWeight: 600, flexShrink: 0, background: call.callType === "Discovery" ? "rgba(59,130,246,0.1)" : call.callType === "Follow-up" ? "rgba(139,92,246,0.1)" : call.callType === "Demo" ? "rgba(234,179,8,0.1)" : call.callType === "Negotiation" ? "rgba(249,115,22,0.1)" : "rgba(49,206,129,0.1)", color: call.callType === "Discovery" ? "#3b82f6" : call.callType === "Follow-up" ? "#8b5cf6" : call.callType === "Demo" ? "#ca8a04" : call.callType === "Negotiation" ? "#ea580c" : "#31CE81" }}>{call.callType}</span>}
                 </div>
                 <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
@@ -1186,7 +1186,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                   <div key={ae} style={{ marginBottom: 8, border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, overflow: "hidden" }}>
                     <button onClick={() => setOpenAEs(p => ({ ...p, [ae]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "#F7F7F8", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>{isOpen ? "▾" : "▸"}</span>
-                      <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>{ae}</span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#012441" }}>{ae}</span>
                       <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginRight: 6 }}>{aeCalls.length} call{aeCalls.length !== 1 ? "s" : ""}</span>
                       {newCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(49,206,129,0.12)", color: "#31CE81", fontWeight: 600 }}>{newCount} new</span>}
                       {doneCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(49,206,129,0.1)", color: "#31CE81", fontWeight: 600 }}>{doneCount} reviewed</span>}
@@ -1289,14 +1289,14 @@ function DiioSettingsModal({ getValidToken, onClose, client }) {
     } catch (e) { setError(e.message); }
   };
 
-  const inputStyle = { width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const inputStyle = { width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
   const labelStyle = { fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 480, maxHeight: "85vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Diio Integration{client ? ` \u2014 ${client}` : ""}</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#012441", margin: 0 }}>Diio Integration{client ? ` \u2014 ${client}` : ""}</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
         </div>
 
@@ -1404,7 +1404,7 @@ function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 28, width: 580, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Sync Diio Calls{client ? ` \u2014 ${client}` : ""}</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#012441", margin: 0 }}>Sync Diio Calls{client ? ` \u2014 ${client}` : ""}</h3>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={loadDiioCalls} disabled={loading} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.5)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{loading ? "..." : "Refresh"}</button>
             <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.45)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
@@ -1425,7 +1425,7 @@ function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                 <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}{sellerFilter ? ` for ${sellerFilter}` : " from last 30 days"}</div>
                 {sellerNames.length > 1 && (
-                  <select value={sellerFilter} onChange={e => setSellerFilter(e.target.value)} style={{ padding: "5px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "#FFFFFF", color: "#1A2B3C", fontSize: 12, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+                  <select value={sellerFilter} onChange={e => setSellerFilter(e.target.value)} style={{ padding: "5px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "#FFFFFF", color: "#012441", fontSize: 12, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
                     <option value="">All Sellers</option>
                     {sellerNames.map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
@@ -1435,7 +1435,7 @@ function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                 <div key={call.diioCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#012441", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
                       {typeBadge(call.callType)}
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
@@ -1517,9 +1517,9 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
           <span onClick={() => setSelectedClient(null)} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
           <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-          <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{selectedClient}</span>
+          <span style={{ color: "#012441", fontWeight: 600 }}>{selectedClient}</span>
         </div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>{selectedClient} &mdash; Integrations</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 20px" }}>{selectedClient} &mdash; Integrations</h2>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Gong card */}
@@ -1527,7 +1527,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <span style={{ fontSize: 24 }}>{"\uD83D\uDD17"}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>Gong</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#012441" }}>Gong</div>
                 <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
                   {gongCfg ? "Connected" : "Not connected"}
                   {gongCfg?.updated_at ? ` \u00B7 Updated ${new Date(gongCfg.updated_at).toLocaleDateString()}` : ""}
@@ -1557,7 +1557,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
               <span style={{ fontSize: 24 }}>{"📞"}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C" }}>Diio</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#012441" }}>Diio</div>
                 <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>
                   {diioCfg ? `Connected · ${diioCfg.subdomain}.diio.com` : "Not connected"}
                   {diioCfg?.updated_at ? ` \u00B7 Updated ${new Date(diioCfg.updated_at).toLocaleDateString()}` : ""}
@@ -1588,7 +1588,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
         <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 40 }}>Loading integrations...</p>
       ) : (
         <>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Integrations</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 20px" }}>Integrations</h2>
           <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "-12px 0 20px" }}>Configure Gong or Diio credentials per client to automatically import and review recorded calls.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {clients.map(name => {
@@ -1598,7 +1598,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
               return (
                 <div key={name} onClick={() => setSelectedClient(name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{"\u2699\uFE0F"}</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C", marginBottom: 8 }}>{name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#012441", marginBottom: 8 }}>{name}</div>
                   {connectedCount > 0 ? (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                       {gongCfg && (
@@ -1732,13 +1732,13 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1A2B3C", margin: "0 0 24px" }}>Dashboard</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 800, color: "#012441", margin: "0 0 24px" }}>Dashboard</h1>
 
       {/* Section A: Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
         <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Reviews This Month</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{reviewsThisMonth}</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "#012441", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{reviewsThisMonth}</div>
           <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 6 }}>last 30 days</div>
         </div>
         <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
@@ -1754,7 +1754,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
         </div>
         <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Active Clients</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "#012441", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
           <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 6 }}>in workspace</div>
         </div>
       </div>
@@ -1762,7 +1762,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
       {/* Section B: Recent Call Reviews */}
       <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>Recent Call Reviews</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#012441" }}>Recent Call Reviews</div>
           <button onClick={() => onNavigate("calls")} style={{ fontSize: 11, color: "#31CE81", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View all →</button>
         </div>
         {recentCalls.length === 0 ? (
@@ -1779,7 +1779,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
                     <CircularScore score={call.overall_score || 0} size={36} strokeWidth={3} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{client}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#012441" }}>{client}</div>
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{repName} · {call.call_type}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
@@ -1795,7 +1795,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
 
       {/* Section C: Needs Attention */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", marginBottom: 12 }}>Needs Attention</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#012441", marginBottom: 12 }}>Needs Attention</div>
         {needsAttention.length === 0 ? (
           <div style={{ background: "rgba(49,206,129,0.06)", border: "1px solid rgba(49,206,129,0.15)", borderRadius: 12, padding: "14px 18px", fontSize: 13, color: "#1a7a42", fontWeight: 500 }}>
             All clients are performing well 🎉
@@ -1805,7 +1805,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
             {needsAttention.map(({ client, avg }) => (
               <div key={client} style={{ background: "#fff", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>{client}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#012441" }}>{client}</div>
                   <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>avg {avg}%</div>
                 </div>
                 <button onClick={() => onClientClick && onClientClick(client)} style={{ fontSize: 11, color: "#31CE81", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View →</button>
@@ -1846,7 +1846,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 34, height: 34, borderRadius: 9, background: sec.accent, border: `1px solid ${sec.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{sec.icon}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{sec.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#012441" }}>{sec.label}</div>
                     </div>
                     {sec.score !== null
                       ? <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: getScoreColor(sec.score) }}>{sec.score}%</div>
@@ -1870,7 +1870,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
                   </div>
                   {clientHealth.map((ch, i) => (
                     <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
-                      <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#6366F1" : "#1A2B3C", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
+                      <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#6366F1" : "#012441", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
                       {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
                         <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
                       ))}
@@ -1986,7 +1986,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>Enablement</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 4px" }}>Enablement</h2>
             <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Audit your sales materials for quality, completeness, and buyer-centricity</p>
           </div>
           <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Upload Doc</button>
@@ -1994,7 +1994,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
         {docs.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
             <div style={{ fontSize: 40, marginBottom: 14 }}>📄</div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>No documents yet</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#012441", margin: "0 0 8px" }}>No documents yet</h3>
             <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Upload a pitch deck, battle card, or email template to get an AI quality audit.</p>
             <button onClick={startNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Upload First Doc</button>
           </div>
@@ -2006,7 +2006,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
                 <div key={doc.id} onClick={() => viewDoc(doc)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>📄</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</div>
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
                       <span>{docTypeLabel(doc.doc_type)}</span>
                       {doc.created_at && <span> · {new Date(doc.created_at).toLocaleDateString()}</span>}
@@ -2034,24 +2034,24 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
         <span onClick={() => setMode("list")} style={{ color: "#3b82f6", cursor: "pointer", fontWeight: 600 }}>Enablement</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{isViewMode ? selectedDoc.title : "New Document"}</span>
+        <span style={{ color: "#012441", fontWeight: 600 }}>{isViewMode ? selectedDoc.title : "New Document"}</span>
       </div>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Document Title</label>
-            <input value={docTitle} onChange={e => setDocTitle(e.target.value)} placeholder="e.g. Q1 2025 Pitch Deck" style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            <input value={docTitle} onChange={e => setDocTitle(e.target.value)} placeholder="e.g. Q1 2025 Pitch Deck" style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Client</label>
-            <select value={docClient} onChange={e => setDocClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!docClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: docClient ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+            <select value={docClient} onChange={e => setDocClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!docClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: docClient ? "#012441" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
               <option value="">Select client...</option>
               {clients.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Document Type</label>
-            <select value={docType} onChange={e => setDocType(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+            <select value={docType} onChange={e => setDocType(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
               {ENABLEMENT_DOC_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </div>
@@ -2072,12 +2072,12 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
             <CircularScore score={analysis.overall_score || 0} size={90} strokeWidth={6} label="quality" />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Document Quality Assessment</div>
-              <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+              <p style={{ fontSize: 14, color: "#012441", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
             </div>
           </div>
           {analysis.scores && (
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
-              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Category Breakdown</h4>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#012441", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Category Breakdown</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {Object.entries(analysis.scores).map(([key, val]) => {
                   const label = key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -2117,7 +2117,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {analysis.gaps.map((g, i) => (
                   <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: 14 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{g.title}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", marginBottom: 4 }}>{g.title}</div>
                     <p style={{ fontSize: 12, color: "rgba(0,0,0,0.6)", margin: "0 0 10px", lineHeight: 1.6 }}>{g.description}</p>
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 12px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8 }}>
                       <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, flexShrink: 0, paddingTop: 1 }}>Fix</span>
@@ -2247,7 +2247,7 @@ function ScoreTrendsChart({ repEntries }) {
           })()}
         </svg>
         {tooltip && (
-          <div style={{ position: "absolute", left: tooltip.x + 14, top: Math.max(4, tooltip.y - 52), background: "#1A2B3C", color: "#fff", borderRadius: 8, padding: "7px 11px", fontSize: 11, pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}>
+          <div style={{ position: "absolute", left: tooltip.x + 14, top: Math.max(4, tooltip.y - 52), background: "#012441", color: "#fff", borderRadius: 8, padding: "7px 11px", fontSize: 11, pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}>
             <div style={{ fontWeight: 700, color: tooltip.color, marginBottom: 2 }}>{tooltip.rep}</div>
             <div>{tooltip.callType} · <span style={{ fontWeight: 700 }}>{tooltip.score}%</span></div>
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, marginTop: 1 }}>{tooltip.date}</div>
@@ -2357,7 +2357,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     <div key={doc.id} onClick={() => onNavigate("enablement")} style={{ background: "#fafafa", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
       <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📄</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</div>
         <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>{docTypeLabel(doc.doc_type)}{doc.created_at ? ` · ${new Date(doc.created_at).toLocaleDateString()}` : ""}</div>
       </div>
       {doc.overall_score
@@ -2371,7 +2371,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: items.length > 0 ? 14 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 16 }}>{icon}</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{title}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#012441" }}>{title}</span>
           {items.length > 0 && <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", background: "rgba(0,0,0,0.05)", borderRadius: 10, padding: "2px 8px" }}>{items.length}</span>}
         </div>
         {action}
@@ -2388,7 +2388,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
         <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Clients</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{client}</span>
+        <span style={{ color: "#012441", fontWeight: 600 }}>{client}</span>
       </div>
 
       {/* Dark hero header */}
@@ -2436,7 +2436,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           ].map(card => (
             <div key={card.label} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${card.accent}` }}>
               <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(0,0,0,0.3)", marginBottom: 6 }}>{card.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#1A2B3C" }}>{card.value}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#012441" }}>{card.value}</div>
               {card.sub && <div style={{ fontSize: 10, color: card.accent, fontWeight: 600, marginTop: 2 }}>{card.sub}</div>}
             </div>
           ))}
@@ -2468,8 +2468,8 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
               <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5 }}>Rep Leaderboard</div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <input type="text" placeholder="Search reps…" value={repSearch} onChange={e => setRepSearch(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, outline: "none", width: 130, fontFamily: "inherit", color: "#1A2B3C" }} />
-                  <select value={repSort} onChange={e => setRepSort(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: "#1A2B3C", background: "#fff" }}>
+                  <input type="text" placeholder="Search reps…" value={repSearch} onChange={e => setRepSearch(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, outline: "none", width: 130, fontFamily: "inherit", color: "#012441" }} />
+                  <select value={repSort} onChange={e => setRepSort(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: "#012441", background: "#fff" }}>
                     <option value="score">Avg Score</option>
                     <option value="calls">Most Calls</option>
                     <option value="trend">Trend</option>
@@ -2497,7 +2497,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                       <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, background: repColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{e.repName.charAt(0).toUpperCase()}</div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
                         {e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", background: "rgba(99,102,241,0.1)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>}
                       </div>
                     </div>
@@ -2615,7 +2615,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>RevOps</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 4px" }}>RevOps</h2>
             <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Track pipeline health and get AI-powered deal analysis per client</p>
           </div>
           <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Add Snapshot</button>
@@ -2623,7 +2623,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
         {snapshots.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
             <div style={{ fontSize: 40, marginBottom: 14 }}>📊</div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>No pipeline data yet</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#012441", margin: "0 0 8px" }}>No pipeline data yet</h3>
             <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Add a CRM snapshot to get AI analysis of your pipeline health, coverage, and forecast quality.</p>
             <button onClick={startNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Add First Snapshot</button>
           </div>
@@ -2635,7 +2635,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
                 <div key={snap.id} onClick={() => viewSnapshot(snap)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>📊</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{client} Pipeline Snapshot</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{client} Pipeline Snapshot</div>
                     <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
                       {snap.snapshot_date && <span>{new Date(snap.snapshot_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>}
                       {snap.crm_data?.totalPipeline && <span> · ${Number(snap.crm_data.totalPipeline).toLocaleString()} pipeline</span>}
@@ -2661,7 +2661,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
   const numField = (key, label, placeholder) => (
     <div key={key}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <input type="number" value={crmData[key] || ""} onChange={e => setCrmData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+      <input type="number" value={crmData[key] || ""} onChange={e => setCrmData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
     </div>
   );
 
@@ -2670,20 +2670,20 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
         <span onClick={() => setMode("list")} style={{ color: "#8b5cf6", cursor: "pointer", fontWeight: 600 }}>RevOps</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{isViewMode ? `${selectedSnapshot.client} — ${selectedSnapshot.snapshot_date}` : "New Snapshot"}</span>
+        <span style={{ color: "#012441", fontWeight: 600 }}>{isViewMode ? `${selectedSnapshot.client} — ${selectedSnapshot.snapshot_date}` : "New Snapshot"}</span>
       </div>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Client</label>
-            <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!selectedClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: selectedClient ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+            <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!selectedClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: selectedClient ? "#012441" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
               <option value="">Select client...</option>
               {clients.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Snapshot Date</label>
-            <input type="date" value={snapshotDate} onChange={e => setSnapshotDate(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            <input type="date" value={snapshotDate} onChange={e => setSnapshotDate(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
         </div>
         <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.45)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Overall Metrics</div>
@@ -2709,7 +2709,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
         </div>
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Additional Context</label>
-          <textarea value={crmData.notes || ""} onChange={e => setCrmData(p => ({ ...p, notes: e.target.value }))} placeholder="Key at-risk deals, market conditions, team changes, etc." rows={3} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+          <textarea value={crmData.notes || ""} onChange={e => setCrmData(p => ({ ...p, notes: e.target.value }))} placeholder="Key at-risk deals, market conditions, team changes, etc." rows={3} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
         </div>
         <button onClick={analyzeData} disabled={analyzing || !selectedClient} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !selectedClient ? "default" : "pointer", background: analyzing || !selectedClient ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: analyzing || !selectedClient ? "rgba(0,0,0,0.35)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
           {analyzing ? "Analyzing..." : "Analyze Pipeline ✦"}
@@ -2723,14 +2723,14 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
             <CircularScore score={analysis.health_score || 0} size={90} strokeWidth={6} label="health" />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#8b5cf6", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Pipeline Health Assessment</div>
-              <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+              <p style={{ fontSize: 14, color: "#012441", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
             </div>
           </div>
           {analysis.key_metrics?.length > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
               {analysis.key_metrics.map((m, i) => (
                 <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "#012441", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>{m.label}</div>
                   {m.note && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", marginTop: 6, lineHeight: 1.4 }}>{m.note}</div>}
                 </div>
@@ -2739,12 +2739,12 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
           )}
           {analysis.insights?.length > 0 && (
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 20 }}>
-              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Key Insights</h4>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#012441", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Key Insights</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {analysis.insights.map((insight, i) => (
                   <div key={i} style={{ display: "flex", gap: 10, padding: "10px 14px", background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: 8 }}>
                     <span style={{ fontSize: 14, flexShrink: 0 }}>{insight.type === "risk" ? "⚠️" : insight.type === "opportunity" ? "✅" : "💡"}</span>
-                    <p style={{ fontSize: 13, color: "#1A2B3C", margin: 0, lineHeight: 1.6 }}>{insight.text}</p>
+                    <p style={{ fontSize: 13, color: "#012441", margin: 0, lineHeight: 1.6 }}>{insight.text}</p>
                   </div>
                 ))}
               </div>
@@ -2756,7 +2756,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {analysis.recommendations.map((rec, i) => (
                   <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10, padding: "12px 16px" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{rec.title}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", marginBottom: 4 }}>{rec.title}</div>
                     <p style={{ fontSize: 12, color: "rgba(0,0,0,0.6)", margin: 0, lineHeight: 1.6 }}>{rec.description}</p>
                   </div>
                 ))}
@@ -2790,10 +2790,10 @@ function AdminDashboard({ allCalls }) {
 
   return (
     <div>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 20px" }}>Admin Dashboard</h2>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 20px" }}>Admin Dashboard</h2>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
         {[
-          { label: "Total Calls", value: totalCalls, color: "#1A2B3C" },
+          { label: "Total Calls", value: totalCalls, color: "#012441" },
           { label: "Avg Score", value: avgScore + "%", color: getScoreColor(avgScore) },
         ].map((card, i) => (
           <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, textAlign: "center" }}>
@@ -2803,7 +2803,7 @@ function AdminDashboard({ allCalls }) {
         ))}
       </div>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Rep Leaderboard</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#012441", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Rep Leaderboard</h3>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8, fontSize: 10, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, padding: "0 0 8px", borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
           <span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span style={{ textAlign: "center" }}>Avg Score</span>
         </div>
@@ -2811,7 +2811,7 @@ function AdminDashboard({ allCalls }) {
           const avg = Math.round(stats.totalScore / stats.calls);
           return (
             <div key={name} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8, padding: "10px 0", borderBottom: "1px solid #FFFFFF", alignItems: "center" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{name}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "#012441" }}>{name}</span>
               <span style={{ textAlign: "center", fontSize: 13, color: "rgba(0,0,0,0.5)" }}>{stats.calls}</span>
               <span style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: getScoreColor(avg) }}>{avg}%</span>
             </div>
@@ -2819,7 +2819,7 @@ function AdminDashboard({ allCalls }) {
         })}
       </div>
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Category Averages (All Reps)</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: "#012441", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Category Averages (All Reps)</h3>
         {CATEGORIES.map(cat => {
           const avg = catAverages[cat.id];
           const pct = Math.round((avg / 10) * 100);
@@ -2880,7 +2880,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
         <CircularScore score={analysis.overall_score || 0} size={88} strokeWidth={6} label="score" />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Assessment Summary</div>
-          <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
+          <p style={{ fontSize: 14, color: "#012441", lineHeight: 1.7, margin: 0 }}>{analysis.summary}</p>
         </div>
       </div>
       {/* Sub-scores */}
@@ -2893,7 +2893,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
               return (
                 <div key={i}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{s.category}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#012441" }}>{s.category}</span>
                     <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: statusColor }}>{s.score}%</span>
                   </div>
                   <div style={{ height: 4, background: "rgba(0,0,0,0.06)", borderRadius: 4, overflow: "hidden", marginBottom: 4 }}>
@@ -2911,7 +2911,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
           {analysis.key_metrics.map((m, i) => (
             <div key={i} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 19, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
+              <div style={{ fontSize: 19, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "#012441", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
               <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 4 }}>{m.label}</div>
               {m.benchmark && <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", marginTop: 4 }}>Benchmark: {m.benchmark}</div>}
             </div>
@@ -2926,7 +2926,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
             {analysis.strengths.map((s, i) => (
               <div key={i} style={{ display: "flex", gap: 10 }}>
                 <span style={{ fontSize: 14, flexShrink: 0 }}>✅</span>
-                <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 2 }}>{s.title}</div><p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{s.description}</p></div>
+                <div><div style={{ fontSize: 13, fontWeight: 600, color: "#012441", marginBottom: 2 }}>{s.title}</div><p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{s.description}</p></div>
               </div>
             ))}
           </div>
@@ -2939,7 +2939,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {analysis.gaps.map((g, i) => (
               <div key={i} style={{ padding: "12px 14px", background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 10 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{g.title}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", marginBottom: 4 }}>{g.title}</div>
                 <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: "0 0 8px", lineHeight: 1.5 }}>{g.description}</p>
                 <div style={{ fontSize: 12, color: accentColor, fontWeight: 600 }}>Fix: {g.fix}</div>
               </div>
@@ -2955,7 +2955,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
             {analysis.recommendations.map((r, i) => (
               <div key={i} style={{ display: "flex", gap: 10 }}>
                 <span style={{ fontSize: 13, color: accentColor, fontWeight: 700, flexShrink: 0 }}>→</span>
-                <div><div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", marginBottom: 2 }}>{r.title}</div><p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{r.description}</p></div>
+                <div><div style={{ fontSize: 13, fontWeight: 600, color: "#012441", marginBottom: 2 }}>{r.title}</div><p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{r.description}</p></div>
               </div>
             ))}
           </div>
@@ -2972,7 +2972,7 @@ function AssessmentListView({ title, emoji, accentColor, assessments, onNew, onV
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>{title}</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 4px" }}>{title}</h2>
           <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>AI-powered assessment against industry best practices</p>
         </div>
         <button onClick={onNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: gradient, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ New Assessment</button>
@@ -2980,7 +2980,7 @@ function AssessmentListView({ title, emoji, accentColor, assessments, onNew, onV
       {assessments.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
           <div style={{ fontSize: 40, marginBottom: 14 }}>{emoji}</div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>No assessments yet</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#012441", margin: "0 0 8px" }}>No assessments yet</h3>
           <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Run an assessment to get AI-scored insights for this area of your GTM.</p>
           <button onClick={onNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: gradient, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Run First Assessment</button>
         </div>
@@ -2992,7 +2992,7 @@ function AssessmentListView({ title, emoji, accentColor, assessments, onNew, onV
               <div key={item.id} onClick={() => onView(item)} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: `${accentColor}15`, border: `1px solid ${accentColor}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{emoji}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#1A2B3C" }}>{client} — {title}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{client} — {title}</div>
                   <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{item.assessment_date && new Date(item.assessment_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
                 </div>
                 {item.overall_score ? (
@@ -3016,20 +3016,20 @@ function AssessmentFormShell({ title, emoji, accentColor, gradient, breadcrumb, 
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
         <span onClick={onBack} style={{ color: accentColor, cursor: "pointer", fontWeight: 600 }}>{title}</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{breadcrumb}</span>
+        <span style={{ color: "#012441", fontWeight: 600 }}>{breadcrumb}</span>
       </div>
       <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Client</label>
-            <select value={client} onChange={e => setClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid " + (!client ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: client ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+            <select value={client} onChange={e => setClient(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid " + (!client ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: client ? "#012441" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
               <option value="">Select client...</option>
               {clients.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Assessment Date</label>
-            <input type="date" value={assessmentDate} onChange={e => setAssessmentDate(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            <input type="date" value={assessmentDate} onChange={e => setAssessmentDate(e.target.value)} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
         </div>
         {children}
@@ -3037,7 +3037,7 @@ function AssessmentFormShell({ title, emoji, accentColor, gradient, breadcrumb, 
           <button onClick={onAnalyze} disabled={analyzing || !client} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !client ? "default" : "pointer", background: analyzing || !client ? "rgba(0,0,0,0.05)" : gradient, color: analyzing || !client ? "rgba(0,0,0,0.35)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
             {analyzing ? "Analyzing..." : analyzeLabel + " ✦"}
           </button>
-          {analysis && <button onClick={onSave} disabled={saving} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "#fff", color: "#1A2B3C", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Assessment"}</button>}
+          {analysis && <button onClick={onSave} disabled={saving} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "#fff", color: "#012441", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Assessment"}</button>}
         </div>
         {analyzing && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 8 }}>Analyzing... (10-20s)</p>}
       </div>
@@ -3065,7 +3065,7 @@ function GtmStrategyPage({ assessments, getValidToken, profile, clients, onUpdat
   const ta = (key, label, placeholder, rows = 3) => (
     <div key={key} style={{ marginBottom: 16 }}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={rows} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={rows} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
     </div>
   );
 
@@ -3130,13 +3130,13 @@ function TopOfFunnelPage({ assessments, getValidToken, profile, clients, onUpdat
   const numField = (key, label, placeholder) => (
     <div key={key}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
     </div>
   );
   const ta = (key, label, placeholder) => (
     <div key={key} style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
     </div>
   );
 
@@ -3208,19 +3208,19 @@ function SalesHiringPage({ assessments, getValidToken, profile, clients, onUpdat
   const toggle = (key, label) => (
     <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: data[key] ? "rgba(34,197,94,0.06)" : "rgba(0,0,0,0.02)", border: `1px solid ${data[key] ? "rgba(34,197,94,0.2)" : "rgba(0,0,0,0.08)"}`, borderRadius: 8, cursor: "pointer" }} onClick={() => setData(p => ({ ...p, [key]: !p[key] }))}>
       <div style={{ width: 18, height: 18, borderRadius: 4, background: data[key] ? "#22c55e" : "#fff", border: `2px solid ${data[key] ? "#22c55e" : "rgba(0,0,0,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, color: "#fff" }}>{data[key] ? "✓" : ""}</div>
-      <span style={{ fontSize: 13, color: "#1A2B3C", fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 13, color: "#012441", fontWeight: 500 }}>{label}</span>
     </div>
   );
   const numField = (key, label, placeholder) => (
     <div key={key}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
     </div>
   );
   const ta = (key, label, placeholder) => (
     <div key={key} style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
     </div>
   );
 
@@ -3294,7 +3294,7 @@ function MetricsPage({ assessments, getValidToken, profile, clients, onUpdate })
   const numField = (key, label, placeholder) => (
     <div key={key}>
       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{label}</label>
-      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+      <input type="number" value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
     </div>
   );
 
@@ -3350,7 +3350,7 @@ function MetricsPage({ assessments, getValidToken, profile, clients, onUpdate })
         </div>
         <div style={{ marginBottom: 8 }}>
           <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>Additional Context</label>
-          <textarea value={data.notes || ""} onChange={e => setData(p => ({ ...p, notes: e.target.value }))} placeholder="Market context, team size, recent changes, quota setting methodology..." rows={2} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+          <textarea value={data.notes || ""} onChange={e => setData(p => ({ ...p, notes: e.target.value }))} placeholder="Market context, team size, recent changes, quota setting methodology..." rows={2} style={{ width: "100%", padding: "10px 12px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
         </div>
       </AssessmentFormShell>
       <AuditAnalysisDisplay analysis={analysis} accentColor="#f59e0b" />
@@ -3439,17 +3439,17 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
         <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Home</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span style={{ color: "#1A2B3C", fontWeight: 600 }}>New GTM Assessment</span>
+        <span style={{ color: "#012441", fontWeight: 600 }}>New GTM Assessment</span>
       </div>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1A2B3C", margin: "0 0 6px" }}>New GTM Assessment</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#012441", margin: "0 0 6px" }}>New GTM Assessment</h1>
         <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Upload company documents and generate a board-ready McKinsey-style GTM assessment report</p>
       </div>
 
       {/* Client Selector */}
       <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "18px 20px", marginBottom: 14 }}>
         <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 8, fontWeight: 700 }}>Client *</label>
-        <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} style={{ width: "100%", maxWidth: 340, padding: "10px 12px", background: "#fff", border: "1px solid " + (!selectedClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: selectedClient ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+        <select value={selectedClient} onChange={e => setSelectedClient(e.target.value)} style={{ width: "100%", maxWidth: 340, padding: "10px 12px", background: "#fff", border: "1px solid " + (!selectedClient ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.08)"), borderRadius: 8, color: selectedClient ? "#012441" : "rgba(0,0,0,0.35)", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
           <option value="">Select client...</option>
           {clients.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -3459,7 +3459,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
       <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "18px 20px", marginBottom: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
           <div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>Documents</h3>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#012441", margin: "0 0 4px" }}>Documents</h3>
             <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: 0 }}>Upload sales decks, playbooks, metrics reports, org charts, transcripts, CRM exports — the more context the better</p>
           </div>
           <button onClick={() => fileInputRef.current?.click()} disabled={extracting} style={{ padding: "8px 16px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#fff", color: "rgba(0,0,0,0.5)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>
@@ -3488,10 +3488,10 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
               <div key={doc.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(49,206,129,0.04)", border: "1px solid rgba(49,206,129,0.15)", borderRadius: 10 }}>
                 <span style={{ fontSize: 14, flexShrink: 0 }}>📎</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.filename}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.filename}</div>
                   <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>{(doc.content.length / 1000).toFixed(1)}k chars</div>
                 </div>
-                <select value={doc.docType} onChange={e => updateDocType(doc.id, e.target.value)} onClick={e => e.stopPropagation()} style={{ padding: "5px 8px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, background: "#fff", color: "#1A2B3C", fontSize: 11, outline: "none", fontFamily: "inherit", cursor: "pointer", flexShrink: 0 }}>
+                <select value={doc.docType} onChange={e => updateDocType(doc.id, e.target.value)} onClick={e => e.stopPropagation()} style={{ padding: "5px 8px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, background: "#fff", color: "#012441", fontSize: 11, outline: "none", fontFamily: "inherit", cursor: "pointer", flexShrink: 0 }}>
                   {DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 <button onClick={() => removeDoc(doc.id)} style={{ background: "none", border: "none", color: "rgba(0,0,0,0.35)", cursor: "pointer", fontSize: 16, padding: 0, lineHeight: 1, flexShrink: 0 }}>✕</button>
@@ -3571,12 +3571,12 @@ function ReportPage({ report, onBack }) {
         <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: execSummary.top_findings?.length ? 24 : 0 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: "#6366F1", fontWeight: 700, marginBottom: 8 }}>GTM Assessment Report</div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", margin: "0 0 4px", lineHeight: 1.15 }}>{report.client}</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: "#012441", margin: "0 0 4px", lineHeight: 1.15 }}>{report.client}</h1>
             <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginBottom: 16 }}>
               {report.report_date && new Date(report.report_date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
               {report.document_sources?.length > 0 && ` · ${report.document_sources.length} document${report.document_sources.length !== 1 ? "s" : ""} analyzed`}
             </div>
-            {execSummary.headline && <p style={{ fontSize: 17, fontWeight: 700, color: "#1A2B3C", margin: "0 0 12px", lineHeight: 1.45, fontStyle: "italic" }}>"{execSummary.headline}"</p>}
+            {execSummary.headline && <p style={{ fontSize: 17, fontWeight: 700, color: "#012441", margin: "0 0 12px", lineHeight: 1.45, fontStyle: "italic" }}>"{execSummary.headline}"</p>}
             {execSummary.narrative && <p style={{ fontSize: 14, color: "rgba(0,0,0,0.6)", margin: 0, lineHeight: 1.7 }}>{execSummary.narrative}</p>}
           </div>
           {analysis.overall_score != null && (
@@ -3594,7 +3594,7 @@ function ReportPage({ report, onBack }) {
                   <span style={{ fontSize: 12 }}>{f.type === "critical" ? "🔴" : f.type === "warning" ? "🟡" : "🟢"}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, color: findingColor(f.type), textTransform: "uppercase", letterSpacing: 0.5 }}>{f.type}</span>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", marginBottom: 4 }}>{f.title}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#012441", marginBottom: 4 }}>{f.title}</div>
                 <p style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", margin: 0, lineHeight: 1.5 }}>{f.description}</p>
               </div>
             ))}
@@ -3618,7 +3618,7 @@ function ReportPage({ report, onBack }) {
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{ width: 34, height: 34, borderRadius: 9, background: cfg.color + "15", border: `1px solid ${cfg.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{cfg.icon}</div>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{dim.label}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: "#012441" }}>{dim.label}</div>
                           <AuditStatusBadge score={dim.score} />
                         </div>
                       </div>
@@ -3645,7 +3645,7 @@ function ReportPage({ report, onBack }) {
                             return (
                               <div key={i} style={{ marginBottom: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                                  <span style={{ fontSize: 12, color: "#1A2B3C" }}>{ss.category}</span>
+                                  <span style={{ fontSize: 12, color: "#012441" }}>{ss.category}</span>
                                   <span style={{ fontSize: 12, fontWeight: 700, color: ssColor, fontFamily: "'Space Mono', monospace" }}>{ss.score}%</span>
                                 </div>
                                 <div style={{ height: 3, background: "rgba(0,0,0,0.06)", borderRadius: 3 }}>
@@ -3662,7 +3662,7 @@ function ReportPage({ report, onBack }) {
                           <div style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Key Gaps</div>
                           {dim.key_gaps.map((gap, i) => (
                             <div key={i} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 8, marginBottom: 6 }}>
-                              <div style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", marginBottom: 4 }}>{gap.title}</div>
+                              <div style={{ fontSize: 12, fontWeight: 600, color: "#012441", marginBottom: 4 }}>{gap.title}</div>
                               <div style={{ fontSize: 11, color: "#2563eb" }}>→ {gap.fix}</div>
                             </div>
                           ))}
@@ -3687,7 +3687,7 @@ function ReportPage({ report, onBack }) {
                 <div style={{ fontWeight: 800, fontSize: 22, color: sevColor(gap.severity), fontFamily: "'Space Mono', monospace", lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>{gap.rank}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{gap.title}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#012441" }}>{gap.title}</span>
                     <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: sevBg(gap.severity), color: sevColor(gap.severity), fontWeight: 700, border: `1px solid ${sevColor(gap.severity)}30`, textTransform: "uppercase", letterSpacing: 0.5 }}>{gap.severity}</span>
                     {gap.dimension && dimConfig[gap.dimension] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "rgba(0,0,0,0.04)", color: "rgba(0,0,0,0.5)", fontWeight: 600 }}>{dimConfig[gap.dimension].label}</span>}
                   </div>
@@ -3714,7 +3714,7 @@ function ReportPage({ report, onBack }) {
           {/* Wave Tabs */}
           <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: 4 }}>
             {waves.map(w => (
-              <button key={w.key} onClick={() => setActiveWave(w.key)} style={{ flex: 1, padding: "8px 12px", border: "none", borderRadius: 8, cursor: "pointer", background: activeWave === w.key ? "#fff" : "transparent", color: activeWave === w.key ? "#1A2B3C" : "rgba(0,0,0,0.45)", fontFamily: "inherit", boxShadow: activeWave === w.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.15s" }}>
+              <button key={w.key} onClick={() => setActiveWave(w.key)} style={{ flex: 1, padding: "8px 12px", border: "none", borderRadius: 8, cursor: "pointer", background: activeWave === w.key ? "#fff" : "transparent", color: activeWave === w.key ? "#012441" : "rgba(0,0,0,0.45)", fontFamily: "inherit", boxShadow: activeWave === w.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.15s" }}>
                 <div style={{ fontSize: 12, fontWeight: activeWave === w.key ? 700 : 500 }}>{w.icon} {w.label}</div>
                 <div style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", marginTop: 2 }}>{w.timeline}</div>
               </button>
@@ -3726,7 +3726,7 @@ function ReportPage({ report, onBack }) {
             <div key={w.key} className={activeWave !== w.key ? "no-print" : ""} style={{ display: activeWave === w.key ? "block" : "none" }}>
               {/* Print header */}
               <div className="print-show-all" style={{ display: "none", marginBottom: 12, paddingBottom: 8, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{w.icon} {w.label}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#012441" }}>{w.icon} {w.label}</span>
                 <span style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginLeft: 8 }}>{w.timeline}</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -3736,7 +3736,7 @@ function ReportPage({ report, onBack }) {
                   return (
                     <div key={i} style={{ padding: "16px 18px", background: "#f8fafc", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{init.title}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#012441" }}>{init.title}</div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
                           {init.owner && <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(99,102,241,0.08)", color: "#6366f1", fontWeight: 700, border: "1px solid rgba(99,102,241,0.2)" }}>{init.owner}</span>}
                           {init.effort && <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 20, background: effortColor + "15", color: effortColor, fontWeight: 700 }}>Effort: {init.effort}</span>}
@@ -3937,7 +3937,7 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 9, background: accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C" }}>{name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#012441" }}>{name}</div>
               {state.connected && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>
                 {isNotion ? (state.workspace || "Connected") : (state.email || "Connected")}
                 {state.last_synced_at && ` · Last synced ${new Date(state.last_synced_at).toLocaleDateString()}`}
@@ -3975,7 +3975,7 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
                 {state.sources.map((src, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, padding: "9px 12px" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{src.name}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{src.name}</div>
                       <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>
                         {src.type === "folder" ? "Folder" : src.type === "database" ? "Database" : "Page"} · {src.client || "No client"} · {ENABLEMENT_DOC_TYPES.find(t => t.id === src.docType)?.name || src.docType}
                       </div>
@@ -4030,7 +4030,7 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: "0 0 4px" }}>Document Sources</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: "#012441", margin: "0 0 4px" }}>Document Sources</h2>
         <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Connect Notion and Google Drive to automatically sync documents into client profiles</p>
       </div>
 
@@ -4581,14 +4581,14 @@ export default function CuotaCallReview() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#F5F3F0", color: "#1A2B3C", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#F5F3F0", color: "#012441", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
 
       {/* SIDEBAR */}
-      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#1A2B3C", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", zIndex: 100 }}>
+      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#012441", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", zIndex: 100 }}>
         {/* Logo — click to go home */}
         <div style={{ padding: "20px 16px 16px" }}>
           <img
@@ -4795,7 +4795,7 @@ export default function CuotaCallReview() {
             {/* Sticky context header */}
             <div style={{ position: "sticky", top: -32, marginTop: -32, paddingTop: 32, paddingBottom: 16, background: "#F5F3F0", zIndex: 10, borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
-                <span style={{ fontWeight: 700, color: "#1A2B3C" }}>{callInfo.client || "New Call Review"}</span>
+                <span style={{ fontWeight: 700, color: "#012441" }}>{callInfo.client || "New Call Review"}</span>
                 {callInfo.repName && <><span style={{ color: "rgba(0,0,0,0.2)" }}>›</span><span>{callInfo.repName}</span></>}
                 {callInfo.callType && <><span style={{ color: "rgba(0,0,0,0.2)" }}>›</span><span style={{ color: "rgba(0,0,0,0.4)" }}>{callInfo.callType}</span></>}
                 {callInfo.callDate && <span style={{ color: "rgba(0,0,0,0.3)" }}> · {new Date(callInfo.callDate + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>}
@@ -4814,12 +4814,12 @@ export default function CuotaCallReview() {
                   <div key={f.key}>
                     <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{f.label}</label>
                     {f.options ? (
-                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!callInfo[f.key] && f.required ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.06)"), borderRadius: 8, color: callInfo[f.key] ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
+                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid " + (!callInfo[f.key] && f.required ? "rgba(239,68,68,0.3)" : "rgba(0,0,0,0.06)"), borderRadius: 8, color: callInfo[f.key] ? "#012441" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
                         {!callInfo[f.key] && <option value="">Select {f.label.toLowerCase()}...</option>}
-                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF", color: "#1A2B3C" }}>{o}</option>)}
+                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF", color: "#012441" }}>{o}</option>)}
                       </select>
                     ) : (
-                      <input type={f.type || "text"} value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                      <input type={f.type || "text"} value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                     )}
                   </div>
                 ))}
@@ -4836,12 +4836,12 @@ export default function CuotaCallReview() {
                   <div key={f.key}>
                     <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{f.label}</label>
                     {f.options ? (
-                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: callInfo[f.key] ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
+                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: callInfo[f.key] ? "#012441" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
                         {!callInfo[f.key] && <option value="">Select...</option>}
-                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF", color: "#1A2B3C" }}>{o}</option>)}
+                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF", color: "#012441" }}>{o}</option>)}
                       </select>
                     ) : (
-                      <input type={f.type || "text"} value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                      <input type={f.type || "text"} value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                     )}
                   </div>
                 ))}
@@ -4871,7 +4871,7 @@ export default function CuotaCallReview() {
             {activeTab === "transcript" && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Call Transcript</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: "#012441", margin: 0 }}>Call Transcript</h3>
                   <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(0,0,0,0.05)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
                     {analyzing ? "Analyzing..." : "Analyze with AI \u2726"}
                   </button>
@@ -4912,7 +4912,7 @@ export default function CuotaCallReview() {
                 {/* Gut Check */}
                 <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 18 }}>
                   <h4 style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Gut Check</h4>
-                  <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
+                  <p style={{ fontSize: 14, color: "#012441", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
                 </div>
 
                 {/* Strengths + Opportunities — 2-column */}
@@ -4933,7 +4933,7 @@ export default function CuotaCallReview() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {(aiAnalysis.areas_of_opportunity || []).map((area, i) => (
                         <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 14 }}>
-                          <p style={{ fontSize: 13, color: "#1A2B3C", margin: "0 0 8px", lineHeight: 1.6 }}>{area.description}</p>
+                          <p style={{ fontSize: 13, color: "#012441", margin: "0 0 8px", lineHeight: 1.6 }}>{area.description}</p>
                           <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(99,102,241,0.04)", borderLeft: "3px solid #6366F1", borderRadius: "0 6px 6px 0" }}>
                             <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", textTransform: "uppercase", letterSpacing: 0.8 }}>↳ Fix</span>
                             <p style={{ fontSize: 12, color: "#374151", margin: "4px 0 0", lineHeight: 1.6 }}>{area.fix}</p>
@@ -4964,7 +4964,7 @@ export default function CuotaCallReview() {
                           <div key={risk.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, background: badgeBg, border: `1px solid ${badgeBorder}` }}>
                             <span style={{ fontSize: 11, fontWeight: 700, color: badgeColor, background: badgeBgIcon, borderRadius: 6, padding: "2px 7px", flexShrink: 0, marginTop: 1 }}>{icon}</span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: flagged ? "#1A2B3C" : "rgba(0,0,0,0.5)", marginBottom: 2 }}>{risk.label}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: flagged ? "#012441" : "rgba(0,0,0,0.5)", marginBottom: 2 }}>{risk.label}</div>
                               <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{data.details}</p>
                             </div>
                           </div>
@@ -4984,8 +4984,8 @@ export default function CuotaCallReview() {
             {/* Notes */}
             {activeTab === "notes" && (
               <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 12px" }}>Coaching Notes</h3>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Key observations, coaching points..." style={{ width: "100%", minHeight: 200, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: 16, fontSize: 13, color: "#1A2B3C", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: "#012441", margin: "0 0 12px" }}>Coaching Notes</h3>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Key observations, coaching points..." style={{ width: "100%", minHeight: 200, background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, padding: 16, fontSize: 13, color: "#012441", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
               </div>
             )}
 
