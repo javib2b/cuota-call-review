@@ -2052,29 +2052,75 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         )}
       </div>
 
-      {/* Call Reviews */}
-      <Section
-        title="Call Reviews" icon="📞" items={clientCalls}
-        emptyText="No call reviews yet for this client."
-        action={clientCalls.length > 0 && <button onClick={onBrowseByRep} style={{ fontSize: 12, fontWeight: 600, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Browse by Rep →</button>}
-      >
-        {clientCalls.map(call => (
-          <div key={call.id} onClick={() => onViewCall(call)} style={{ background: "#fafafa", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
-            <CircularScore score={call.overall_score || 0} size={40} strokeWidth={3} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", display: "flex", alignItems: "center", gap: 6 }}>
-                {call.category_scores?.rep_name || call.rep_name || "Unknown Rep"}
-                {call.category_scores?.rep_type === "SDR" && <span style={{ background: "rgba(99,102,241,0.1)", color: "#6366f1", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 4 }}>SDR</span>}
-              </div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
-                {call.category_scores?.call_type || call.call_type || "Call"}
-                {call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}
-              </div>
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0), textTransform: "uppercase", letterSpacing: 0.5, flexShrink: 0 }}>{getScoreLabel(call.overall_score || 0)}</div>
+      {/* Call Reviews — grouped by rep */}
+      {clientCalls.length === 0 ? (
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 16 }}>📞</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>Call Reviews</span>
           </div>
-        ))}
-      </Section>
+          <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: 0, textAlign: "center", padding: "12px 0" }}>No call reviews yet for this client.</p>
+        </div>
+      ) : (() => {
+        // Group calls by rep name, sorted most recent first within each rep
+        const byRep = {};
+        clientCalls.forEach(call => {
+          const repName = call.category_scores?.rep_name || call.rep_name || "Unknown Rep";
+          if (!byRep[repName]) byRep[repName] = [];
+          byRep[repName].push(call);
+        });
+        const repEntries = Object.entries(byRep).map(([repName, repCalls]) => {
+          const avg = Math.round(repCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / repCalls.length);
+          const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
+          return { repName, repCalls, avg, isSdr };
+        }).sort((a, b) => b.avg - a.avg);
+
+        const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
+          const [open, setOpen] = useState(true);
+          return (
+            <div style={{ border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, overflow: "hidden", marginBottom: 8 }}>
+              <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", background: "#fafafa" }}>
+                <CircularScore score={avg} size={38} strokeWidth={3} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", display: "flex", alignItems: "center", gap: 6 }}>
+                    {repName}
+                    {isSdr && <span style={{ background: "rgba(99,102,241,0.1)", color: "#6366F1", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 4 }}>SDR</span>}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · {getScoreLabel(avg)}</div>
+                </div>
+                <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>{open ? "▲" : "▼"}</span>
+              </div>
+              {open && repCalls.map(call => (
+                <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px 10px 18px", borderTop: "1px solid rgba(0,0,0,0.04)", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                  <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{call.category_scores?.call_type || call.call_type || "Call"}{call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
+                    {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        };
+
+        return (
+          <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>📞</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>Call Reviews</span>
+                <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", background: "rgba(0,0,0,0.05)", borderRadius: 10, padding: "2px 8px" }}>{clientCalls.length}</span>
+              </div>
+              <button onClick={onBrowseByRep} style={{ fontSize: 12, fontWeight: 600, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Browse by Rep →</button>
+            </div>
+            {repEntries.map(e => <RepGroup key={e.repName} {...e} />)}
+          </div>
+        );
+      })()}
 
       {/* Enablement Documents */}
       <Section
