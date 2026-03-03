@@ -1974,6 +1974,82 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
   );
 }
 
+// ==================== REP PROGRESSION GRAPH ====================
+const REP_COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#84CC16"];
+
+function RepProgressionGraph({ repEntries }) {
+  const repData = repEntries.map((entry, i) => {
+    const pts = entry.repCalls
+      .filter(c => c.call_date || c.created_at)
+      .map(c => ({ date: new Date(c.call_date || c.created_at).getTime(), score: c.overall_score || 0 }))
+      .sort((a, b) => a.date - b.date);
+    return { repName: entry.repName, pts, color: REP_COLORS[i % REP_COLORS.length] };
+  }).filter(e => e.pts.length > 0);
+
+  if (repData.length === 0) return null;
+
+  const allPts = repData.flatMap(e => e.pts);
+  const minDate = Math.min(...allPts.map(p => p.date));
+  const maxDate = Math.max(...allPts.map(p => p.date));
+  const dateRange = maxDate - minDate || 86400000;
+
+  const W = 540, H = 180;
+  const pad = { l: 32, r: 16, t: 20, b: 28 };
+  const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
+  const xS = d => pad.l + ((d - minDate) / dateRange) * cW;
+  const yS = s => pad.t + cH - (Math.min(Math.max(s, 0), 100) / 100) * cH;
+
+  const uniqueDates = [...new Set(allPts.map(p => p.date))].sort((a, b) => a - b);
+  const tickCount = Math.min(uniqueDates.length, 5);
+  const tickDates = tickCount <= 1 ? uniqueDates :
+    Array.from({ length: tickCount }, (_, i) => uniqueDates[Math.round(i * (uniqueDates.length - 1) / (tickCount - 1))]);
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px 10px", marginBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>Score Progression</span>
+        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+          {repData.map(e => (
+            <div key={e.repName} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#4B5563" }}>
+              <span style={{ width: 16, height: 3, background: e.color, borderRadius: 2, display: "inline-block", flexShrink: 0 }} />
+              {e.repName}
+            </div>
+          ))}
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        {[0, 25, 50, 75, 100].map(v => (
+          <g key={v}>
+            <line x1={pad.l} y1={yS(v)} x2={W - pad.r} y2={yS(v)} stroke="rgba(0,0,0,0.05)" strokeWidth={1} strokeDasharray={v > 0 ? "3,3" : undefined} />
+            <text x={pad.l - 5} y={yS(v) + 3} textAnchor="end" fontSize={8} fill="rgba(0,0,0,0.28)">{v}</text>
+          </g>
+        ))}
+        {tickDates.map(d => (
+          <text key={d} x={xS(d)} y={H - 2} textAnchor="middle" fontSize={8} fill="rgba(0,0,0,0.3)">
+            {new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          </text>
+        ))}
+        {repData.map(e => (
+          <g key={e.repName}>
+            {e.pts.length > 1 && (
+              <polyline
+                points={e.pts.map(p => `${xS(p.date)},${yS(p.score)}`).join(" ")}
+                fill="none" stroke={e.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+              />
+            )}
+            {e.pts.map((p, j) => (
+              <g key={j}>
+                <circle cx={xS(p.date)} cy={yS(p.score)} r={4} fill={e.color} stroke="#fff" strokeWidth={1.5} />
+                <text x={xS(p.date)} y={yS(p.score) - 8} textAnchor="middle" fontSize={8} fill={e.color} fontWeight="700">{p.score}</text>
+              </g>
+            ))}
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 // ==================== CLIENT PROFILE PAGE ====================
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange }) {
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
@@ -2062,7 +2138,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         ))}
       </div>
 
-      {/* Call Reviews — grouped by rep */}
+      {/* Call Reviews — progression graph + grouped by rep */}
       {activeTab === "calls" && (
         clientCalls.length === 0 ? (
           <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
@@ -2083,9 +2159,37 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           }).sort((a, b) => b.avg - a.avg);
 
           const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
-            const [open, setOpen] = useState(true);
+            const [open, setOpen] = useState(false);
+            const [showHighlight, setShowHighlight] = useState(false);
+            const [showOpportunities, setShowOpportunities] = useState(false);
+
+            // Compute per-category averages for this rep
+            const catAvgs = {};
+            CATEGORIES.forEach(cat => {
+              let total = 0, count = 0;
+              repCalls.forEach(call => {
+                const cs = call.category_scores?.[cat.id];
+                if (cs && typeof cs.score === "number") { total += cs.score; count++; }
+              });
+              if (count > 0) catAvgs[cat.id] = { name: cat.name, avg: Math.round(total / count) };
+            });
+            const sortedCats = Object.values(catAvgs).sort((a, b) => b.avg - a.avg);
+            const highlights = sortedCats.slice(0, 3);
+            const opportunities = sortedCats.filter(c => c.avg < 7).slice(-3).reverse();
+
+            const InsightRow = ({ cat }) => (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0" }}>
+                <span style={{ flex: 1, fontSize: 12, color: "#374151" }}>{cat.name}</span>
+                <div style={{ width: 100, height: 5, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
+                  <div style={{ width: `${cat.avg * 10}%`, height: "100%", background: getScoreColor10(cat.avg), borderRadius: 3 }} />
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor10(cat.avg), width: 22, textAlign: "right", flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>{cat.avg}</span>
+              </div>
+            );
+
             return (
               <div style={{ border: "1px solid rgba(99,102,241,0.15)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+                {/* Rep header — click to toggle */}
                 <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer", background: "rgba(99,102,241,0.04)", borderBottom: open ? "1px solid rgba(99,102,241,0.1)" : "none" }}>
                   <CircularScore score={avg} size={42} strokeWidth={4} />
                   <div style={{ flex: 1 }}>
@@ -2095,27 +2199,62 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                     </div>
                     <div style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", marginTop: 2, fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</div>
                   </div>
-                  <span style={{ fontSize: 12, color: "rgba(99,102,241,0.4)", fontWeight: 600 }}>{open ? "▲" : "▼"}</span>
+                  <span style={{ fontSize: 10, color: "rgba(99,102,241,0.4)" }}>{open ? "▾" : "▸"}</span>
                 </div>
-                {open && repCalls.map((call, idx) => (
-                  <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-                    <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
-                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{call.category_scores?.call_type || call.call_type || "Call"}{call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}</div>
+
+                {open && (
+                  <>
+                    {/* Rep Highlight */}
+                    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                      <div onClick={() => setShowHighlight(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", cursor: "pointer", background: "#fafafa", userSelect: "none" }}>
+                        <span style={{ fontSize: 13 }}>⭐</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", flex: 1 }}>Rep Highlight</span>
+                        <span style={{ fontSize: 10, color: "rgba(0,0,0,0.3)" }}>{showHighlight ? "▾" : "▸"}</span>
+                      </div>
+                      {showHighlight && (
+                        <div style={{ padding: "4px 16px 12px" }}>
+                          {highlights.length > 0 ? highlights.map(cat => <InsightRow key={cat.name} cat={cat} />) : <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: "8px 0 0" }}>Not enough data yet.</p>}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
-                      {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
+
+                    {/* Areas of Opportunity */}
+                    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
+                      <div onClick={() => setShowOpportunities(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", cursor: "pointer", background: "#fafafa", userSelect: "none" }}>
+                        <span style={{ fontSize: 13 }}>🎯</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", flex: 1 }}>Areas of Opportunity</span>
+                        <span style={{ fontSize: 10, color: "rgba(0,0,0,0.3)" }}>{showOpportunities ? "▾" : "▸"}</span>
+                      </div>
+                      {showOpportunities && (
+                        <div style={{ padding: "4px 16px 12px" }}>
+                          {opportunities.length > 0 ? opportunities.map(cat => <InsightRow key={cat.name} cat={cat} />) : <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: "8px 0 0" }}>No weak areas detected — great work!</p>}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+
+                    {/* Call rows */}
+                    {repCalls.map((call, idx) => (
+                      <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                        <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
+                          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{call.category_scores?.call_type || call.call_type || "Call"}{call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}</div>
+                        </div>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
+                          {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             );
           };
 
           return (
             <div>
+              <RepProgressionGraph repEntries={repEntries} />
               {repEntries.map(e => <RepGroup key={e.repName} {...e} />)}
             </div>
           );
