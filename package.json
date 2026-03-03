@@ -9,21 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.2.1",
-    "@types/node": "^25.3.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
     "@vercel/functions": "^1.0.0",
-    "autoprefixer": "^10.4.27",
     "mammoth": "^1.11.0",
     "pdfjs-dist": "^5.4.624",
-    "postcss": "^8.5.8",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^7.13.1",
-    "recharts": "^3.7.0",
-    "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
