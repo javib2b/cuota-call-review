@@ -3721,6 +3721,7 @@ export default function CuotaCallReview() {
   const [selectedClientProfile, setSelectedClientProfile] = useState(null);
   const [clientPageTab, setClientPageTab] = useState("calls");
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
+  const [sidebarSections, setSidebarSections] = useState({ clients: true, assessments: true, admin: true });
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -4203,16 +4204,18 @@ export default function CuotaCallReview() {
         </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-          {/* CLIENTS */}
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "4px 8px 4px" }}>Clients</div>
-          {clients.map(clientName => {
+          {/* CLIENTS SECTION */}
+          <button onClick={() => setSidebarSections(p => ({ ...p, clients: !p.clients }))} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "8px 8px 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{sidebarSections.clients ? "▾" : "▸"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", letterSpacing: 0.3 }}>Clients</span>
+          </button>
+          {sidebarSections.clients && clients.map(clientName => {
             const isOpen = !!sidebarOpenClients[clientName];
             const isActiveClient = page === "client" && selectedClientProfile === clientName;
             const callCount = savedCalls.filter(c => c.category_scores?.client === clientName || (c.prospect_company || "").toLowerCase().includes(clientName.toLowerCase())).length;
             const docCount = enablementDocs.filter(d => d.client === clientName).length;
             return (
               <div key={clientName}>
-                {/* Client row */}
                 <button onClick={() => setSidebarOpenClients(prev => ({ ...prev, [clientName]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px", border: "none", background: isActiveClient && !isOpen ? "rgba(99,102,241,0.04)" : "transparent", color: isActiveClient ? "#1A2B3C" : "#374151", fontSize: 13, fontWeight: isActiveClient ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
                   {getClientLogo(clientName)
                     ? <img src={getClientLogo(clientName)} style={{ width: 16, height: 16, borderRadius: 3, objectFit: "contain", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
@@ -4221,7 +4224,6 @@ export default function CuotaCallReview() {
                   <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName}</span>
                   <span style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", flexShrink: 0 }}>{isOpen ? "▾" : "▸"}</span>
                 </button>
-                {/* Sub-items */}
                 {isOpen && (
                   <div style={{ marginBottom: 4 }}>
                     {[
@@ -4243,9 +4245,12 @@ export default function CuotaCallReview() {
             );
           })}
 
-          {/* ASSESSMENTS */}
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Assessments</div>
-          {[
+          {/* ASSESSMENTS SECTION */}
+          <button onClick={() => setSidebarSections(p => ({ ...p, assessments: !p.assessments }))} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "10px 8px 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{sidebarSections.assessments ? "▾" : "▸"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", letterSpacing: 0.3 }}>Assessments</span>
+          </button>
+          {sidebarSections.assessments && [
             { id: "gtm", label: "GTM Strategy", icon: "🎯" },
             { id: "tof", label: "Top of Funnel", icon: "📣" },
             { id: "crm", label: "RevOps", icon: "📊" },
@@ -4261,27 +4266,34 @@ export default function CuotaCallReview() {
             );
           })}
 
-          {/* ADMIN */}
+          {/* ADMIN SECTION */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
             <>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Admin</div>
-              {profile?.role === "admin" && [
-                { id: "integrations", label: "Integrations", icon: "⚙️" },
-                { id: "docsync", label: "Doc Sync", icon: "🔄" },
-                { id: "admin", label: "Admin", icon: "👑" },
-              ].map(nav => {
-                const active = page === nav.id;
-                return (
-                  <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
-                    <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
-                    <span>{nav.label}</span>
-                  </button>
-                );
-              })}
-              <button onClick={() => setShowInvite(true)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: "3px solid transparent", background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
-                <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>✉️</span>
-                <span>Invite User</span>
+              <button onClick={() => setSidebarSections(p => ({ ...p, admin: !p.admin }))} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "10px 8px 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+                <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{sidebarSections.admin ? "▾" : "▸"}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", letterSpacing: 0.3 }}>Admin</span>
               </button>
+              {sidebarSections.admin && (
+                <>
+                  {profile?.role === "admin" && [
+                    { id: "integrations", label: "Integrations", icon: "⚙️" },
+                    { id: "docsync", label: "Doc Sync", icon: "🔄" },
+                    { id: "admin", label: "Admin", icon: "👑" },
+                  ].map(nav => {
+                    const active = page === nav.id;
+                    return (
+                      <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+                        <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
+                        <span>{nav.label}</span>
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => setShowInvite(true)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: "3px solid transparent", background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+                    <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>✉️</span>
+                    <span>Invite User</span>
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
