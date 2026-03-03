@@ -334,7 +334,7 @@ function AuthScreen({ onAuth }) {
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
       <div style={{ width: 400, padding: 40 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", letterSpacing: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", letterSpacing: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
           <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 4, letterSpacing: 1 }}>GTM Audit Engine</div>
         </div>
         <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 16, padding: 28 }}>
@@ -359,7 +359,7 @@ function AuthScreen({ onAuth }) {
           </div>
           {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
           {message && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: "#1a7a42" }}>{message}</div>}
-          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 10, cursor: "pointer", background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "inherit" }}>{loading ? "..." : mode === "login" ? "Log In" : "Create Account"}</button>
+          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 10, cursor: "pointer", background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "inherit" }}>{loading ? "..." : mode === "login" ? "Log In" : "Create Account"}</button>
         </div>
       </div>
     </div>
@@ -405,10 +405,10 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
   const breadcrumb = (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#31CE81" : "#1A2B3C", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Clients</span>
+      <span onClick={() => { setFolderClient(null); setFolderAE(null); }} style={{ color: folderClient ? "#6366F1" : "#1A2B3C", cursor: folderClient ? "pointer" : "default", fontWeight: 600 }}>Clients</span>
       {folderClient && <>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
-        <span onClick={() => setFolderAE(null)} style={{ color: folderAE ? "#31CE81" : "#1A2B3C", cursor: folderAE ? "pointer" : "default", fontWeight: 600 }}>{folderClient}</span>
+        <span onClick={() => setFolderAE(null)} style={{ color: folderAE ? "#6366F1" : "#1A2B3C", cursor: folderAE ? "pointer" : "default", fontWeight: 600 }}>{folderClient}</span>
       </>}
       {folderAE && <>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
@@ -418,7 +418,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
   );
 
   const newReviewBtn = (
-    <button onClick={onNewCall} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
+    <button onClick={onNewCall} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
   );
 
   // ---- CLIENT FOLDERS VIEW ----
@@ -435,7 +435,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         <div key={client} style={{ position: "relative", background: isPast ? "#fafafa" : "#FFFFFF", border: `1px solid ${isPast ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.08)"}`, borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isPast ? 0.65 : (isEmpty ? 0.5 : 1), transition: "all 0.2s", boxShadow: isEmpty || isPast ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
           <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
             {isPast ? (
-              onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.1)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
+              onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(99,102,241,0.1)", border: "none", color: "#6366F1", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
             ) : (
               onArchiveClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) onArchiveClient(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }} title="Archive client">Archive</button>
             )}
@@ -443,7 +443,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
               {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-              <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#31CE81", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+              <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#6366F1", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.45)" : "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -484,8 +484,8 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           {clients.map(client => renderClientCard(client, false))}
           {onAddClient && (
             <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "#FFFFFF", border: "2px dashed rgba(0,0,0,0.1)", borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(49,206,129,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                <span style={{ fontSize: 24, color: "#31CE81", fontWeight: 300 }}>+</span>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(99,102,241,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                <span style={{ fontSize: 24, color: "#6366F1", fontWeight: 300 }}>+</span>
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.4)" }}>Add Client</div>
             </div>
@@ -760,7 +760,7 @@ function InviteModal({ token, profile, onClose }) {
             <option value="manager" style={{ background: "#FFFFFF" }}>Manager</option>
           </select>
         </div>
-        <button onClick={sendInvite} disabled={sending} style={{ width: "100%", padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>{sending ? "Sending..." : "Send Invite"}</button>
+        <button onClick={sendInvite} disabled={sending} style={{ width: "100%", padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>{sending ? "Sending..." : "Send Invite"}</button>
         {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
         {sent && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>Invite created! They can sign up and will be added to your org.</div>}
         {invites.length > 0 && (
@@ -895,7 +895,7 @@ function GongSettingsModal({ token, getValidToken, onClose, client }) {
             {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
               {configured && (
                 <button onClick={handleTest} disabled={testing} style={{ padding: "10px 16px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{testing ? "Testing..." : "Test"}</button>
               )}
@@ -1030,7 +1030,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                 </div>
                 {statusBadge(call.status)}
                 {(call.status === "new" || call.status === "failed") && (
-                  <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                  <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
                     {processing === call.gongCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
                   </button>
                 )}
@@ -1168,7 +1168,7 @@ function DiioSettingsModal({ getValidToken, onClose, client }) {
             {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
               {configured && (
                 <button onClick={handleTest} disabled={testing} style={{ padding: "10px 16px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{testing ? "Testing..." : "Test"}</button>
               )}
@@ -1288,7 +1288,7 @@ function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                   </div>
                   {statusBadge(call.status)}
                   {(call.status === "new" || call.status === "failed") && (
-                    <button onClick={() => processCall(call.diioCallId, call.rawId, call.callType)} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.diioCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                    <button onClick={() => processCall(call.diioCallId, call.rawId, call.callType)} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.diioCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
                       {processing === call.diioCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
                     </button>
                   )}
@@ -1351,7 +1351,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
         {diioSyncClient && <DiioSyncModal getValidToken={getValidToken} client={diioSyncClient} onClose={() => setDiioSyncClient(null)} onCallProcessed={loadCalls} />}
 
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-          <span onClick={() => setSelectedClient(null)} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
+          <span onClick={() => setSelectedClient(null)} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
           <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
           <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{selectedClient}</span>
         </div>
@@ -1372,7 +1372,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: gongCfg ? "#31CE81" : "rgba(0,0,0,0.2)", display: "inline-block" }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setGongSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => setGongSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 {gongCfg ? "Edit Credentials" : "Connect Gong"}
               </button>
               {gongCfg && (
@@ -1402,7 +1402,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: diioCfg ? "#31CE81" : "rgba(0,0,0,0.2)", display: "inline-block" }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setDiioSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => setDiioSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 {diioCfg ? "Edit Credentials" : "Connect Diio"}
               </button>
               {diioCfg && (
@@ -1576,7 +1576,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
             </div>
             {clientHealth.map((ch, i) => (
               <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
-                <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#31CE81" : "#1A2B3C", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
+                <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#6366F1" : "#1A2B3C", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
                 {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
                   <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
                 ))}
@@ -1590,7 +1590,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>Start your first GTM audit</h3>
           <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Select any section from the navigation above to begin assessing your sales organization.</p>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            {[{ id: "calls", label: "Review a Call", color: "#31CE81" }, { id: "gtm", label: "Assess GTM Strategy", color: "#6366f1" }, { id: "crm", label: "Add Pipeline Data", color: "#8b5cf6" }].map(b => (
+            {[{ id: "calls", label: "Review a Call", color: "#6366F1" }, { id: "gtm", label: "Assess GTM Strategy", color: "#4F46E5" }, { id: "crm", label: "Add Pipeline Data", color: "#8b5cf6" }].map(b => (
               <button key={b.id} onClick={() => onNavigate(b.id)} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: b.color, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{b.label}</button>
             ))}
           </div>
@@ -1915,7 +1915,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     <div>
       {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
-        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Clients</span>
+        <span onClick={onBack} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Clients</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{client}</span>
       </div>
@@ -1924,7 +1924,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 22px" }}>
         <div style={{ width: 56, height: 56, borderRadius: 14, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
           {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 38, height: 38, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} /> : null}
-          <span style={{ fontSize: 22, fontWeight: 700, color: "#31CE81" }}>{client.charAt(0)}</span>
+          <span style={{ fontSize: 22, fontWeight: 700, color: "#6366F1" }}>{client.charAt(0)}</span>
         </div>
         <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1A2B3C", margin: "0 0 4px" }}>{client}</h2>
@@ -1944,7 +1944,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       <Section
         title="Call Reviews" icon="📞" items={clientCalls}
         emptyText="No call reviews yet for this client."
-        action={clientCalls.length > 0 && <button onClick={onBrowseByRep} style={{ fontSize: 12, fontWeight: 600, color: "#31CE81", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Browse by Rep →</button>}
+        action={clientCalls.length > 0 && <button onClick={onBrowseByRep} style={{ fontSize: 12, fontWeight: 600, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Browse by Rep →</button>}
       >
         {clientCalls.map(call => (
           <div key={call.id} onClick={() => onViewCall(call)} style={{ background: "#fafafa", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
@@ -2883,7 +2883,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
-        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Home</span>
+        <span onClick={onBack} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Home</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span style={{ color: "#1A2B3C", fontWeight: 600 }}>New GTM Assessment</span>
       </div>
@@ -2954,7 +2954,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
         <button
           onClick={generate}
           disabled={!canGenerate}
-          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "linear-gradient(135deg, #31CE81, #28B870)" : "rgba(0,0,0,0.07)", color: canGenerate ? "#fff" : "rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
+          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "linear-gradient(135deg, #6366F1, #4F46E5)" : "rgba(0,0,0,0.07)", color: canGenerate ? "#fff" : "rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
         >
           {generating ? "Analyzing documents..." : "Generate GTM Assessment ✦"}
         </button>
@@ -3016,7 +3016,7 @@ function ReportPage({ report, onBack }) {
       <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "28px 32px", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 24, marginBottom: execSummary.top_findings?.length ? 24 : 0 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: "#31CE81", fontWeight: 700, marginBottom: 8 }}>GTM Assessment Report</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, color: "#6366F1", fontWeight: 700, marginBottom: 8 }}>GTM Assessment Report</div>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: "#1A2B3C", margin: "0 0 4px", lineHeight: 1.15 }}>{report.client}</h1>
             <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginBottom: 16 }}>
               {report.report_date && new Date(report.report_date + "T12:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
@@ -3994,75 +3994,84 @@ export default function CuotaCallReview() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F3F0", color: "#1A2B3C", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#F5F3F0", color: "#1A2B3C", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
 
-      {/* NAV */}
-      <div style={{ background: "#FFFFFF", borderBottom: "1px solid rgba(0,0,0,0.08)", padding: "0 24px", display: "flex", alignItems: "center", gap: 8, height: 56 }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, marginRight: 8, flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
-
-        {/* Home */}
-        <button onClick={() => setPage("home")} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === "home" ? "rgba(0,0,0,0.06)" : "transparent", color: page === "home" ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
-          ◼ Home
-        </button>
-
-        {/* New Assessment CTA */}
-        <button onClick={() => { setPage("intake"); }} style={{ padding: "7px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 700, background: page === "intake" || page === "report" ? "linear-gradient(135deg, #28B870, #22a062)" : "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
-          + New Assessment
-        </button>
-
-        {/* Call Reviews direct link */}
-        <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: page === "calls" || page === "review" ? "rgba(0,0,0,0.06)" : "transparent", color: page === "calls" || page === "review" ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}>
-          📞 Call Reviews {savedCalls.length > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(49,206,129,0.15)", color: "#31CE81" }}>{savedCalls.length}</span>}
-        </button>
-
-        {/* Audit dropdown */}
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          <button onClick={() => setNavOpen(o => !o)} style={{ padding: "8px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, background: ["gtm","tof","calls","enablement","crm","hiring","metrics"].includes(page) ? "rgba(0,0,0,0.06)" : "transparent", color: ["gtm","tof","calls","enablement","crm","hiring","metrics"].includes(page) ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
-            📋 Sections <span style={{ fontSize: 10, opacity: 0.6 }}>{navOpen ? "▲" : "▼"}</span>
+      {/* SIDEBAR */}
+      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#FFFFFF", borderRight: "1px solid rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", zIndex: 100 }}>
+        <div style={{ padding: "24px 16px 16px" }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5 }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></span>
+        </div>
+        <div style={{ padding: "0 12px 16px" }}>
+          <button onClick={() => setPage("intake")} style={{ width: "100%", padding: "9px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            + New Assessment
           </button>
-          {navOpen && (
-            <div onMouseLeave={() => setNavOpen(false)} style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "#fff", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 200, minWidth: 210, padding: "6px 0" }}>
-              {[
-                { id: "gtm", label: "GTM Strategy", icon: "🎯" },
-                { id: "tof", label: "Top of Funnel", icon: "📣" },
-                { id: "calls", label: "Sales Readiness", icon: "📞", badge: savedCalls.length },
-                { id: "enablement", label: "Sales Enablement", icon: "📄" },
-                { id: "crm", label: "RevOps", icon: "📊" },
-                { id: "hiring", label: "Hiring", icon: "👥" },
-                { id: "metrics", label: "Metrics", icon: "📈" },
-              ].map(nav => (
-                <button key={nav.id} onClick={() => { setPage(nav.id); setNavOpen(false); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", border: "none", background: page === nav.id ? "rgba(0,0,0,0.04)" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: page === nav.id ? 700 : 500, color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.65)", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}>
-                  <span style={{ width: 20, textAlign: "center" }}>{nav.icon}</span>
-                  <span style={{ flex: 1 }}>{nav.label}</span>
-                  {nav.badge > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(74,222,128,0.15)", color: "#31CE81" }}>{nav.badge}</span>}
-                </button>
-              ))}
-              {profile?.role === "admin" && (
-                <>
-                  <div style={{ height: 1, background: "rgba(0,0,0,0.06)", margin: "6px 0" }} />
-                  {[{ id: "integrations", label: "Integrations", icon: "⚙️" }, { id: "docsync", label: "Document Sources", icon: "🔄" }, { id: "admin", label: "Admin", icon: "👑" }].map(nav => (
-                    <button key={nav.id} onClick={() => { setPage(nav.id); setNavOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", border: "none", background: page === nav.id ? "rgba(0,0,0,0.04)" : "transparent", cursor: "pointer", fontSize: 13, fontWeight: page === nav.id ? 700 : 500, color: page === nav.id ? "#1A2B3C" : "rgba(0,0,0,0.65)", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}>
-                      <span style={{ width: 20, textAlign: "center" }}>{nav.icon}</span>
-                      <span>{nav.label}</span>
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "8px 8px 4px" }}>Platform</div>
+          {[
+            { id: "home", label: "Home", icon: "◼" },
+            { id: "calls", label: "Call Reviews", icon: "📞", badge: savedCalls.length },
+          ].map(nav => {
+            const active = nav.id === "calls" ? (page === "calls" || page === "review") : page === nav.id;
+            return (
+              <button key={nav.id} onClick={() => { setPage(nav.id); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+                <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
+                <span style={{ flex: 1 }}>{nav.label}</span>
+                {nav.badge > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(99,102,241,0.12)", color: "#6366F1" }}>{nav.badge}</span>}
+              </button>
+            );
+          })}
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Assessments</div>
+          {[
+            { id: "gtm", label: "GTM Strategy", icon: "🎯" },
+            { id: "tof", label: "Top of Funnel", icon: "📣" },
+            { id: "enablement", label: "Sales Enablement", icon: "📄" },
+            { id: "crm", label: "RevOps", icon: "📊" },
+            { id: "hiring", label: "Hiring", icon: "👥" },
+            { id: "metrics", label: "Metrics", icon: "📈" },
+          ].map(nav => {
+            const active = page === nav.id;
+            return (
+              <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+                <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
+                <span>{nav.label}</span>
+              </button>
+            );
+          })}
+          {(profile?.role === "manager" || profile?.role === "admin") && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Admin</div>
+              {profile?.role === "admin" && [
+                { id: "integrations", label: "Integrations", icon: "⚙️" },
+                { id: "docsync", label: "Doc Sync", icon: "🔄" },
+                { id: "admin", label: "Admin", icon: "👑" },
+              ].map(nav => {
+                const active = page === nav.id;
+                return (
+                  <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+                    <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
+                    <span>{nav.label}</span>
+                  </button>
+                );
+              })}
+              <button onClick={() => setShowInvite(true)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: "3px solid transparent", background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+                <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>✉️</span>
+                <span>Invite User</span>
+              </button>
+            </>
           )}
         </div>
-
-        <div style={{ flex: 1 }} />
-        {(profile?.role === "manager" || profile?.role === "admin") && <button onClick={() => setShowInvite(true)} style={{ padding: "6px 12px", border: "1px solid rgba(49,206,129,0.3)", borderRadius: 8, background: "rgba(49,206,129,0.08)", color: "#31CE81", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Invite</button>}
-        <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{session.user?.email}</span>
-        <button onClick={handleLogout} style={{ padding: "6px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Logout</button>
+        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.user?.email}</div>
+          <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
+        </div>
       </div>
 
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{ marginLeft: 220, flex: 1, padding: "32px 40px" }}>
         {/* HOME PAGE — Executive Summary */}
         {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} />}
 
@@ -4169,7 +4178,7 @@ export default function CuotaCallReview() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Call Transcript</h3>
-                  <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
+                  <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
                     {analyzing ? "Analyzing..." : "Analyze with AI \u2726"}
                   </button>
                 </div>
@@ -4264,9 +4273,9 @@ export default function CuotaCallReview() {
 
             {/* Save Button */}
             <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "flex-end" }}>
-              {saveSuccess && <span style={{ padding: "12px 0", fontSize: 13, color: "#31CE81", fontWeight: 600 }}>Saved successfully!</span>}
+              {saveSuccess && <span style={{ padding: "12px 0", fontSize: 13, color: "#6366F1", fontWeight: 600 }}>Saved successfully!</span>}
               {error && !analyzing && <span style={{ padding: "12px 0", fontSize: 13, color: "#ef4444" }}>{error}</span>}
-              <button onClick={saveCall} disabled={saving} style={{ padding: "14px 32px", border: "none", borderRadius: 12, cursor: "pointer", background: "linear-gradient(135deg, #31CE81, #28B870)", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
+              <button onClick={saveCall} disabled={saving} style={{ padding: "14px 32px", border: "none", borderRadius: 12, cursor: "pointer", background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
                 {saving ? "Saving..." : selectedCall ? "Update Call" : "Save This Call"}
               </button>
             </div>
