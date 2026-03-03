@@ -1,5 +1,5 @@
 // Vercel Cron — auto-processes new Diio calls for all configured clients
-// Runs on a schedule defined in vercel.json (every hour)
+// Runs on a schedule defined in vercel.json (daily)
 import { adminTable } from "../_lib/supabase.js";
 import { createDiioClient, refreshDiioToken } from "../_lib/diio.js";
 import { analyzeTranscript, computeScores, buildCallData } from "../_lib/analyze.js";
@@ -15,11 +15,11 @@ function fetchWithTimeout(url, options, ms) {
     .then((r) => { clearTimeout(timer); return r; })
     .catch((e) => { clearTimeout(timer); throw e; });
 }
-const DAYS_BACK = 7;       // scan last 7 days
-const MAX_PER_AE = 1;      // 1 call per AE per run for fair distribution
-const MAX_TOTAL = 1;       // 1 call per run: setup ~9s + Claude up to 40s + DB ~4s ≈ 53s, under 60s limit
-const MAX_TRANSCRIPT_CHARS = 20000; // truncate to ~3500 words — enough for analysis, faster Claude
-const CLAUDE_TIMEOUT_MS = 40000;    // 40s Claude timeout with MAX_TOTAL=1: 9+40+4=53s, under watchdog
+const DAYS_BACK = 7;               // scan last 7 days
+const MAX_TRANSCRIPT_CHARS = 10000; // ~1700 words — faster Claude, fits parallel budget
+const CLAUDE_TIMEOUT_MS = 22000;    // 22s per call; 3 parallel batches fit in 60s window
+const CONCURRENCY = 3;              // parallel Claude calls per batch
+const MAX_CALLS_PER_RUN = 20;       // safety cap — prevents runaway on huge backlogs
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {
@@ -185,7 +185,7 @@ export default async function handler(req, res) {
   const t0 = Date.now();
   const elapsed = () => `+${((Date.now() - t0) / 1000).toFixed(1)}s`;
 
-  // Watchdog: respond at 55s with whatever we have rather than letting Vercel kill at 60s
+  // Watchdog: respond at 52s with whatever we have rather than letting Vercel kill at 60s
   let responded = false;
   const watchdog = setTimeout(() => {
     if (!responded) {
@@ -193,7 +193,7 @@ export default async function handler(req, res) {
       console.error(`[cron] WATCHDOG triggered at ${elapsed()} — lastStep: ${summary.lastStep}`);
       res.status(200).json({ ok: false, timedOut: true, ...summary });
     }
-  }, 55000);
+  }, 52000);
 
   try {
     console.log(`[cron] start`);
@@ -204,6 +204,9 @@ export default async function handler(req, res) {
     }
     console.log(`[cron] settings loaded ${elapsed()}`);
     summary.lastStep = "settings loaded";
+
+    // Phase 1: collect all pending work items across every org (fast — no Claude yet)
+    const workItems = [];
 
     for (const settings of allSettings) {
       const { org_id: orgId, client } = settings;
@@ -315,25 +318,32 @@ export default async function handler(req, res) {
           continue;
         }
 
-        // Group by AE, cap at MAX_PER_AE per seller
-        const byAE = {};
-        for (const item of queue) {
-          if (!byAE[item.seller]) byAE[item.seller] = [];
-          if (byAE[item.seller].length < MAX_PER_AE) byAE[item.seller].push(item);
-        }
-        const toProcess = Object.values(byAE).flat();
-
         summary.orgsProcessed++;
-        console.log(`[cron] ${queue.length} new calls for ${client} across ${Object.keys(byAE).length} AEs, processing ${toProcess.length}`);
+        console.log(`[cron] ${queue.length} pending calls for ${client}, queueing all`);
 
-        for (const { callId, callType } of toProcess) {
-          if (summary.callsProcessed + summary.callsFailed >= MAX_TOTAL) break;
-          const ok = await processOneCall(diio, settings, callId, callType, orgId, client, apiKey);
-          if (ok) summary.callsProcessed++;
-          else summary.callsFailed++;
+        for (const { callId, callType } of queue) {
+          workItems.push({ diio, settings, callId, callType, orgId, client, apiKey });
         }
       } catch (e) {
         console.error(`[cron] Error for org ${orgId} (${client}): ${e.message}`);
+      }
+    }
+
+    // Phase 2: process all collected calls in parallel batches
+    const limited = workItems.slice(0, MAX_CALLS_PER_RUN);
+    console.log(`[cron] processing ${limited.length} calls (concurrency=${CONCURRENCY}) ${elapsed()}`);
+    summary.lastStep = "processing";
+
+    for (let i = 0; i < limited.length; i += CONCURRENCY) {
+      const batch = limited.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(
+        batch.map(({ diio, settings, callId, callType, orgId, client, apiKey }) =>
+          processOneCall(diio, settings, callId, callType, orgId, client, apiKey)
+        )
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value) summary.callsProcessed++;
+        else summary.callsFailed++;
       }
     }
 
