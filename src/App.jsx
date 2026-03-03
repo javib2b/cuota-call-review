@@ -1975,7 +1975,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
 }
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange }) {
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
   const docCategory = (docType) => ENABLEMENT_DOC_TYPES.find(t => t.id === docType)?.category || "enablement";
 
@@ -2052,104 +2052,102 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         )}
       </div>
 
-      {/* Call Reviews — grouped by rep */}
-      {clientCalls.length === 0 ? (
-        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 16 }}>📞</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>Call Reviews</span>
-          </div>
-          <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: 0, textAlign: "center", padding: "12px 0" }}>No call reviews yet for this client.</p>
-        </div>
-      ) : (() => {
-        // Group calls by rep name, sorted most recent first within each rep
-        const byRep = {};
-        clientCalls.forEach(call => {
-          const repName = call.category_scores?.rep_name || call.rep_name || "Unknown Rep";
-          if (!byRep[repName]) byRep[repName] = [];
-          byRep[repName].push(call);
-        });
-        const repEntries = Object.entries(byRep).map(([repName, repCalls]) => {
-          const avg = Math.round(repCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / repCalls.length);
-          const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
-          return { repName, repCalls, avg, isSdr };
-        }).sort((a, b) => b.avg - a.avg);
+      {/* Tab bar */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 4 }}>
+        {[{ id: "calls", label: "📞 Call Reviews", count: clientCalls.length }, { id: "docs", label: "📄 Doc Intakes", count: clientDocs.length }].map(tab => (
+          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ flex: 1, padding: "9px 12px", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(99,102,241,0.08)" : "transparent", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.45)", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            {tab.label}
+            {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(99,102,241,0.15)" : "rgba(0,0,0,0.06)", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.4)" }}>{tab.count}</span>}
+          </button>
+        ))}
+      </div>
 
-        const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
-          const [open, setOpen] = useState(true);
-          return (
-            <div style={{ border: "1px solid rgba(99,102,241,0.15)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
-              {/* Rep header — visually distinct */}
-              <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer", background: "rgba(99,102,241,0.04)", borderBottom: open ? "1px solid rgba(99,102,241,0.1)" : "none" }}>
-                <CircularScore score={avg} size={42} strokeWidth={4} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "#6366F1", display: "flex", alignItems: "center", gap: 8 }}>
-                    {repName}
-                    {isSdr && <span style={{ background: "rgba(99,102,241,0.12)", color: "#6366F1", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, letterSpacing: 0.5 }}>SDR</span>}
+      {/* Call Reviews — grouped by rep */}
+      {activeTab === "calls" && (
+        clientCalls.length === 0 ? (
+          <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📞</div>
+            <p style={{ fontSize: 13, color: "rgba(0,0,0,0.35)", margin: 0 }}>No call reviews yet for this client.</p>
+          </div>
+        ) : (() => {
+          const byRep = {};
+          clientCalls.forEach(call => {
+            const repName = call.category_scores?.rep_name || call.rep_name || "Unknown Rep";
+            if (!byRep[repName]) byRep[repName] = [];
+            byRep[repName].push(call);
+          });
+          const repEntries = Object.entries(byRep).map(([repName, repCalls]) => {
+            const avg = Math.round(repCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / repCalls.length);
+            const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
+            return { repName, repCalls, avg, isSdr };
+          }).sort((a, b) => b.avg - a.avg);
+
+          const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
+            const [open, setOpen] = useState(true);
+            return (
+              <div style={{ border: "1px solid rgba(99,102,241,0.15)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+                <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer", background: "rgba(99,102,241,0.04)", borderBottom: open ? "1px solid rgba(99,102,241,0.1)" : "none" }}>
+                  <CircularScore score={avg} size={42} strokeWidth={4} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#6366F1", display: "flex", alignItems: "center", gap: 8 }}>
+                      {repName}
+                      {isSdr && <span style={{ background: "rgba(99,102,241,0.12)", color: "#6366F1", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, letterSpacing: 0.5 }}>SDR</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", marginTop: 2, fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", marginTop: 2, fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</div>
+                  <span style={{ fontSize: 12, color: "rgba(99,102,241,0.4)", fontWeight: 600 }}>{open ? "▲" : "▼"}</span>
                 </div>
-                <span style={{ fontSize: 12, color: "rgba(99,102,241,0.4)", fontWeight: 600 }}>{open ? "▲" : "▼"}</span>
+                {open && repCalls.map((call, idx) => (
+                  <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+                    <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
+                      <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{call.category_scores?.call_type || call.call_type || "Call"}{call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}</div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
+                      {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
+                    </div>
+                  </div>
+                ))}
               </div>
-              {/* Call rows */}
-              {open && repCalls.map((call, idx) => (
-                <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-                  <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
-                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{call.category_scores?.call_type || call.call_type || "Call"}{call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}</div>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
-                    {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
-                  </div>
-                </div>
-              ))}
+            );
+          };
+
+          return (
+            <div>
+              {repEntries.map(e => <RepGroup key={e.repName} {...e} />)}
             </div>
           );
-        };
+        })()
+      )}
 
-        return (
-          <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 16 }}>📞</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>Call Reviews</span>
-                <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", background: "rgba(0,0,0,0.05)", borderRadius: 10, padding: "2px 8px" }}>{clientCalls.length}</span>
-              </div>
-              <button onClick={onBrowseByRep} style={{ fontSize: 12, fontWeight: 600, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>Browse by Rep →</button>
-            </div>
-            {repEntries.map(e => <RepGroup key={e.repName} {...e} />)}
-          </div>
-        );
-      })()}
-
-      {/* Enablement Documents */}
-      <Section
-        title="Enablement Documents" icon="📄" items={enablementList}
-        emptyText="No enablement documents uploaded yet."
-        action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
-      >
-        {enablementList.map(docRow)}
-      </Section>
-
-      {/* Marketing Materials */}
-      <Section
-        title="Marketing Materials" icon="📣" items={marketingList}
-        emptyText="No marketing materials uploaded yet."
-        action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
-      >
-        {marketingList.map(docRow)}
-      </Section>
-
-      {/* Training Documents */}
-      <Section
-        title="Training Documents" icon="🎓" items={trainingList}
-        emptyText="No training documents uploaded yet."
-        action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#8b5cf6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
-      >
-        {trainingList.map(docRow)}
-      </Section>
+      {/* Doc Intakes — three categories */}
+      {activeTab === "docs" && (
+        <div>
+          <Section
+            title="Enablement Documents" icon="📄" items={enablementList}
+            emptyText="No enablement documents uploaded yet."
+            action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
+          >
+            {enablementList.map(docRow)}
+          </Section>
+          <Section
+            title="Marketing Materials" icon="📣" items={marketingList}
+            emptyText="No marketing materials uploaded yet."
+            action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
+          >
+            {marketingList.map(docRow)}
+          </Section>
+          <Section
+            title="Training Documents" icon="🎓" items={trainingList}
+            emptyText="No training documents uploaded yet."
+            action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#8b5cf6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
+          >
+            {trainingList.map(docRow)}
+          </Section>
+        </div>
+      )}
     </div>
   );
 }
@@ -3721,6 +3719,8 @@ export default function CuotaCallReview() {
   const [pastClients, setPastClients] = useState(loadPastClients);
   const [archivedClients, setArchivedClients] = useState(loadArchivedClients);
   const [selectedClientProfile, setSelectedClientProfile] = useState(null);
+  const [clientPageTab, setClientPageTab] = useState("calls");
+  const [sidebarOpenClients, setSidebarOpenClients] = useState({});
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -4191,34 +4191,77 @@ export default function CuotaCallReview() {
 
       {/* SIDEBAR */}
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#FFFFFF", borderRight: "1px solid rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", zIndex: 100 }}>
+        {/* Logo */}
         <div style={{ padding: "24px 16px 16px" }}>
           <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5 }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></span>
         </div>
-        <div style={{ padding: "0 12px 16px" }}>
-          <button onClick={() => setPage("intake")} style={{ width: "100%", padding: "9px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            + New Assessment
+        {/* + New Call Review */}
+        <div style={{ padding: "0 12px 14px" }}>
+          <button onClick={startNewReview} style={{ width: "100%", padding: "9px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            + New Call Review
           </button>
         </div>
+
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "8px 8px 4px" }}>Platform</div>
+          {/* CLIENTS */}
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "4px 8px 4px" }}>Clients</div>
+          {clients.map(clientName => {
+            const isOpen = !!sidebarOpenClients[clientName];
+            const isActiveClient = page === "client" && selectedClientProfile === clientName;
+            const callCount = savedCalls.filter(c => c.category_scores?.client === clientName || (c.prospect_company || "").toLowerCase().includes(clientName.toLowerCase())).length;
+            const docCount = enablementDocs.filter(d => d.client === clientName).length;
+            return (
+              <div key={clientName}>
+                {/* Client row */}
+                <button onClick={() => setSidebarOpenClients(prev => ({ ...prev, [clientName]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px", border: "none", background: isActiveClient && !isOpen ? "rgba(99,102,241,0.04)" : "transparent", color: isActiveClient ? "#1A2B3C" : "#374151", fontSize: 13, fontWeight: isActiveClient ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
+                  {getClientLogo(clientName)
+                    ? <img src={getClientLogo(clientName)} style={{ width: 16, height: 16, borderRadius: 3, objectFit: "contain", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
+                    : <span style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(99,102,241,0.12)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#6366F1", flexShrink: 0 }}>{clientName[0]}</span>
+                  }
+                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName}</span>
+                  <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", flexShrink: 0, transition: "transform 0.15s", display: "inline-block", transform: isOpen ? "rotate(90deg)" : "none" }}>›</span>
+                </button>
+                {/* Sub-items */}
+                {isOpen && (
+                  <div style={{ marginBottom: 4 }}>
+                    {[
+                      { tab: "calls", label: "Call Reviews", icon: "📞", count: callCount },
+                      { tab: "docs", label: "Doc Intakes", icon: "📄", count: docCount },
+                    ].map(({ tab, label, icon, count }) => {
+                      const isActive = isActiveClient && clientPageTab === tab;
+                      return (
+                        <button key={tab} onClick={() => { setSelectedClientProfile(clientName); setClientPageTab(tab); setPage("client"); setSidebarOpenClients(prev => ({ ...prev, [clientName]: true })); }} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px 7px 30px", border: "none", borderLeft: isActive ? "3px solid #6366F1" : "3px solid transparent", background: isActive ? "rgba(99,102,241,0.08)" : "transparent", color: isActive ? "#6366F1" : "#6B7280", fontSize: 12, fontWeight: isActive ? 600 : 400, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
+                          <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
+                          <span style={{ flex: 1 }}>{label}</span>
+                          {count > 0 && <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 8, background: isActive ? "rgba(99,102,241,0.15)" : "rgba(0,0,0,0.05)", color: isActive ? "#6366F1" : "rgba(0,0,0,0.35)", flexShrink: 0 }}>{count}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* PLATFORM */}
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Platform</div>
           {[
             { id: "home", label: "Home", icon: "◼" },
-            { id: "calls", label: "Call Reviews", icon: "📞", badge: savedCalls.length },
           ].map(nav => {
-            const active = nav.id === "calls" ? (page === "calls" || page === "review") : page === nav.id;
+            const active = page === nav.id;
             return (
-              <button key={nav.id} onClick={() => { setPage(nav.id); if (nav.id === "calls") { setFolderClient(null); setFolderAE(null); } }} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
+              <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
                 <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
                 <span style={{ flex: 1 }}>{nav.label}</span>
-                {nav.badge > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 10, background: "rgba(99,102,241,0.12)", color: "#6366F1" }}>{nav.badge}</span>}
               </button>
             );
           })}
+
+          {/* ASSESSMENTS */}
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Assessments</div>
           {[
             { id: "gtm", label: "GTM Strategy", icon: "🎯" },
             { id: "tof", label: "Top of Funnel", icon: "📣" },
-            { id: "enablement", label: "Sales Enablement", icon: "📄" },
             { id: "crm", label: "RevOps", icon: "📊" },
             { id: "hiring", label: "Hiring", icon: "👥" },
             { id: "metrics", label: "Metrics", icon: "📈" },
@@ -4231,6 +4274,8 @@ export default function CuotaCallReview() {
               </button>
             );
           })}
+
+          {/* ADMIN */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
             <>
               <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Admin</div>
@@ -4254,6 +4299,8 @@ export default function CuotaCallReview() {
             </>
           )}
         </div>
+
+        {/* User + Logout */}
         <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(0,0,0,0.06)" }}>
           <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.user?.email}</div>
           <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
@@ -4281,10 +4328,12 @@ export default function CuotaCallReview() {
           client={selectedClientProfile}
           savedCalls={savedCalls}
           enablementDocs={enablementDocs}
-          onBack={() => { setPage("calls"); setSelectedClientProfile(null); setFolderClient(null); setFolderAE(null); }}
+          onBack={() => { setPage("home"); setSelectedClientProfile(null); setFolderClient(null); setFolderAE(null); }}
           onViewCall={(call) => { loadCallIntoReview(call); }}
           onBrowseByRep={() => { setPage("calls"); setFolderClient(selectedClientProfile); setFolderAE(null); }}
           onNavigate={(p) => setPage(p)}
+          activeTab={clientPageTab}
+          onTabChange={setClientPageTab}
         />}
 
         {/* SALES READINESS */}
