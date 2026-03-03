@@ -4595,7 +4595,7 @@ export default function CuotaCallReview() {
             src="/cuota_logo_official_White.png"
             alt="Cuota"
             onClick={() => setPage("home")}
-            style={{ height: 32, cursor: "pointer", display: "block", maxWidth: "100%" }}
+            style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }}
           />
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
