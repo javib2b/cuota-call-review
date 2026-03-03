@@ -4590,8 +4590,13 @@ export default function CuotaCallReview() {
       {/* SIDEBAR */}
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#1A2B3C", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", zIndex: 100 }}>
         {/* Logo — click to go home */}
-        <div style={{ padding: "24px 16px 16px" }}>
-          <span onClick={() => setPage("home")} style={{ fontSize: 16, fontWeight: 800, color: "#FFFFFF", letterSpacing: 1.5, cursor: "pointer" }}>CUOTA<span style={{ color: "#31CE81" }}>/</span></span>
+        <div style={{ padding: "20px 16px 16px" }}>
+          <img
+            src="/cuota_logo_official_White.png"
+            alt="Cuota"
+            onClick={() => setPage("home")}
+            style={{ height: 32, cursor: "pointer", display: "block", maxWidth: "100%" }}
+          />
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
           {/* HOME */}
