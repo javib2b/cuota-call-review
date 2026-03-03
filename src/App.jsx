@@ -187,7 +187,7 @@ function groupCallsByClientAndAE(calls, clientList) {
 }
 
 function getScoreColor(s) { return s >= 80 ? "#31CE81" : s >= 60 ? "#eab308" : s >= 40 ? "#f97316" : "#ef4444"; }
-function getScoreLabel(s) { return s >= 85 ? "Solid" : s >= 65 ? "Average" : s >= 50 ? "Needs Work" : "Critical"; }
+function getScoreLabel(s) { return s >= 90 ? "Excellent" : s >= 80 ? "Good" : s >= 65 ? "Average" : s >= 50 ? "Needs Work" : "Critical"; }
 function getScoreColor10(s) { return s >= 8 ? "#31CE81" : s >= 6 ? "#eab308" : s >= 4 ? "#f97316" : "#ef4444"; }
 
 function CircularScore({ score, size = 120, strokeWidth = 8, label }) {
@@ -415,8 +415,16 @@ function CategoryBar({ category, scores, onScoreChange }) {
 }
 
 // ==================== SAVED CALLS ====================
+function getClientTrend(clientCalls) {
+  if (clientCalls.length < 2) return null;
+  const sorted = [...clientCalls].sort((a, b) => new Date(b.call_date || b.created_at) - new Date(a.call_date || a.created_at));
+  const last = sorted[0].overall_score || 0;
+  const prevAvg = sorted.slice(1, 4).reduce((s, c) => s + (c.overall_score || 0), 0) / Math.min(sorted.length - 1, 3);
+  const diff = Math.round(last - prevAvg);
+  return { direction: diff > 5 ? "up" : diff < -5 ? "down" : "flat", diff };
+}
+
 function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient, pastClients, onArchiveClient, onRestoreClient, onClientClick, archivedClients, onArchiveFromPast, onRestoreFromArchived }) {
-  const [showPast, setShowPast] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const allKnownClients = [...clients, ...(pastClients || []), ...(archivedClients || [])];
   const grouped = groupCallsByClientAndAE(calls, allKnownClients);
@@ -478,7 +486,17 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 <CircularScore score={avgScore} size={40} strokeWidth={3} />
                 <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>avg score</div>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(avgScore), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(avgScore)}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(avgScore), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(avgScore)}</div>
+                {(() => {
+                  const trend = getClientTrend(clientCalls);
+                  if (!trend) return null;
+                  const arrowColor = trend.direction === "up" ? "#31CE81" : trend.direction === "down" ? "#ef4444" : "rgba(0,0,0,0.3)";
+                  const arrow = trend.direction === "up" ? "↑" : trend.direction === "down" ? "↓" : "→";
+                  const diffStr = trend.direction !== "flat" ? ` ${trend.diff > 0 ? "+" : ""}${trend.diff}` : "";
+                  return <span style={{ fontSize: 11, fontWeight: 600, color: arrowColor }}>{arrow}{diffStr}</span>;
+                })()}
+              </div>
             </div>
           )}
         </div>
@@ -487,10 +505,26 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
     return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Clients</h2>
-          {newReviewBtn}
         </div>
+        {(() => {
+          const totalCalls = calls.length;
+          const avgScoreStat = calls.length > 0 ? Math.round(calls.reduce((s, c) => s + (c.overall_score || 0), 0) / calls.length) : null;
+          const totalReps = new Set(calls.map(c => c.category_scores?.rep_name).filter(Boolean)).size;
+          const activeClientCount = clients.length;
+          return totalCalls > 0 ? (
+            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginBottom: 18, display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontWeight: 600, color: "#1A2B3C" }}>{activeClientCount} {activeClientCount === 1 ? "Client" : "Clients"}</span>
+              <span style={{ color: "rgba(0,0,0,0.2)" }}>·</span>
+              <span>{totalCalls} {totalCalls === 1 ? "Review" : "Reviews"}</span>
+              <span style={{ color: "rgba(0,0,0,0.2)" }}>·</span>
+              <span>Avg Score <span style={{ fontWeight: 700, color: avgScoreStat !== null ? getScoreColor(avgScoreStat) : "inherit" }}>{avgScoreStat ?? "—"}</span></span>
+              <span style={{ color: "rgba(0,0,0,0.2)" }}>·</span>
+              <span>{totalReps} {totalReps === 1 ? "Rep" : "Reps"}</span>
+            </div>
+          ) : null;
+        })()}
         {error && (
           <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
             <span style={{ fontSize: 13, color: "#ef4444" }}>{error}</span>
@@ -501,56 +535,51 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
           {clients.map(client => renderClientCard(client, false))}
           {onAddClient && (
-            <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "#FFFFFF", border: "2px dashed rgba(0,0,0,0.1)", borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(99,102,241,0.08)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                <span style={{ fontSize: 24, color: "#6366F1", fontWeight: 300 }}>+</span>
+            <div onClick={() => { const name = window.prompt("Enter client name:"); if (name?.trim()) onAddClient(name.trim()); }} style={{ background: "transparent", border: "2px dashed rgba(0,0,0,0.1)", borderRadius: 16, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 120 }}>
+              <div style={{ width: 20, height: 20, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 18, color: "rgba(0,0,0,0.25)", fontWeight: 300 }}>+</span>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.4)" }}>Add Client</div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: "rgba(0,0,0,0.3)" }}>Add Client</div>
             </div>
           )}
         </div>
         {pastClients && pastClients.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <button onClick={() => setShowPast(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 0", marginBottom: showPast ? 12 : 0, fontFamily: "inherit" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1 }}>Past Clients</span>
-              <span style={{ fontSize: 11, padding: "1px 7px", borderRadius: 10, background: "rgba(0,0,0,0.06)", color: "rgba(0,0,0,0.4)", fontWeight: 600 }}>{pastClients.length}</span>
-              <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", marginLeft: 2 }}>{showPast ? "▲" : "▼"}</span>
-            </button>
-            {showPast && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
-                {pastClients.map(client => {
-                  const aes = grouped[client] || {};
-                  const clientCalls = Object.values(aes).flat();
-                  const callCount = clientCalls.length;
-                  const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
-                  const logoUrl = getClientLogo(client);
-                  return (
-                    <div key={client} style={{ position: "relative", background: "#fafafa", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
-                      <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
-                        {onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(99,102,241,0.1)", border: "none", color: "#6366F1", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
-                        {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
-                      </div>
-                      <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                          {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-                          <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.25)", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
-                          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.25)", marginTop: 2 }}>{callCount > 0 ? `${callCount} call${callCount !== 1 ? "s" : ""}` : "No calls"}</div>
-                        </div>
-                      </div>
-                      {callCount > 0 && (
-                        <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", gap: 8 }}>
-                          <CircularScore score={avgScore} size={40} strokeWidth={3} />
-                          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>avg score</div>
-                        </div>
-                      )}
+            <div style={{ height: 1, background: "rgba(0,0,0,0.05)", marginBottom: 16 }} />
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>Past Clients</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
+              {pastClients.map(client => {
+                const aes = grouped[client] || {};
+                const clientCalls = Object.values(aes).flat();
+                const callCount = clientCalls.length;
+                const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
+                const logoUrl = getClientLogo(client);
+                return (
+                  <div key={client} style={{ position: "relative", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
+                    <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
+                      {onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(99,102,241,0.1)", border: "none", color: "#6366F1", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
+                      {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                        {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
+                        <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.25)", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
+                        <div style={{ fontSize: 12, color: "rgba(0,0,0,0.25)", marginTop: 2 }}>{callCount > 0 ? `${callCount} call${callCount !== 1 ? "s" : ""}` : "No calls"}</div>
+                      </div>
+                    </div>
+                    {callCount > 0 && (
+                      <div style={{ padding: "0 20px 16px", display: "flex", alignItems: "center", gap: 8 }}>
+                        <CircularScore score={avgScore} size={40} strokeWidth={3} />
+                        <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>avg score</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -1598,22 +1627,62 @@ function AuditStatusBadge({ score }) {
 }
 
 function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, tofAssessments, hiringAssessments, metricsAssessments, clients, onNavigate, onClientClick }) {
+  const [showGtmSummary, setShowGtmSummary] = useState(false);
+
+  // Stats
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+  const reviewsThisMonth = savedCalls.filter(c => {
+    const d = new Date(c.call_date || c.created_at);
+    return d >= thirtyDaysAgo;
+  }).length;
+
+  const allCallScores = savedCalls.map(c => c.overall_score).filter(Boolean);
+  const avgCallScore = allCallScores.length > 0 ? Math.round(allCallScores.reduce((a, b) => a + b, 0) / allCallScores.length) : null;
+
+  const prevMonthScores = savedCalls.filter(c => {
+    const d = new Date(c.call_date || c.created_at);
+    return d >= sixtyDaysAgo && d < thirtyDaysAgo;
+  }).map(c => c.overall_score).filter(Boolean);
+  const prevAvgScore = prevMonthScores.length > 0 ? Math.round(prevMonthScores.reduce((a, b) => a + b, 0) / prevMonthScores.length) : null;
+  const scoreTrend = avgCallScore !== null && prevAvgScore !== null ? avgCallScore - prevAvgScore : null;
+
+  // Recent calls (last 5)
+  const recentCalls = [...savedCalls]
+    .sort((a, b) => new Date(b.call_date || b.created_at) - new Date(a.call_date || a.created_at))
+    .slice(0, 5);
+
+  // Needs attention
+  const needsAttention = clients.map(client => {
+    const clientCalls = savedCalls.filter(c =>
+      c.category_scores?.client === client ||
+      (c.prospect_company || "").toLowerCase().includes(client.toLowerCase())
+    );
+    if (clientCalls.length === 0) return null;
+    const avg = Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length);
+    const sorted = [...clientCalls].sort((a, b) => new Date(b.call_date || b.created_at) - new Date(a.call_date || a.created_at));
+    const mostRecent = sorted[0]?.overall_score || 0;
+    if (avg < 65 || mostRecent < 50) return { client, avg, mostRecent };
+    return null;
+  }).filter(Boolean);
+
+  // GTM helpers (for collapsed section)
   const latestScore = (arr) => arr.length > 0 ? (arr[0].overall_score || null) : null;
-  const avgScore = (arr) => {
+  const avgScoreFn = (arr) => {
     const scores = arr.map(a => a.overall_score).filter(Boolean);
     return scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
   };
-
-  const callScore = avgScore(savedCalls);
-  const enablementScore = avgScore(enablementDocs);
+  const callScore = avgScoreFn(savedCalls);
+  const enablementScore = avgScoreFn(enablementDocs);
   const crmScore = latestScore(crmSnapshots);
   const gtmScore = latestScore(gtmAssessments);
   const tofScore = latestScore(tofAssessments);
   const hiringScore = latestScore(hiringAssessments);
   const metricsScore = latestScore(metricsAssessments);
-
-  const allScores = [gtmScore, tofScore, callScore, enablementScore, crmScore, hiringScore, metricsScore].filter(s => s !== null);
-  const overallScore = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
+  const allGtmScores = [gtmScore, tofScore, callScore, enablementScore, crmScore, hiringScore, metricsScore].filter(s => s !== null);
+  const overallGtmScore = allGtmScores.length > 0 ? Math.round(allGtmScores.reduce((a, b) => a + b, 0) / allGtmScores.length) : null;
 
   const sections = [
     { id: "gtm", label: "GTM Strategy", icon: "🎯", color: "#6366f1", accent: "rgba(99,102,241,0.08)", border: "rgba(99,102,241,0.2)", score: gtmScore, count: gtmAssessments.length, countLabel: "assessments", desc: "ICP definition, buyer personas, competitive positioning, channel strategy" },
@@ -1625,7 +1694,6 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
     { id: "metrics", label: "Metrics & Benchmarks", icon: "📈", color: "#f59e0b", accent: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)", score: metricsScore, count: metricsAssessments.length, countLabel: "assessments", desc: "Quota attainment, pipeline coverage, win rate, SDR/AE benchmarks" },
   ];
 
-  // Per-client cross-dimension health
   const clientHealth = clients.map(client => {
     const clientCalls = savedCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()));
     const cs = clientCalls.length > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length) : null;
@@ -1652,73 +1720,156 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1A2B3C", margin: "0 0 6px" }}>GTM Audit — Executive Summary</h1>
-          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Full-funnel assessment of your sales organization's go-to-market execution</p>
+      <h1 style={{ fontSize: 24, fontWeight: 800, color: "#1A2B3C", margin: "0 0 24px" }}>Dashboard</h1>
+
+      {/* Section A: Stats Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Reviews This Month</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{reviewsThisMonth}</div>
+          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 6 }}>last 30 days</div>
         </div>
-        {overallScore !== null && (
-          <div style={{ textAlign: "center", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 22px", flexShrink: 0 }}>
-            <div style={{ fontSize: 32, fontWeight: 800, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{overallScore}%</div>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 6 }}>Overall GTM Score</div>
-            <AuditStatusBadge score={overallScore} />
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Avg Score</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: avgCallScore !== null ? getScoreColor(avgCallScore) : "rgba(0,0,0,0.3)", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
+          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 6 }}>
+            {scoreTrend !== null ? (
+              <span style={{ color: scoreTrend >= 0 ? "#31CE81" : "#ef4444", fontWeight: 600 }}>
+                {scoreTrend >= 0 ? "↑" : "↓"} {Math.abs(scoreTrend)} vs last month
+              </span>
+            ) : "all time"}
+          </div>
+        </div>
+        <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Active Clients</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "#1A2B3C", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
+          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginTop: 6 }}>in workspace</div>
+        </div>
+      </div>
+
+      {/* Section B: Recent Call Reviews */}
+      <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>Recent Call Reviews</div>
+          <button onClick={() => onNavigate("calls")} style={{ fontSize: 11, color: "#6366F1", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View all →</button>
+        </div>
+        {recentCalls.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(0,0,0,0.35)", fontSize: 13 }}>No calls reviewed yet.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {recentCalls.map(call => {
+              const repName = call.category_scores?.rep_name || call.rep_name || "—";
+              const client = call.category_scores?.client || "—";
+              const dateStr = call.call_date ? new Date(call.call_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
+              return (
+                <div key={call.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                  <div style={{ width: 36, height: 36, flexShrink: 0 }}>
+                    <CircularScore score={call.overall_score || 0} size={36} strokeWidth={3} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C" }}>{client}</div>
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{repName} · {call.call_type}</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
+                    <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)" }}>{dateStr}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* 7 Audit Area Cards — 2 columns + 1 */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 32 }}>
-        {sections.map(sec => (
-          <div key={sec.id} onClick={() => onNavigate(sec.id)} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: sec.accent, border: `1px solid ${sec.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{sec.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{sec.label}</div>
-              </div>
-              {sec.score !== null
-                ? <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: getScoreColor(sec.score) }}>{sec.score}%</div>
-                : <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>—</div>}
-            </div>
-            <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: 0, lineHeight: 1.55 }}>{sec.desc}</p>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <AuditStatusBadge score={sec.score} />
-              <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>{sec.count > 0 ? `${sec.count} ${sec.countLabel}` : ""}</span>
-            </div>
+      {/* Section C: Needs Attention */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", marginBottom: 12 }}>Needs Attention</div>
+        {needsAttention.length === 0 ? (
+          <div style={{ background: "rgba(49,206,129,0.06)", border: "1px solid rgba(49,206,129,0.15)", borderRadius: 12, padding: "14px 18px", fontSize: 13, color: "#1a7a42", fontWeight: 500 }}>
+            All clients are performing well 🎉
           </div>
-        ))}
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+            {needsAttention.map(({ client, avg }) => (
+              <div key={client} style={{ background: "#fff", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>{client}</div>
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>avg {avg}%</div>
+                </div>
+                <button onClick={() => onClientClick && onClientClick(client)} style={{ fontSize: 11, color: "#6366F1", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View →</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Client Health Overview */}
-      {clientHealth.length > 0 ? (
-        <div>
-          <h3 style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1.2 }}>Client Health Overview</h3>
-          <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "9px 18px", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
-              <span>Client</span>
-              {["GTM","TOF","S.Ready","S.Enable","RevOps","Hiring","Metrics","Overall"].map(h => <span key={h} style={{ textAlign: "center" }}>{h}</span>)}
+      {/* Section D: Quick Actions */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 32 }}>
+        <button onClick={() => onNavigate("review")} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Call Review</button>
+        <button onClick={() => onNavigate("gtm")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Run Assessment</button>
+        <button onClick={() => onNavigate("enablement")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Upload Doc</button>
+      </div>
+
+      {/* GTM Audit Summary (collapsible) */}
+      <div>
+        <button onClick={() => setShowGtmSummary(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 0", marginBottom: showGtmSummary ? 16 : 0, fontFamily: "inherit" }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.45)" }}>GTM Audit Summary</span>
+          <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>{showGtmSummary ? "▲" : "▸"}</span>
+        </button>
+        {showGtmSummary && (
+          <div>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
+              <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: 0 }}>Full-funnel assessment of your sales organization's go-to-market execution</p>
+              {overallGtmScore !== null && (
+                <div style={{ textAlign: "center", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "14px 22px", flexShrink: 0, marginLeft: 20 }}>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: getScoreColor(overallGtmScore), fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{overallGtmScore}%</div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginTop: 6 }}>Overall GTM Score</div>
+                  <AuditStatusBadge score={overallGtmScore} />
+                </div>
+              )}
             </div>
-            {clientHealth.map((ch, i) => (
-              <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
-                <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#6366F1" : "#1A2B3C", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
-                {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
-                  <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
-                ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+              {sections.map(sec => (
+                <div key={sec.id} onClick={() => onNavigate(sec.id)} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 9, background: sec.accent, border: `1px solid ${sec.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{sec.icon}</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#1A2B3C" }}>{sec.label}</div>
+                    </div>
+                    {sec.score !== null
+                      ? <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: getScoreColor(sec.score) }}>{sec.score}%</div>
+                      : <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>—</div>}
+                  </div>
+                  <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: 0, lineHeight: 1.55 }}>{sec.desc}</p>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <AuditStatusBadge score={sec.score} />
+                    <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>{sec.count > 0 ? `${sec.count} ${sec.countLabel}` : ""}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {clientHealth.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1.2 }}>Client Health Overview</h3>
+                <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "9px 18px", fontSize: 9, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
+                    <span>Client</span>
+                    {["GTM","TOF","S.Ready","S.Enable","RevOps","Hiring","Metrics","Overall"].map(h => <span key={h} style={{ textAlign: "center" }}>{h}</span>)}
+                  </div>
+                  {clientHealth.map((ch, i) => (
+                    <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
+                      <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#6366F1" : "#1A2B3C", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
+                      {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
+                        <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      ) : (
-        <div style={{ textAlign: "center", padding: "48px 20px", background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16 }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>🚀</div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: "0 0 8px" }}>Start your first GTM audit</h3>
-          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", margin: "0 0 20px" }}>Select any section from the navigation above to begin assessing your sales organization.</p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            {[{ id: "calls", label: "Review a Call", color: "#6366F1" }, { id: "gtm", label: "Assess GTM Strategy", color: "#4F46E5" }, { id: "crm", label: "Add Pipeline Data", color: "#8b5cf6" }].map(b => (
-              <button key={b.id} onClick={() => onNavigate(b.id)} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: b.color, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{b.label}</button>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -4313,14 +4464,24 @@ export default function CuotaCallReview() {
         <div style={{ padding: "24px 16px 16px" }}>
           <span onClick={() => setPage("home")} style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, cursor: "pointer" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></span>
         </div>
-        {/* + New Call Review */}
-        <div style={{ padding: "0 12px 14px" }}>
-          <button onClick={startNewReview} style={{ width: "100%", padding: "9px 14px", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            + New Call Review
-          </button>
-        </div>
-
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
+          {/* HOME */}
+          <button onClick={() => setPage("home")} style={{
+            display: "flex", alignItems: "center", gap: 8, width: "100%",
+            padding: "9px 12px", border: "none",
+            borderLeft: page === "home" ? "3px solid #6366F1" : "3px solid transparent",
+            background: page === "home" ? "rgba(99,102,241,0.08)" : "transparent",
+            color: page === "home" ? "#6366F1" : "#4B5563",
+            fontSize: 14, fontWeight: page === "home" ? 700 : 500,
+            cursor: "pointer", fontFamily: "inherit", borderRadius: 8, boxSizing: "border-box"
+          }}>
+            <span style={{ fontSize: 13 }}>🏠</span> Home
+          </button>
+
+          {/* WORKSPACE section */}
+          <div style={{ height: 1, background: "rgba(0,0,0,0.05)", margin: "8px 12px 0" }} />
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Workspace</div>
+
           {/* CLIENTS SECTION */}
           <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); setSidebarSections(p => ({ ...p, clients: !p.clients })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: page === "calls" || page === "client" ? "#6366F1" : "#1A2B3C" }}>Clients</span>
@@ -4349,7 +4510,7 @@ export default function CuotaCallReview() {
                     ].map(({ tab, label, icon, count }) => {
                       const isActive = isActiveClient && clientPageTab === tab;
                       return (
-                        <button key={tab} onClick={() => { setSelectedClientProfile(clientName); setClientPageTab(tab); setPage("client"); setSidebarOpenClients(prev => ({ ...prev, [clientName]: true })); }} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px 7px 30px", border: "none", borderLeft: isActive ? "3px solid #6366F1" : "3px solid transparent", background: isActive ? "rgba(99,102,241,0.08)" : "transparent", color: isActive ? "#6366F1" : "#6B7280", fontSize: 12, fontWeight: isActive ? 600 : 400, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
+                        <button key={tab} onClick={() => { setSelectedClientProfile(clientName); setClientPageTab(tab); setPage("client"); setSidebarOpenClients(prev => ({ ...prev, [clientName]: true })); }} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "6px 8px 6px 36px", border: "none", borderLeft: isActive ? "3px solid #6366F1" : "3px solid transparent", background: isActive ? "rgba(99,102,241,0.08)" : "transparent", color: isActive ? "#6366F1" : "#6B7280", fontSize: 11, fontWeight: isActive ? 600 : 400, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
                           <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
                           <span style={{ flex: 1 }}>{label}</span>
                           {count > 0 && <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 8, background: isActive ? "rgba(99,102,241,0.15)" : "rgba(0,0,0,0.05)", color: isActive ? "#6366F1" : "rgba(0,0,0,0.35)", flexShrink: 0 }}>{count}</span>}
@@ -4361,6 +4522,10 @@ export default function CuotaCallReview() {
               </div>
             );
           })}
+
+          {/* TOOLS section */}
+          <div style={{ height: 1, background: "rgba(0,0,0,0.05)", margin: "8px 12px 0" }} />
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Tools</div>
 
           {/* ASSESSMENTS SECTION */}
           <button onClick={() => { setPage("gtm"); setSidebarSections(p => ({ ...p, assessments: !p.assessments })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
@@ -4382,6 +4547,14 @@ export default function CuotaCallReview() {
               </button>
             );
           })}
+
+          {/* SETTINGS section */}
+          {(profile?.role === "manager" || profile?.role === "admin") && (
+            <div style={{ height: 1, background: "rgba(0,0,0,0.05)", margin: "8px 12px 0" }} />
+          )}
+          {(profile?.role === "manager" || profile?.role === "admin") && (
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Settings</div>
+          )}
 
           {/* ADMIN SECTION */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
@@ -4422,9 +4595,21 @@ export default function CuotaCallReview() {
         </div>
       </div>
 
+      {/* Floating Action Button */}
+      {page !== "review" && (
+        <button onClick={startNewReview} style={{
+          position: "fixed", bottom: 28, right: 28, zIndex: 200,
+          background: "linear-gradient(135deg, #6366F1, #4F46E5)",
+          border: "none", borderRadius: 28, padding: "12px 20px",
+          color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+          boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
+          display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit"
+        }}>+ New Review</button>
+      )}
+
       <div style={{ marginLeft: 220, flex: 1, padding: "32px 40px" }}>
-        {/* HOME PAGE — Executive Summary */}
-        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} />}
+        {/* HOME PAGE — Dashboard */}
+        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { if (p === "review") { startNewReview(); } else { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} />}
 
         {/* INTAKE PAGE — New Assessment */}
         {page === "intake" && <IntakePage clients={clients} getValidToken={getValidToken} profile={profile} onBack={() => setPage("home")} onReportGenerated={(report) => { setCurrentReport(report); setPage("report"); loadGtmReports(); }} />}
@@ -4473,18 +4658,24 @@ export default function CuotaCallReview() {
         {/* REVIEW PAGE */}
         {page === "review" && (
           <>
-            {/* Call Info */}
+            {/* Sticky context header */}
+            <div style={{ position: "sticky", top: -32, marginTop: -32, paddingTop: 32, paddingBottom: 16, background: "#F5F3F0", zIndex: 10, borderBottom: "1px solid rgba(0,0,0,0.06)", marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
+                <span style={{ fontWeight: 700, color: "#1A2B3C" }}>{callInfo.client || "New Call Review"}</span>
+                {callInfo.repName && <><span style={{ color: "rgba(0,0,0,0.2)" }}>›</span><span>{callInfo.repName}</span></>}
+                {callInfo.callType && <><span style={{ color: "rgba(0,0,0,0.2)" }}>›</span><span style={{ color: "rgba(0,0,0,0.4)" }}>{callInfo.callType}</span></>}
+                {callInfo.callDate && <span style={{ color: "rgba(0,0,0,0.3)" }}> · {new Date(callInfo.callDate + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>}
+              </div>
+            </div>
+
+            {/* Call Info — grouped WHO / WHAT & WHEN */}
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 8 }}>Who</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                 {[
                   { key: "client", label: "Client", options: clients, required: true },
                   { key: "repName", label: "Rep Name", placeholder: "e.g. Sarah Chen" },
                   { key: "repType", label: "Rep Type", options: ["AE", "SDR"] },
-                  { key: "prospectCompany", label: "Prospect Company", placeholder: "e.g. Meijer" },
-                  { key: "callDate", label: "Call Date", type: "date" },
-                  { key: "callType", label: "Call Type", options: ["Discovery", "Demo", "Follow-up", "Negotiation", "Closing"] },
-                  { key: "dealStage", label: "Deal Stage", options: ["Early", "Mid-Pipe", "Late Stage", "Negotiation"] },
-                  { key: "dealValue", label: "Deal Value ($)", placeholder: "e.g. 50000", type: "number" },
                 ].map(f => (
                   <div key={f.key}>
                     <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{f.label}</label>
@@ -4499,10 +4690,32 @@ export default function CuotaCallReview() {
                   </div>
                 ))}
               </div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 8, marginTop: 16 }}>What & When</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
+                {[
+                  { key: "prospectCompany", label: "Prospect Co.", placeholder: "e.g. Meijer" },
+                  { key: "callDate", label: "Date", type: "date" },
+                  { key: "callType", label: "Call Type", options: ["Discovery", "Demo", "Follow-up", "Negotiation", "Closing"] },
+                  { key: "dealStage", label: "Deal Stage", options: ["Early", "Mid-Pipe", "Late Stage", "Negotiation"] },
+                  { key: "dealValue", label: "Deal Value ($)", placeholder: "e.g. 50000", type: "number" },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{f.label}</label>
+                    {f.options ? (
+                      <select value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: callInfo[f.key] ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontSize: 13, outline: "none", boxSizing: "border-box" }}>
+                        {!callInfo[f.key] && <option value="">Select...</option>}
+                        {f.options.map(o => <option key={o} value={o} style={{ background: "#FFFFFF", color: "#1A2B3C" }}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <input type={f.type || "text"} value={callInfo[f.key]} onChange={e => setCallInfo(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#1A2B3C", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Score Dashboard */}
-            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 16, marginBottom: 24 }}>
+            {/* Score Dashboard — CircularScore + status badge only */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
               <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                 <CircularScore score={overallScore} size={100} label="overall" />
                 <div style={{ textAlign: "center" }}>
@@ -4511,18 +4724,12 @@ export default function CuotaCallReview() {
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 600, color: getScoreColor(overallScore), textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
               </div>
-              {aiAnalysis?.gut_check && (
-                <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "#7c3aed", fontWeight: 700 }}>Gut Check</span>
-                  <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
-                </div>
-              )}
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#FFFFFF", borderRadius: 12, padding: 4, overflowX: "auto" }}>
+            {/* Tabs — underline style */}
+            <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.08)", overflowX: "auto" }}>
               {tabs.map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex: 1, padding: "10px 12px", border: "none", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", background: activeTab === tab.id ? "rgba(0,0,0,0.06)" : "transparent", color: activeTab === tab.id ? "#1A2B3C" : "rgba(0,0,0,0.35)", fontFamily: "inherit" }}>{tab.label}</button>
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: "10px 16px 10px", border: "none", borderBottom: activeTab === tab.id ? "2px solid #6366F1" : "2px solid transparent", background: "transparent", cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, whiteSpace: "nowrap", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.45)", fontFamily: "inherit", marginBottom: -1 }}>{tab.label}</button>
               ))}
             </div>
 
@@ -4544,6 +4751,23 @@ export default function CuotaCallReview() {
             {/* Scorecard */}
             {activeTab === "scorecard" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {Object.keys(scores).length > 0 && (
+                  <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 16px", marginBottom: 6 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10 }}>Category Overview</div>
+                    {CATEGORIES.map(cat => {
+                      const s = scores[cat.id]?.score || 0;
+                      return (
+                        <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+                          <span style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", width: 145, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</span>
+                          <div style={{ flex: 1, height: 5, background: "rgba(0,0,0,0.05)", borderRadius: 3 }}>
+                            <div style={{ width: `${(s / 10) * 100}%`, height: "100%", background: getScoreColor10(s), borderRadius: 3, transition: "width 0.4s ease" }} />
+                          </div>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: getScoreColor10(s), width: 18, textAlign: "right", fontFamily: "monospace" }}>{s > 0 ? s : "—"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {CATEGORIES.map(cat => <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />)}
               </div>
             )}
@@ -4557,32 +4781,32 @@ export default function CuotaCallReview() {
                   <p style={{ fontSize: 14, color: "#1A2B3C", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
                 </div>
 
-                {/* Strengths */}
-                <div>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#31CE81", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Strengths</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-                    {(aiAnalysis.strengths || []).map((s, i) => (
-                      <div key={i} style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 12, padding: 16 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: "#1a7a42", marginBottom: 6 }}>{s.title}</div>
-                        <p style={{ fontSize: 12, color: "#1a7a42", margin: 0, lineHeight: 1.6, opacity: 0.85 }}>{s.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Areas of Opportunity */}
-                <div>
-                  <h4 style={{ fontSize: 13, fontWeight: 700, color: "#eab308", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Areas of Opportunity</h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {(aiAnalysis.areas_of_opportunity || []).map((area, i) => (
-                      <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16 }}>
-                        <p style={{ fontSize: 13, color: "#1A2B3C", margin: "0 0 10px", lineHeight: 1.6 }}>{area.description}</p>
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 12px", background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.15)", borderRadius: 8 }}>
-                          <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#3b82f6", fontWeight: 700, flexShrink: 0, paddingTop: 2 }}>Fix</span>
-                          <p style={{ fontSize: 12, color: "#2563eb", margin: 0, lineHeight: 1.6 }}>{area.fix}</p>
+                {/* Strengths + Opportunities — 2-column */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: "#31CE81", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Strengths</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {(aiAnalysis.strengths || []).map((s, i) => (
+                        <div key={i} style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 12, padding: 14 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#1a7a42", marginBottom: 4 }}>{s.title}</div>
+                          <p style={{ fontSize: 12, color: "#1a7a42", margin: 0, lineHeight: 1.6, opacity: 0.85 }}>{s.description}</p>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: 13, fontWeight: 700, color: "#eab308", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Areas of Opportunity</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {(aiAnalysis.areas_of_opportunity || []).map((area, i) => (
+                        <div key={i} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 14 }}>
+                          <p style={{ fontSize: 13, color: "#1A2B3C", margin: "0 0 8px", lineHeight: 1.6 }}>{area.description}</p>
+                          <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(99,102,241,0.04)", borderLeft: "3px solid #6366F1", borderRadius: "0 6px 6px 0" }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", textTransform: "uppercase", letterSpacing: 0.8 }}>↳ Fix</span>
+                            <p style={{ fontSize: 12, color: "#374151", margin: "4px 0 0", lineHeight: 1.6 }}>{area.fix}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -4595,9 +4819,16 @@ export default function CuotaCallReview() {
                         const data = aiAnalysis.risks[risk.id];
                         if (!data) return null;
                         const flagged = data.flagged;
+                        const isFailed = flagged && risk.severity === "high";
+                        const isWarning = flagged && risk.severity !== "high";
+                        const badgeBg = isFailed ? "rgba(239,68,68,0.06)" : isWarning ? "rgba(234,179,8,0.06)" : "rgba(49,206,129,0.04)";
+                        const badgeBorder = isFailed ? "rgba(239,68,68,0.2)" : isWarning ? "rgba(234,179,8,0.2)" : "rgba(49,206,129,0.15)";
+                        const badgeColor = isFailed ? "#ef4444" : isWarning ? "#b45309" : "#31CE81";
+                        const badgeBgIcon = isFailed ? "rgba(239,68,68,0.1)" : isWarning ? "rgba(234,179,8,0.1)" : "rgba(49,206,129,0.1)";
+                        const icon = isFailed ? "✕" : isWarning ? "⚠" : "✓";
                         return (
-                          <div key={risk.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, background: flagged ? risk.severity === "high" ? "rgba(239,68,68,0.06)" : "rgba(234,179,8,0.06)" : "rgba(49,206,129,0.04)", border: "1px solid " + (flagged ? risk.severity === "high" ? "rgba(239,68,68,0.2)" : "rgba(234,179,8,0.2)" : "rgba(49,206,129,0.15)") }}>
-                            <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{flagged ? risk.severity === "high" ? "\u26A0\uFE0F" : "\u26A0" : "\u2705"}</span>
+                          <div key={risk.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10, background: badgeBg, border: `1px solid ${badgeBorder}` }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: badgeColor, background: badgeBgIcon, borderRadius: 6, padding: "2px 7px", flexShrink: 0, marginTop: 1 }}>{icon}</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 13, fontWeight: 600, color: flagged ? "#1A2B3C" : "rgba(0,0,0,0.5)", marginBottom: 2 }}>{risk.label}</div>
                               <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0, lineHeight: 1.5 }}>{data.details}</p>
