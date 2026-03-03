@@ -3860,7 +3860,7 @@ export default function CuotaCallReview() {
   const [selectedClientProfile, setSelectedClientProfile] = useState(null);
   const [clientPageTab, setClientPageTab] = useState("calls");
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
-  const [sidebarSections, setSidebarSections] = useState({ clients: true, assessments: true, admin: true });
+  const [sidebarSections, setSidebarSections] = useState({ clients: false, assessments: false, admin: false });
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -4344,9 +4344,9 @@ export default function CuotaCallReview() {
 
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
           {/* CLIENTS SECTION */}
-          <button onClick={() => setSidebarSections(p => ({ ...p, clients: !p.clients }))} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "8px 8px 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{sidebarSections.clients ? "▾" : "▸"}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", letterSpacing: 0.3 }}>Clients</span>
+          <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); setSidebarSections(p => ({ ...p, clients: !p.clients })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: page === "calls" || page === "client" ? "#6366F1" : "#1A2B3C" }}>Clients</span>
+            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>{sidebarSections.clients ? "▾" : "▸"}</span>
           </button>
           {sidebarSections.clients && clients.map(clientName => {
             const isOpen = !!sidebarOpenClients[clientName];
@@ -4385,9 +4385,9 @@ export default function CuotaCallReview() {
           })}
 
           {/* ASSESSMENTS SECTION */}
-          <button onClick={() => setSidebarSections(p => ({ ...p, assessments: !p.assessments }))} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "10px 8px 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{sidebarSections.assessments ? "▾" : "▸"}</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", letterSpacing: 0.3 }}>Assessments</span>
+          <button onClick={() => { setPage("gtm"); setSidebarSections(p => ({ ...p, assessments: !p.assessments })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: ["gtm","tof","crm","hiring","metrics"].includes(page) ? "#6366F1" : "#1A2B3C" }}>Assessments</span>
+            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>{sidebarSections.assessments ? "▾" : "▸"}</span>
           </button>
           {sidebarSections.assessments && [
             { id: "gtm", label: "GTM Strategy", icon: "🎯" },
@@ -4408,9 +4408,9 @@ export default function CuotaCallReview() {
           {/* ADMIN SECTION */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
             <>
-              <button onClick={() => setSidebarSections(p => ({ ...p, admin: !p.admin }))} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "10px 8px 6px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-                <span style={{ fontSize: 10, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{sidebarSections.admin ? "▾" : "▸"}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#1A2B3C", letterSpacing: 0.3 }}>Admin</span>
+              <button onClick={() => { setPage(profile?.role === "admin" ? "integrations" : "admin"); setSidebarSections(p => ({ ...p, admin: !p.admin })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: ["integrations","docsync","admin"].includes(page) ? "#6366F1" : "#1A2B3C" }}>Admin</span>
+                <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>{sidebarSections.admin ? "▾" : "▸"}</span>
               </button>
               {sidebarSections.admin && (
                 <>
