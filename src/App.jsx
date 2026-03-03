@@ -594,29 +594,54 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
     );
   }
 
-  // ---- AE FOLDERS VIEW ----
+  // ---- CLIENT CALLS VIEW (grouped by rep) ----
   if (folderClient && !folderAE) {
     const aes = grouped[folderClient] || {};
     const allEntries = Object.entries(aes).map(([name, aeCalls]) => {
       const avg = aeCalls.length > 0 ? Math.round(aeCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / aeCalls.length) : 0;
-      // Determine rep type from calls — if any call is tagged SDR, treat the rep as SDR
       const isSdr = aeCalls.some(c => c.category_scores?.rep_type === "SDR");
-      return { name, calls: aeCalls, avg, isSdr };
+      const sorted = [...aeCalls].sort((a, b) => new Date(b.call_date) - new Date(a.call_date));
+      return { name, calls: sorted, avg, isSdr };
     }).sort((a, b) => b.avg - a.avg);
 
     const aeEntries = allEntries.filter(e => !e.isSdr);
     const sdrEntries = allEntries.filter(e => e.isSdr);
 
-    const repRow = (ae) => (
-      <div key={ae.name} onClick={() => setFolderAE(ae.name)} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
-        <CircularScore score={ae.avg} size={50} strokeWidth={4} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: "#1A2B3C" }}>{ae.name}</div>
-          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", marginTop: 2 }}>{ae.calls.length} call{ae.calls.length !== 1 ? "s" : ""}</div>
+    const RepSection = ({ ae }) => {
+      const [open, setOpen] = useState(true);
+      return (
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden", marginBottom: 8 }}>
+          {/* Rep header row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" }} onClick={() => setOpen(v => !v)}>
+            <CircularScore score={ae.avg} size={44} strokeWidth={4} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1A2B3C" }}>{ae.name}</div>
+              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{ae.calls.length} call{ae.calls.length !== 1 ? "s" : ""} · avg {getScoreLabel(ae.avg)}</div>
+            </div>
+            <button onClick={(e) => { e.stopPropagation(); setFolderAE(ae.name); }} style={{ padding: "5px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "transparent", color: "rgba(0,0,0,0.45)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>Rep Profile →</button>
+            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.3)", marginLeft: 4 }}>{open ? "▲" : "▼"}</span>
+          </div>
+          {/* Call rows */}
+          {open && (
+            <div style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+              {ae.calls.map(call => (
+                <div key={call.id} onClick={() => onSelect(call)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 16px 11px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.02)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <CircularScore score={call.overall_score || 0} size={38} strokeWidth={3} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
+                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>{call.call_type} · {call.call_date}</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
+                    {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(ae.avg), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(ae.avg)}</div>
-      </div>
-    );
+      );
+    };
 
     return (
       <div>
@@ -628,18 +653,14 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         {allEntries.length === 0 && <p style={{ color: "rgba(0,0,0,0.45)", textAlign: "center", padding: 40 }}>No calls for this client.</p>}
         {aeEntries.length > 0 && (
           <div style={{ marginBottom: sdrEntries.length > 0 ? 28 : 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Account Executives</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {aeEntries.map(repRow)}
-            </div>
+            {allEntries.length > aeEntries.length && <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Account Executives</div>}
+            {aeEntries.map(ae => <RepSection key={ae.name} ae={ae} />)}
           </div>
         )}
         {sdrEntries.length > 0 && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>SDR Prospecting</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {sdrEntries.map(repRow)}
-            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>SDRs</div>
+            {sdrEntries.map(ae => <RepSection key={ae.name} ae={ae} />)}
           </div>
         )}
       </div>
