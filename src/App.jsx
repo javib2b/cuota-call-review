@@ -2136,64 +2136,119 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
   );
 }
 
-// ==================== REP PROGRESSION GRAPH ====================
+// ==================== SCORE TRENDS CHART ====================
 const REP_COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#84CC16"];
 
-function RepProgressionGraph({ repEntries }) {
+function ScoreTrendsChart({ repEntries }) {
+  const [tooltip, setTooltip] = useState(null);
   const repData = repEntries.map((entry, i) => {
     const pts = entry.repCalls
       .filter(c => c.call_date || c.created_at)
-      .map(c => ({ date: new Date(c.call_date || c.created_at), score: c.overall_score || 0 }))
+      .map(c => ({
+        date: new Date(c.call_date || c.created_at),
+        score: c.overall_score || 0,
+        callType: c.category_scores?.call_type || c.call_type || "Call"
+      }))
       .sort((a, b) => a.date - b.date);
     return { repName: entry.repName, pts, color: REP_COLORS[i % REP_COLORS.length] };
   }).filter(e => e.pts.length > 0);
 
   if (repData.length === 0) return null;
 
+  const allTimestamps = repData.flatMap(e => e.pts.map(p => p.date.getTime()));
+  const minDate = new Date(Math.min(...allTimestamps));
+  const maxDate = new Date(Math.max(...allTimestamps));
+  const PAD_L = 36, PAD_R = 16, PAD_T = 12, PAD_B = 34;
+  const W = 760, H = 180;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const dateRange = maxDate.getTime() - minDate.getTime() || 1;
+  const toX = (date) => PAD_L + ((date.getTime() - minDate.getTime()) / dateRange) * chartW;
+  const toY = (score) => PAD_T + chartH - (score / 100) * chartH;
+
   return (
-    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", marginBottom: 16 }}>Score Progression</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {repData.map(e => {
-          const last = e.pts[e.pts.length - 1]?.score ?? null;
-          const prev = e.pts.length >= 2 ? e.pts[e.pts.length - 2].score : null;
-          const diff = prev !== null ? last - prev : null;
-          return (
-            <div key={e.repName}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: e.color }}>{e.repName}</span>
-                {diff !== null && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 3 }}>
-                    {diff > 0 ? "↑" : diff < 0 ? "↓" : "→"} {diff > 0 ? `+${diff}` : diff}
-                  </span>
-                )}
-              </div>
-              <div style={{ overflowX: "auto", paddingBottom: 4 }}>
-                <div style={{ display: "flex", alignItems: "center", minWidth: "max-content", gap: 0 }}>
-                  {e.pts.map((p, i) => {
-                    const scoreColor = getScoreColor(p.score);
-                    const nextScore = e.pts[i + 1]?.score ?? null;
-                    return (
-                      <div key={i} style={{ display: "flex", alignItems: "center" }}>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 800, fontFamily: "'Space Mono', monospace", boxShadow: `0 2px 8px ${scoreColor}55` }}>
-                            {p.score}
-                          </div>
-                          <div style={{ fontSize: 9, color: "rgba(0,0,0,0.35)", marginTop: 5, textAlign: "center", whiteSpace: "nowrap" }}>
-                            {p.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                          </div>
-                        </div>
-                        {nextScore !== null && (
-                          <div style={{ width: 36, height: 3, flexShrink: 0, margin: "0 2px", marginBottom: 16, borderRadius: 2, background: nextScore > p.score ? "#10b981" : nextScore < p.score ? "#ef4444" : "rgba(0,0,0,0.12)", opacity: 0.5 }} />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 14 }}>Score Trends</div>
+      <div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 180, display: "block" }}>
+          <defs>
+            {repData.map(e => {
+              const gradId = `grad-${e.repName.replace(/[^a-zA-Z0-9]/g, "-")}`;
+              return (
+                <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={e.color} stopOpacity="0.18" />
+                  <stop offset="100%" stopColor={e.color} stopOpacity="0" />
+                </linearGradient>
+              );
+            })}
+          </defs>
+          {[50, 75].map(s => (
+            <g key={s}>
+              <line x1={PAD_L} x2={W - PAD_R} y1={toY(s)} y2={toY(s)} stroke="rgba(0,0,0,0.07)" strokeWidth={1} strokeDasharray="4 3" />
+              <text x={PAD_L - 5} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(0,0,0,0.28)">{s}</text>
+            </g>
+          ))}
+          {[0, 100].map(s => (
+            <text key={s} x={PAD_L - 5} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(0,0,0,0.2)">{s}</text>
+          ))}
+          {repData.map(e => {
+            if (e.pts.length < 2) return null;
+            const gradId = `grad-${e.repName.replace(/[^a-zA-Z0-9]/g, "-")}`;
+            const firstX = toX(e.pts[0].date);
+            const lastX = toX(e.pts[e.pts.length - 1].date);
+            const linePts = e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ");
+            const fillD = `M ${firstX},${toY(0)} L ${linePts} L ${lastX},${toY(0)} Z`;
+            return <path key={`fill-${e.repName}`} d={fillD} fill={`url(#${gradId})`} />;
+          })}
+          {repData.map(e => {
+            if (e.pts.length < 2) return null;
+            const d = `M ${e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ")}`;
+            return <path key={`line-${e.repName}`} d={d} fill="none" stroke={e.color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
+          })}
+          {repData.map(e => e.pts.map((p, i) => (
+            <circle
+              key={`${e.repName}-${i}`}
+              cx={toX(p.date)} cy={toY(p.score)} r={4}
+              fill="#fff" stroke={e.color} strokeWidth={2.5}
+              style={{ cursor: "pointer" }}
+              onMouseEnter={(ev) => {
+                const rect = ev.currentTarget.closest("svg").getBoundingClientRect();
+                setTooltip({
+                  x: toX(p.date) * (rect.width / W),
+                  y: toY(p.score) * (rect.height / H),
+                  rep: e.repName, score: p.score, color: e.color,
+                  callType: p.callType,
+                  date: p.date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+                });
+              }}
+            />
+          )))}
+          {(() => {
+            const allPts = repData.flatMap(e => e.pts).sort((a, b) => a.date - b.date);
+            const unique = [...new Map(allPts.map(p => [p.date.toDateString(), p])).values()];
+            const step = Math.max(1, Math.floor(unique.length / 5));
+            return unique.filter((_, i) => i % step === 0 || i === unique.length - 1).map((p, i) => (
+              <text key={i} x={toX(p.date)} y={H - 4} textAnchor="middle" fontSize={9} fill="rgba(0,0,0,0.32)">
+                {p.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              </text>
+            ));
+          })()}
+        </svg>
+        {tooltip && (
+          <div style={{ position: "absolute", left: tooltip.x + 14, top: Math.max(4, tooltip.y - 52), background: "#1A2B3C", color: "#fff", borderRadius: 8, padding: "7px 11px", fontSize: 11, pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}>
+            <div style={{ fontWeight: 700, color: tooltip.color, marginBottom: 2 }}>{tooltip.rep}</div>
+            <div>{tooltip.callType} · <span style={{ fontWeight: 700 }}>{tooltip.score}%</span></div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, marginTop: 1 }}>{tooltip.date}</div>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginTop: 12 }}>
+        {repData.map(e => (
+          <div key={e.repName} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 14, height: 3, background: e.color, borderRadius: 2 }} />
+            <span style={{ fontSize: 11, color: "rgba(0,0,0,0.5)" }}>{e.repName}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -2201,6 +2256,9 @@ function RepProgressionGraph({ repEntries }) {
 
 // ==================== CLIENT PROFILE PAGE ====================
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange }) {
+  const [repSearch, setRepSearch] = useState("");
+  const [repSort, setRepSort] = useState("score");
+  const [logoFailed, setLogoFailed] = useState(false);
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
   const docCategory = (docType) => ENABLEMENT_DOC_TYPES.find(t => t.id === docType)?.category || "enablement";
 
@@ -2219,6 +2277,69 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
   const logoUrl = getClientLogo(client);
 
+  const byRep = {};
+  clientCalls.forEach(call => {
+    const repName = call.category_scores?.rep_name || call.rep_name || "Unknown Rep";
+    if (!byRep[repName]) byRep[repName] = [];
+    byRep[repName].push(call);
+  });
+
+  const repEntries = Object.entries(byRep).map(([repName, repCalls]) => {
+    const sortedByDate = [...repCalls].sort((a, b) => new Date(a.call_date || a.created_at) - new Date(b.call_date || b.created_at));
+    const avg = Math.round(repCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / repCalls.length);
+    const trend = sortedByDate.length >= 2
+      ? Math.round((sortedByDate[sortedByDate.length - 1].overall_score || 0) - (sortedByDate[sortedByDate.length - 2].overall_score || 0))
+      : null;
+    const lastCall = sortedByDate[sortedByDate.length - 1];
+    const catAvgs = {};
+    CATEGORIES.forEach(cat => {
+      let total = 0, count = 0;
+      repCalls.forEach(call => {
+        const cs = call.category_scores?.[cat.id];
+        if (cs && typeof cs.score === "number") { total += cs.score; count++; }
+      });
+      if (count > 0) catAvgs[cat.id] = { name: cat.name, avg: Math.round(total / count) };
+    });
+    const sortedCats = Object.values(catAvgs).sort((a, b) => a.avg - b.avg);
+    const topWeakness = sortedCats[0]?.name || null;
+    const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
+    return { repName, repCalls, avg, trend, lastCall, topWeakness, isSdr };
+  }).sort((a, b) => b.avg - a.avg);
+
+  const trendArrow = (() => {
+    if (clientCalls.length < 2) return null;
+    const sorted = [...clientCalls].sort((a, b) => new Date(a.call_date || a.created_at) - new Date(b.call_date || b.created_at));
+    return Math.round((sorted[sorted.length - 1].overall_score || 0) - (sorted[sorted.length - 2].overall_score || 0));
+  })();
+
+  const mostImproved = repEntries.reduce((best, e) => {
+    const sorted = [...e.repCalls].sort((a, b) => new Date(a.call_date || a.created_at) - new Date(b.call_date || b.created_at));
+    if (sorted.length < 2) return best;
+    const improvement = Math.round((sorted[sorted.length - 1].overall_score || 0) - (sorted[0].overall_score || 0));
+    return !best || improvement > best.improvement ? { repName: e.repName, improvement } : best;
+  }, null);
+
+  const repsNeedingAttention = repEntries.filter(e => e.avg < 65).length;
+
+  const relTime = (dateStr) => {
+    if (!dateStr) return "";
+    const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days}d ago`;
+    if (days < 30) return `${Math.floor(days / 7)}w ago`;
+    if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+    return `${Math.floor(days / 365)}y ago`;
+  };
+
+  const filteredReps = [...repEntries]
+    .filter(e => !repSearch || e.repName.toLowerCase().includes(repSearch.toLowerCase()))
+    .sort((a, b) => {
+      if (repSort === "calls") return b.repCalls.length - a.repCalls.length;
+      if (repSort === "trend") return (b.trend || 0) - (a.trend || 0);
+      return b.avg - a.avg;
+    });
+
   const docRow = (doc) => (
     <div key={doc.id} onClick={() => onNavigate("enablement")} style={{ background: "#fafafa", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "11px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
       <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📄</div>
@@ -2232,7 +2353,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     </div>
   );
 
-  const Section = ({ title, icon, accent, items, emptyText, children, action }) => (
+  const Section = ({ title, icon, items, emptyText, children, action }) => (
     <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: items.length > 0 ? 14 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2243,7 +2364,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         {action}
       </div>
       {items.length === 0
-        ? <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: items.length === 0 ? "10px 0 0" : 0, textAlign: "center", padding: "12px 0" }}>{emptyText}</p>
+        ? <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: "10px 0 0", textAlign: "center", padding: "12px 0" }}>{emptyText}</p>
         : <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{children}</div>}
     </div>
   );
@@ -2251,167 +2372,161 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
   return (
     <div>
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
         <span onClick={onBack} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Clients</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{client}</span>
       </div>
 
-      {/* Header card */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 22px" }}>
-        <div style={{ width: 56, height: 56, borderRadius: 14, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
-          {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 38, height: 38, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; }} /> : null}
-          <span style={{ fontSize: 22, fontWeight: 700, color: "#6366F1" }}>{client.charAt(0)}</span>
-        </div>
-        <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: "#1A2B3C", margin: "0 0 4px" }}>{client}</h2>
-          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>
-            {clientCalls.length} call{clientCalls.length !== 1 ? "s" : ""} · {clientDocs.length} document{clientDocs.length !== 1 ? "s" : ""}
+      {/* Dark hero header */}
+      <div style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.04, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "20px 20px", pointerEvents: "none" }} />
+        <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, background: "rgba(255,255,255,0.08)", border: "2px solid rgba(99,102,241,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "#fff", boxShadow: "0 0 30px rgba(99,102,241,0.3)", overflow: "hidden" }}>
+            {logoUrl && !logoFailed
+              ? <img src={logoUrl} alt={client} style={{ width: 44, height: 44, objectFit: "contain" }} onError={() => setLogoFailed(true)} />
+              : <span>{client.charAt(0)}</span>}
           </div>
-        </div>
-        {avgCallScore !== null && (
-          <div style={{ textAlign: "center", flexShrink: 0 }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: getScoreColor(avgCallScore), fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{avgCallScore}%</div>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.35)", marginTop: 4 }}>Avg Call Score</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: "0 0 10px", letterSpacing: -0.5 }}>{client}</h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {[
+                { label: `${clientCalls.length} Reviews`, icon: "📞" },
+                { label: `${repEntries.length} Reps`, icon: "👤" },
+                { label: `${clientDocs.length} Docs`, icon: "📄" }
+              ].map(p => (
+                <span key={p.label} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{p.icon} {p.label}</span>
+              ))}
+            </div>
           </div>
-        )}
+          {avgCallScore !== null && (
+            <div style={{ textAlign: "center", flexShrink: 0 }}>
+              <div style={{ fontSize: 52, fontWeight: 900, color: "#fff", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Avg Score</div>
+              <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(99,102,241,0.35)", color: "rgba(255,255,255,0.9)" }}>{getScoreLabel(avgCallScore)}</span>
+                {trendArrow !== null && <span style={{ fontSize: 14, color: trendArrow > 5 ? "#34D399" : trendArrow < -5 ? "#F87171" : "rgba(255,255,255,0.45)" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Tab bar */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: 4 }}>
+      {/* Stats bar */}
+      {clientCalls.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+          {[
+            { label: "Total Reviews", value: String(clientCalls.length), accent: "#6366F1" },
+            { label: "Team Avg Score", value: avgCallScore !== null ? `${avgCallScore}%` : "—", accent: getScoreColor(avgCallScore || 0) },
+            { label: "Most Improved", value: mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—", accent: "#10B981", sub: mostImproved?.improvement > 0 ? `+${mostImproved.improvement} pts` : null },
+            { label: "Need Attention", value: repsNeedingAttention > 0 ? String(repsNeedingAttention) : "None", accent: repsNeedingAttention > 0 ? "#EF4444" : "#10B981" }
+          ].map(card => (
+            <div key={card.label} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${card.accent}` }}>
+              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: "rgba(0,0,0,0.3)", marginBottom: 6 }}>{card.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#1A2B3C" }}>{card.value}</div>
+              {card.sub && <div style={{ fontSize: 10, color: card.accent, fontWeight: 600, marginTop: 2 }}>{card.sub}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pill tab switcher */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
         {[{ id: "calls", label: "📞 Call Reviews", count: clientCalls.length }, { id: "docs", label: "📄 Doc Intakes", count: clientDocs.length }].map(tab => (
-          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ flex: 1, padding: "9px 12px", border: "none", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(99,102,241,0.08)" : "transparent", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.45)", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #6366F1" : "1.5px solid rgba(0,0,0,0.09)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(99,102,241,0.06)" : "#fff", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.5)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(99,102,241,0.15)" : "rgba(0,0,0,0.06)", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.4)" }}>{tab.count}</span>}
           </button>
         ))}
       </div>
 
-      {/* Call Reviews — progression graph + grouped by rep */}
+      {/* CALLS TAB */}
       {activeTab === "calls" && (
         clientCalls.length === 0 ? (
           <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>📞</div>
             <p style={{ fontSize: 13, color: "rgba(0,0,0,0.35)", margin: 0 }}>No call reviews yet for this client.</p>
           </div>
-        ) : (() => {
-          const byRep = {};
-          clientCalls.forEach(call => {
-            const repName = call.category_scores?.rep_name || call.rep_name || "Unknown Rep";
-            if (!byRep[repName]) byRep[repName] = [];
-            byRep[repName].push(call);
-          });
-          const repEntries = Object.entries(byRep).map(([repName, repCalls]) => {
-            const avg = Math.round(repCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / repCalls.length);
-            const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
-            return { repName, repCalls, avg, isSdr };
-          }).sort((a, b) => b.avg - a.avg);
-
-          const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
-            const [open, setOpen] = useState(false);
-
-            // Compute per-category averages for this rep
-            const catAvgs = {};
-            CATEGORIES.forEach(cat => {
-              let total = 0, count = 0;
-              repCalls.forEach(call => {
-                const cs = call.category_scores?.[cat.id];
-                if (cs && typeof cs.score === "number") { total += cs.score; count++; }
-              });
-              if (count > 0) catAvgs[cat.id] = { name: cat.name, avg: Math.round(total / count) };
-            });
-            const sortedCats = Object.values(catAvgs).sort((a, b) => b.avg - a.avg);
-            const highlights = sortedCats.slice(0, 3);
-            const opportunities = sortedCats.filter(c => c.avg < 7).slice(-3).reverse();
-
-            return (
-              <div style={{ border: "1px solid rgba(99,102,241,0.15)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
-                {/* Rep header — click to toggle */}
-                <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer", background: "rgba(99,102,241,0.04)", borderBottom: open ? "1px solid rgba(99,102,241,0.1)" : "none" }}>
-                  <CircularScore score={avg} size={42} strokeWidth={4} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#6366F1", display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      {repName}
-                      {isSdr && <span style={{ background: "rgba(99,102,241,0.12)", color: "#6366F1", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, letterSpacing: 0.5 }}>SDR</span>}
+        ) : (
+          <div>
+            <ScoreTrendsChart repEntries={repEntries} />
+            {/* Rep Leaderboard */}
+            <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5 }}>Rep Leaderboard</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input type="text" placeholder="Search reps…" value={repSearch} onChange={e => setRepSearch(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, outline: "none", width: 130, fontFamily: "inherit", color: "#1A2B3C" }} />
+                  <select value={repSort} onChange={e => setRepSort(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: "#1A2B3C", background: "#fff" }}>
+                    <option value="score">Avg Score</option>
+                    <option value="calls">Most Calls</option>
+                    <option value="trend">Trend</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 106px 84px", padding: "8px 18px 6px", borderBottom: "1px solid rgba(0,0,0,0.04)", fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", textTransform: "uppercase", letterSpacing: 1, gap: 8 }}>
+                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span>Top Weakness</span><span>Last Call</span>
+              </div>
+              {filteredReps.length === 0 ? (
+                <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "rgba(0,0,0,0.35)" }}>No reps match your search.</div>
+              ) : filteredReps.map((e, idx) => {
+                const repColor = REP_COLORS[repEntries.findIndex(r => r.repName === e.repName) % REP_COLORS.length];
+                return (
+                  <div
+                    key={e.repName}
+                    onClick={() => onBrowseByRep(e.repName)}
+                    style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 106px 84px", padding: "11px 18px", cursor: "pointer", alignItems: "center", gap: 8, background: idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)", borderLeft: "3px solid transparent", transition: "background 0.1s ease, border-color 0.1s ease" }}
+                    onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(99,102,241,0.04)"; ev.currentTarget.style.borderLeftColor = "#6366F1"; }}
+                    onMouseLeave={ev => { ev.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)"; ev.currentTarget.style.borderLeftColor = "transparent"; }}
+                  >
+                    <span style={{ fontSize: 13, textAlign: "center", display: "block" }}>
+                      {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.3)" }}>{idx + 1}</span>}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, background: repColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{e.repName.charAt(0).toUpperCase()}</div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
+                        {e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", background: "rgba(99,102,241,0.1)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>}
+                      </div>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
-                      <span style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</span>
-                      {highlights.length > 0 && (
-                        <>
-                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.2)" }}>|</span>
-                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", fontWeight: 600 }}>⭐</span>
-                          {highlights.map(cat => (
-                            <span key={cat.name} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(16,185,129,0.1)", color: "#059669", fontWeight: 600 }}>{cat.name}</span>
-                          ))}
-                        </>
-                      )}
-                      {opportunities.length > 0 && (
-                        <>
-                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.2)" }}>|</span>
-                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", fontWeight: 600 }}>🎯</span>
-                          {opportunities.map(cat => (
-                            <span key={cat.name} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(234,179,8,0.1)", color: "#b45309", fontWeight: 600 }}>{cat.name}</span>
-                          ))}
-                        </>
-                      )}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(0,0,0,0.55)", textAlign: "center" }}>{e.repCalls.length}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.05)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${e.avg}%`, height: "100%", background: getScoreColor(e.avg), borderRadius: 3 }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: getScoreColor(e.avg), fontFamily: "'Space Mono', monospace", width: 36, flexShrink: 0, textAlign: "right" }}>{e.avg}%</span>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      {e.trend !== null
+                        ? <span style={{ fontSize: 12, fontWeight: 700, color: e.trend > 5 ? "#10B981" : e.trend < -5 ? "#EF4444" : "rgba(0,0,0,0.3)" }}>{e.trend > 5 ? `↑${e.trend}` : e.trend < -5 ? `↓${Math.abs(e.trend)}` : "→"}</span>
+                        : <span style={{ color: "rgba(0,0,0,0.2)", fontSize: 12 }}>—</span>}
+                    </div>
+                    <div>
+                      {e.topWeakness
+                        ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: "rgba(234,179,8,0.1)", color: "#92400E", fontWeight: 600, display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.topWeakness}</span>
+                        : <span style={{ color: "rgba(0,0,0,0.2)", fontSize: 11 }}>—</span>}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(0,0,0,0.5)" }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
+                      <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", marginTop: 1 }}>{e.lastCall?.category_scores?.call_type || e.lastCall?.call_type || "Call"}</div>
                     </div>
                   </div>
-                  <span style={{ fontSize: 10, color: "rgba(99,102,241,0.4)", flexShrink: 0 }}>{open ? "▾" : "▸"}</span>
-                </div>
-
-                {open && (
-                  <>
-                    {/* Call rows */}
-                    {repCalls.map((call, idx) => (
-                      <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
-                        <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
-                          <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{call.category_scores?.call_type || call.call_type || "Call"}{call.call_date ? ` · ${new Date(call.call_date).toLocaleDateString()}` : ""}</div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
-                          {call.deal_value ? <div style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            );
-          };
-
-          return (
-            <div>
-              <RepProgressionGraph repEntries={repEntries} />
-              {repEntries.map(e => <RepGroup key={e.repName} {...e} />)}
+                );
+              })}
             </div>
-          );
-        })()
+          </div>
+        )
       )}
 
-      {/* Doc Intakes — three categories */}
+      {/* DOCS TAB */}
       {activeTab === "docs" && (
         <div>
-          <Section
-            title="Enablement Documents" icon="📄" items={enablementList}
-            emptyText="No enablement documents uploaded yet."
-            action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
-          >
+          <Section title="Enablement Documents" icon="📄" items={enablementList} emptyText="No enablement documents uploaded yet." action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}>
             {enablementList.map(docRow)}
           </Section>
-          <Section
-            title="Marketing Materials" icon="📣" items={marketingList}
-            emptyText="No marketing materials uploaded yet."
-            action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
-          >
+          <Section title="Marketing Materials" icon="📣" items={marketingList} emptyText="No marketing materials uploaded yet." action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}>
             {marketingList.map(docRow)}
           </Section>
-          <Section
-            title="Training Documents" icon="🎓" items={trainingList}
-            emptyText="No training documents uploaded yet."
-            action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#8b5cf6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}
-          >
+          <Section title="Training Documents" icon="🎓" items={trainingList} emptyText="No training documents uploaded yet." action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#8b5cf6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}>
             {trainingList.map(docRow)}
           </Section>
         </div>
@@ -4630,7 +4745,7 @@ export default function CuotaCallReview() {
           enablementDocs={enablementDocs}
           onBack={() => { setPage("home"); setSelectedClientProfile(null); setFolderClient(null); setFolderAE(null); }}
           onViewCall={(call) => { loadCallIntoReview(call); }}
-          onBrowseByRep={() => { setPage("calls"); setFolderClient(selectedClientProfile); setFolderAE(null); }}
+          onBrowseByRep={(repName) => { setPage("calls"); setFolderClient(selectedClientProfile); setFolderAE(repName || null); }}
           onNavigate={(p) => setPage(p)}
           activeTab={clientPageTab}
           onTabChange={setClientPageTab}
