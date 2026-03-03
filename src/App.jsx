@@ -67,6 +67,18 @@ const CATEGORIES = [
   { id: "objection_handling", name: "Objection Handling" },
 ];
 
+const SDR_CATEGORIES = [
+  { id: "call_opener", name: "Call Opener" },
+  { id: "product_pitch", name: "Product Pitch" },
+  { id: "qualification", name: "Qualification" },
+  { id: "call_to_action", name: "Call to Action" },
+  { id: "objection_handling", name: "Objection Handling" },
+];
+
+function getCategories(repType) {
+  return repType === "SDR" ? SDR_CATEGORIES : CATEGORIES;
+}
+
 // Old category IDs for backward compatibility detection
 const OLD_CATEGORY_IDS = ["opening", "qualification", "storytelling", "objection", "demo", "multithreading", "nextsteps", "control"];
 
@@ -2291,8 +2303,10 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       ? Math.round((sortedByDate[sortedByDate.length - 1].overall_score || 0) - (sortedByDate[sortedByDate.length - 2].overall_score || 0))
       : null;
     const lastCall = sortedByDate[sortedByDate.length - 1];
+    const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
+    const repCategories = getCategories(isSdr ? "SDR" : "AE");
     const catAvgs = {};
-    CATEGORIES.forEach(cat => {
+    repCategories.forEach(cat => {
       let total = 0, count = 0;
       repCalls.forEach(call => {
         const cs = call.category_scores?.[cat.id];
@@ -2302,7 +2316,6 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     });
     const sortedCats = Object.values(catAvgs).sort((a, b) => a.avg - b.avg);
     const topWeakness = sortedCats[0]?.name || null;
-    const isSdr = repCalls.some(c => c.category_scores?.rep_type === "SDR");
     return { repName, repCalls, avg, trend, lastCall, topWeakness, isSdr };
   }).sort((a, b) => b.avg - a.avg);
 
@@ -4454,8 +4467,9 @@ export default function CuotaCallReview() {
   // Review functions
   const handleScoreChange = (catId, newScore) => { setScores(p => ({ ...p, [catId]: { ...p[catId], score: newScore } })); };
 
-  const totalRaw = CATEGORIES.reduce((sum, cat) => sum + (scores[cat.id]?.score || 0), 0);
-  const overallScore = Math.round((totalRaw / 90) * 100);
+  const activeCategories = getCategories(callInfo.repType);
+  const totalRaw = activeCategories.reduce((sum, cat) => sum + (scores[cat.id]?.score || 0), 0);
+  const overallScore = Math.round((totalRaw / (activeCategories.length * 10)) * 100);
 
   const analyzeTranscript = async () => {
     if (!transcript.trim()) { setError("Paste a transcript first."); return; }
@@ -4463,11 +4477,11 @@ export default function CuotaCallReview() {
     try {
       const validToken = await getValidToken();
       if (!validToken) { clearSession(); throw new Error("Session expired. Please log in again."); }
-      const res = await fetch("/api/analyze", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${validToken}`}, body:JSON.stringify({transcript, apiKey: apiKey || undefined}) });
+      const res = await fetch("/api/analyze", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${validToken}`}, body:JSON.stringify({transcript, apiKey: apiKey || undefined, repType: callInfo.repType || "AE"}) });
       if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||"Analysis failed");}
       const result=await res.json();
       const newScores = {};
-      CATEGORIES.forEach(cat => { const ai = result.scores[cat.id]; if (ai) { newScores[cat.id] = { score: ai.score || 0, details: ai.details || "" }; } });
+      getCategories(callInfo.repType).forEach(cat => { const ai = result.scores[cat.id]; if (ai) { newScores[cat.id] = { score: ai.score || 0, details: ai.details || "" }; } });
       setScores(newScores);
       // Auto-fill call info from transcript
       if (result.metadata) {
@@ -4869,7 +4883,7 @@ export default function CuotaCallReview() {
                 {Object.keys(scores).length > 0 && (
                   <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 16px", marginBottom: 6 }}>
                     <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10 }}>Category Overview</div>
-                    {CATEGORIES.map(cat => {
+                    {activeCategories.map(cat => {
                       const s = scores[cat.id]?.score || 0;
                       return (
                         <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
@@ -4883,7 +4897,7 @@ export default function CuotaCallReview() {
                     })}
                   </div>
                 )}
-                {CATEGORIES.map(cat => <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />)}
+                {activeCategories.map(cat => <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />)}
               </div>
             )}
 

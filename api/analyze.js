@@ -1,7 +1,46 @@
 // POST /api/analyze — analyze a transcript with Claude (server-side)
-// Body: { transcript, apiKey? }
+// Body: { transcript, apiKey?, repType? }
 // Uses ANTHROPIC_API_KEY env var, falls back to user-provided apiKey
 import { authenticateUser } from "./_lib/supabase.js";
+
+const SDR_ANALYSIS_PROMPT = `You are an expert sales call reviewer using the Cuota scoring rubric. Analyze the following SDR (Sales Development Representative) prospecting call transcript.
+
+SCORING RUBRIC — 5 categories, each scored out of 10 (total /50):
+1. CALL OPENER (call_opener): Did the SDR open with a confident, concise opener? Did they clearly identify themselves and their company, then immediately earn the right to continue? Avoid weak, apologetic, or rambly openers. Did they hook the prospect's attention?
+2. PRODUCT PITCH (product_pitch): Was the value proposition clear, concise (30–60 seconds), and relevant to the prospect's likely pain points? Did the SDR differentiate without launching into a full demo? Did they focus on outcomes over features?
+3. QUALIFICATION (qualification): Did the SDR uncover basic qualification signals — relevant need, decision authority, approximate timeline, and fit? Did they ask smart, purposeful questions rather than interrogating or skipping qualification entirely?
+4. CALL TO ACTION (call_to_action): Was there a clear, specific ask (e.g. a booked demo or intro call)? Did the SDR push confidently for a calendar commitment? Did they handle pushback on the CTA with a pivot rather than immediately backing down?
+5. OBJECTION HANDLING (objection_handling): Were common SDR objections (not interested, no time, already have a solution, send an email) acknowledged and addressed with confidence and a bridge — rather than immediately capitulating or over-explaining?
+
+For each category, provide:
+- score: An integer from 0 to 10
+- details: 2-3 sentences explaining the score — what the SDR did well or missed
+
+RISK INDICATORS — assess each of these (flagged = true if the risk is present):
+- meddpicc_gaps: Did the SDR fail to establish any basic qualification signals (need, authority, timeline)?
+- single_threaded: Is the SDR only talking to a single contact who may lack authority or influence?
+- no_decision_maker: Does the SDR have no awareness of who the actual decision maker or champion would be?
+- engagement_gap: Was there a long gap in outreach, or does this call feel cold with no prior context established?
+- no_next_steps: Did the call end without a committed next step (booked meeting, agreed follow-up date)?
+
+For each risk, provide:
+- flagged: true or false
+- details: 1-2 sentences explaining why the risk is or isn't present
+
+ALSO PROVIDE:
+- gut_check: An honest 3-5 sentence paragraph giving your overall gut feeling about this SDR call. Be direct and constructive — focus on prospecting effectiveness, opener confidence, and pipeline generation ability.
+- strengths: Exactly 3 strengths, each with a short title and 1-2 sentence description.
+- areas_of_opportunity: 2-4 areas where the SDR can improve. Each must have a description of the gap AND a "fix" — a specific, actionable suggestion the SDR can implement on the very next call.
+
+ALSO EXTRACT from the transcript:
+- rep_name: The SDR's name (the person from the selling company running the call)
+- prospect_company: The company name of the person being prospected
+- prospect_name: The main prospect on the call
+- call_type: One of Cold Call, Warm Call, Follow-up, Discovery
+- deal_stage: One of Prospecting, Early, Qualified, Nurture
+
+RESPOND ONLY WITH VALID JSON:
+{"metadata":{"rep_name":"...","prospect_company":"...","prospect_name":"...","call_type":"...","deal_stage":"..."},"scores":{"call_opener":{"score":7,"details":"..."},"product_pitch":{"score":8,"details":"..."},"qualification":{"score":6,"details":"..."},"call_to_action":{"score":8,"details":"..."},"objection_handling":{"score":7,"details":"..."}},"risks":{"meddpicc_gaps":{"flagged":true,"details":"..."},"single_threaded":{"flagged":false,"details":"..."},"no_decision_maker":{"flagged":true,"details":"..."},"engagement_gap":{"flagged":false,"details":"..."},"no_next_steps":{"flagged":false,"details":"..."}},"gut_check":"...","strengths":[{"title":"...","description":"..."},{"title":"...","description":"..."},{"title":"...","description":"..."}],"areas_of_opportunity":[{"description":"...","fix":"..."},{"description":"...","fix":"..."}]}`;
 
 const ANALYSIS_PROMPT = `You are an expert sales call reviewer using the Cuota scoring rubric. Analyze the following sales call transcript.
 
@@ -63,7 +102,7 @@ export default async function handler(req, res) {
     const auth = await authenticateUser(token);
     if (!auth) return res.status(401).json({ error: "Unauthorized" });
 
-    const { transcript, apiKey: userKey } = req.body || {};
+    const { transcript, apiKey: userKey, repType } = req.body || {};
     if (!transcript || !transcript.trim()) {
       return res.status(400).json({ error: "Transcript is required" });
     }
@@ -73,6 +112,8 @@ export default async function handler(req, res) {
     if (!anthropicKey) {
       return res.status(400).json({ error: "No API key configured. Ask your admin to set ANTHROPIC_API_KEY." });
     }
+
+    const prompt = repType === "SDR" ? SDR_ANALYSIS_PROMPT : ANALYSIS_PROMPT;
 
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -84,7 +125,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 8192,
-        messages: [{ role: "user", content: ANALYSIS_PROMPT + "\n\n---\n\nTRANSCRIPT:\n" + transcript }],
+        messages: [{ role: "user", content: prompt + "\n\n---\n\nTRANSCRIPT:\n" + transcript }],
       }),
     });
 
