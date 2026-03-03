@@ -2171,8 +2171,6 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
           const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
             const [open, setOpen] = useState(false);
-            const [showHighlight, setShowHighlight] = useState(false);
-            const [showOpportunities, setShowOpportunities] = useState(false);
 
             // Compute per-category averages for this rep
             const catAvgs = {};
@@ -2188,61 +2186,43 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
             const highlights = sortedCats.slice(0, 3);
             const opportunities = sortedCats.filter(c => c.avg < 7).slice(-3).reverse();
 
-            const InsightRow = ({ cat }) => (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0" }}>
-                <span style={{ flex: 1, fontSize: 12, color: "#374151" }}>{cat.name}</span>
-                <div style={{ width: 100, height: 5, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                  <div style={{ width: `${cat.avg * 10}%`, height: "100%", background: getScoreColor10(cat.avg), borderRadius: 3 }} />
-                </div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor10(cat.avg), width: 22, textAlign: "right", flexShrink: 0, fontFamily: "'Space Mono', monospace" }}>{cat.avg}</span>
-              </div>
-            );
-
             return (
               <div style={{ border: "1px solid rgba(99,102,241,0.15)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
                 {/* Rep header — click to toggle */}
                 <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer", background: "rgba(99,102,241,0.04)", borderBottom: open ? "1px solid rgba(99,102,241,0.1)" : "none" }}>
                   <CircularScore score={avg} size={42} strokeWidth={4} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: "#6366F1", display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#6366F1", display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       {repName}
                       {isSdr && <span style={{ background: "rgba(99,102,241,0.12)", color: "#6366F1", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, letterSpacing: 0.5 }}>SDR</span>}
                     </div>
-                    <div style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", marginTop: 2, fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</div>
+                    <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
+                      <span style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</span>
+                      {highlights.length > 0 && (
+                        <>
+                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.2)" }}>|</span>
+                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", fontWeight: 600 }}>⭐</span>
+                          {highlights.map(cat => (
+                            <span key={cat.name} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(16,185,129,0.1)", color: "#059669", fontWeight: 600 }}>{cat.name}</span>
+                          ))}
+                        </>
+                      )}
+                      {opportunities.length > 0 && (
+                        <>
+                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.2)" }}>|</span>
+                          <span style={{ fontSize: 10, color: "rgba(0,0,0,0.35)", fontWeight: 600 }}>🎯</span>
+                          {opportunities.map(cat => (
+                            <span key={cat.name} style={{ fontSize: 10, padding: "2px 7px", borderRadius: 6, background: "rgba(234,179,8,0.1)", color: "#b45309", fontWeight: 600 }}>{cat.name}</span>
+                          ))}
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <span style={{ fontSize: 10, color: "rgba(99,102,241,0.4)" }}>{open ? "▾" : "▸"}</span>
+                  <span style={{ fontSize: 10, color: "rgba(99,102,241,0.4)", flexShrink: 0 }}>{open ? "▾" : "▸"}</span>
                 </div>
 
                 {open && (
                   <>
-                    {/* Rep Highlight */}
-                    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                      <div onClick={() => setShowHighlight(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", cursor: "pointer", background: "#fafafa", userSelect: "none" }}>
-                        <span style={{ fontSize: 13 }}>⭐</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", flex: 1 }}>Rep Highlight</span>
-                        <span style={{ fontSize: 10, color: "rgba(0,0,0,0.3)" }}>{showHighlight ? "▾" : "▸"}</span>
-                      </div>
-                      {showHighlight && (
-                        <div style={{ padding: "4px 16px 12px" }}>
-                          {highlights.length > 0 ? highlights.map(cat => <InsightRow key={cat.name} cat={cat} />) : <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: "8px 0 0" }}>Not enough data yet.</p>}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Areas of Opportunity */}
-                    <div style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}>
-                      <div onClick={() => setShowOpportunities(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", cursor: "pointer", background: "#fafafa", userSelect: "none" }}>
-                        <span style={{ fontSize: 13 }}>🎯</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", flex: 1 }}>Areas of Opportunity</span>
-                        <span style={{ fontSize: 10, color: "rgba(0,0,0,0.3)" }}>{showOpportunities ? "▾" : "▸"}</span>
-                      </div>
-                      {showOpportunities && (
-                        <div style={{ padding: "4px 16px 12px" }}>
-                          {opportunities.length > 0 ? opportunities.map(cat => <InsightRow key={cat.name} cat={cat} />) : <p style={{ fontSize: 12, color: "rgba(0,0,0,0.35)", margin: "8px 0 0" }}>No weak areas detected — great work!</p>}
-                        </div>
-                      )}
-                    </div>
-
                     {/* Call rows */}
                     {repCalls.map((call, idx) => (
                       <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
