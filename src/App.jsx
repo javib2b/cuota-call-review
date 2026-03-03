@@ -1031,6 +1031,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   const [aeFilter, setAeFilter] = useState("");
 
   const [debugInfo, setDebugInfo] = useState(null);
+  const [openAEs, setOpenAEs] = useState({});
 
   const loadGongCalls = useCallback(async () => {
     setLoading(true); setError("");
@@ -1105,51 +1106,61 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
         ) : calls.length === 0 ? (
           <p style={{ textAlign: "center", color: "rgba(0,0,0,0.4)", padding: 20 }}>No calls found in the last 30 days.</p>
         ) : (() => {
-          const aeNames = [...new Set(calls.map(c => c.aeName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-          const filtered = aeFilter ? calls.filter(c => c.aeName === aeFilter) : calls;
-          return (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{filtered.length} call{filtered.length !== 1 ? "s" : ""}{aeFilter ? ` for ${aeFilter}` : " from last 30 days"}</div>
-              {aeNames.length > 1 && (
-                <select value={aeFilter} onChange={e => setAeFilter(e.target.value)} style={{ padding: "5px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, background: "#FFFFFF", color: "#1A2B3C", fontSize: 12, outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
-                  <option value="">All AEs</option>
-                  {aeNames.map(ae => <option key={ae} value={ae}>{ae}</option>)}
-                </select>
+          const aeNames = [...new Set(calls.map(c => c.aeName || "Unknown AE").filter(Boolean))].sort((a, b) => a.localeCompare(b));
+          const grouped = aeNames.map(ae => ({
+            ae,
+            calls: calls.filter(c => (c.aeName || "Unknown AE") === ae),
+          }));
+          const callRow = (call) => (
+            <div key={call.gongCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FAFAFA", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, marginBottom: 4 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "#1A2B3C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
+                  {call.callType && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 6, fontWeight: 600, flexShrink: 0, background: call.callType === "Discovery" ? "rgba(59,130,246,0.1)" : call.callType === "Follow-up" ? "rgba(139,92,246,0.1)" : call.callType === "Demo" ? "rgba(234,179,8,0.1)" : call.callType === "Negotiation" ? "rgba(249,115,22,0.1)" : "rgba(49,206,129,0.1)", color: call.callType === "Discovery" ? "#3b82f6" : call.callType === "Follow-up" ? "#8b5cf6" : call.callType === "Demo" ? "#ca8a04" : call.callType === "Negotiation" ? "#ea580c" : "#31CE81" }}>{call.callType}</span>}
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+                  {call.started ? new Date(call.started).toLocaleDateString() : ""}
+                  {call.duration ? ` \u00B7 ${Math.round(call.duration / 60)}min` : ""}
+                  {call.prospectName && <span> &middot; {call.prospectName}</span>}
+                  {call.prospectCompany && <span style={{ fontWeight: 500 }}> &middot; {call.prospectCompany}</span>}
+                </div>
+                {call.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{call.errorMessage}</div>}
+              </div>
+              {statusBadge(call.status)}
+              {(call.status === "new" || call.status === "failed") && (
+                <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                  {processing === call.gongCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
+                </button>
               )}
             </div>
-            {filtered.map(call => (
-              <div key={call.gongCallId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: call.status === "completed" ? "rgba(49,206,129,0.03)" : "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 10 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{call.title}</span>
-                    {call.callType && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 6, fontWeight: 600, flexShrink: 0, background: call.callType === "Discovery" ? "rgba(59,130,246,0.1)" : call.callType === "Follow-up" ? "rgba(139,92,246,0.1)" : call.callType === "Demo" ? "rgba(234,179,8,0.1)" : call.callType === "Negotiation" ? "rgba(249,115,22,0.1)" : "rgba(49,206,129,0.1)", color: call.callType === "Discovery" ? "#3b82f6" : call.callType === "Follow-up" ? "#8b5cf6" : call.callType === "Demo" ? "#ca8a04" : call.callType === "Negotiation" ? "#ea580c" : "#31CE81" }}>{call.callType}</span>}
+          );
+          return (
+            <div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginBottom: 12 }}>{calls.length} call{calls.length !== 1 ? "s" : ""} from last 30 days &middot; {aeNames.length} AE{aeNames.length !== 1 ? "s" : ""}</div>
+              {grouped.map(({ ae, calls: aeCalls }) => {
+                const isOpen = openAEs[ae] !== false; // default open
+                const newCount = aeCalls.filter(c => c.status === "new" || c.status === "failed").length;
+                const doneCount = aeCalls.filter(c => c.status === "completed").length;
+                return (
+                  <div key={ae} style={{ marginBottom: 8, border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, overflow: "hidden" }}>
+                    <button onClick={() => setOpenAEs(p => ({ ...p, [ae]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "#F7F7F8", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
+                      <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>{isOpen ? "▾" : "▸"}</span>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>{ae}</span>
+                      <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginRight: 6 }}>{aeCalls.length} call{aeCalls.length !== 1 ? "s" : ""}</span>
+                      {newCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(99,102,241,0.1)", color: "#6366F1", fontWeight: 600 }}>{newCount} new</span>}
+                      {doneCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(49,206,129,0.1)", color: "#31CE81", fontWeight: 600 }}>{doneCount} reviewed</span>}
+                    </button>
+                    {isOpen && (
+                      <div style={{ padding: "8px 10px 4px" }}>
+                        {aeCalls.map(call => callRow(call))}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
-                    {call.started ? new Date(call.started).toLocaleDateString() : ""}
-                    {call.duration ? ` \u00B7 ${Math.round(call.duration / 60)}min` : ""}
-                  </div>
-                  {(call.aeName || call.prospectName) && (
-                    <div style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", marginTop: 3 }}>
-                      {call.aeName && <span style={{ fontWeight: 600 }}>AE: {call.aeName}</span>}
-                      {call.aeName && call.prospectName && <span> &middot; </span>}
-                      {call.prospectName && <span>Prospect: {call.prospectName}</span>}
-                      {call.prospectCompany && <span> &middot; {call.prospectCompany}</span>}
-                      {call.prospectTitle && <span style={{ color: "rgba(0,0,0,0.35)" }}> ({call.prospectTitle})</span>}
-                    </div>
-                  )}
-                  {call.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{call.errorMessage}</div>}
-                </div>
-                {statusBadge(call.status)}
-                {(call.status === "new" || call.status === "failed") && (
-                  <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
-                    {processing === call.gongCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          ); })()}
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
