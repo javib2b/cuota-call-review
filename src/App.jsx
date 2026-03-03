@@ -4191,9 +4191,9 @@ export default function CuotaCallReview() {
 
       {/* SIDEBAR */}
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#FFFFFF", borderRight: "1px solid rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", zIndex: 100 }}>
-        {/* Logo */}
+        {/* Logo — click to go home */}
         <div style={{ padding: "24px 16px 16px" }}>
-          <span style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5 }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></span>
+          <span onClick={() => setPage("home")} style={{ fontSize: 16, fontWeight: 800, color: "#1A2B3C", letterSpacing: 1.5, cursor: "pointer" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></span>
         </div>
         {/* + New Call Review */}
         <div style={{ padding: "0 12px 14px" }}>
@@ -4219,7 +4219,7 @@ export default function CuotaCallReview() {
                     : <span style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(99,102,241,0.12)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#6366F1", flexShrink: 0 }}>{clientName[0]}</span>
                   }
                   <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName}</span>
-                  <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", flexShrink: 0, transition: "transform 0.15s", display: "inline-block", transform: isOpen ? "rotate(90deg)" : "none" }}>›</span>
+                  <span style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", flexShrink: 0 }}>{isOpen ? "▾" : "▸"}</span>
                 </button>
                 {/* Sub-items */}
                 {isOpen && (
@@ -4240,20 +4240,6 @@ export default function CuotaCallReview() {
                   </div>
                 )}
               </div>
-            );
-          })}
-
-          {/* PLATFORM */}
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(0,0,0,0.35)", letterSpacing: 1.2, textTransform: "uppercase", padding: "12px 8px 4px" }}>Platform</div>
-          {[
-            { id: "home", label: "Home", icon: "◼" },
-          ].map(nav => {
-            const active = page === nav.id;
-            return (
-              <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #6366F1" : "3px solid transparent", background: active ? "rgba(99,102,241,0.08)" : "transparent", color: active ? "#6366F1" : "#4B5563", fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
-                <span style={{ width: 18, textAlign: "center", fontSize: 12 }}>{nav.icon}</span>
-                <span style={{ flex: 1 }}>{nav.label}</span>
-              </button>
             );
           })}
 
