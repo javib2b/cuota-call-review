@@ -1992,71 +1992,58 @@ function RepProgressionGraph({ repEntries }) {
   const repData = repEntries.map((entry, i) => {
     const pts = entry.repCalls
       .filter(c => c.call_date || c.created_at)
-      .map(c => ({ date: new Date(c.call_date || c.created_at).getTime(), score: c.overall_score || 0 }))
+      .map(c => ({ date: new Date(c.call_date || c.created_at), score: c.overall_score || 0 }))
       .sort((a, b) => a.date - b.date);
     return { repName: entry.repName, pts, color: REP_COLORS[i % REP_COLORS.length] };
   }).filter(e => e.pts.length > 0);
 
   if (repData.length === 0) return null;
 
-  const allPts = repData.flatMap(e => e.pts);
-  const minDate = Math.min(...allPts.map(p => p.date));
-  const maxDate = Math.max(...allPts.map(p => p.date));
-  const dateRange = maxDate - minDate || 86400000;
-
-  const W = 540, H = 180;
-  const pad = { l: 32, r: 16, t: 20, b: 28 };
-  const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
-  const xS = d => pad.l + ((d - minDate) / dateRange) * cW;
-  const yS = s => pad.t + cH - (Math.min(Math.max(s, 0), 100) / 100) * cH;
-
-  const uniqueDates = [...new Set(allPts.map(p => p.date))].sort((a, b) => a - b);
-  const tickCount = Math.min(uniqueDates.length, 5);
-  const tickDates = tickCount <= 1 ? uniqueDates :
-    Array.from({ length: tickCount }, (_, i) => uniqueDates[Math.round(i * (uniqueDates.length - 1) / (tickCount - 1))]);
-
   return (
-    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px 10px", marginBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>Score Progression</span>
-        <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          {repData.map(e => (
-            <div key={e.repName} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#4B5563" }}>
-              <span style={{ width: 16, height: 3, background: e.color, borderRadius: 2, display: "inline-block", flexShrink: 0 }} />
-              {e.repName}
+    <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", marginBottom: 16 }}>Score Progression</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {repData.map(e => {
+          const last = e.pts[e.pts.length - 1]?.score ?? null;
+          const prev = e.pts.length >= 2 ? e.pts[e.pts.length - 2].score : null;
+          const diff = prev !== null ? last - prev : null;
+          return (
+            <div key={e.repName}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: e.color }}>{e.repName}</span>
+                {diff !== null && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: diff > 0 ? "#10b981" : diff < 0 ? "#ef4444" : "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", gap: 3 }}>
+                    {diff > 0 ? "↑" : diff < 0 ? "↓" : "→"} {diff > 0 ? `+${diff}` : diff}
+                  </span>
+                )}
+              </div>
+              <div style={{ overflowX: "auto", paddingBottom: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", minWidth: "max-content", gap: 0 }}>
+                  {e.pts.map((p, i) => {
+                    const scoreColor = getScoreColor(p.score);
+                    const nextScore = e.pts[i + 1]?.score ?? null;
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: scoreColor, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 800, fontFamily: "'Space Mono', monospace", boxShadow: `0 2px 8px ${scoreColor}55` }}>
+                            {p.score}
+                          </div>
+                          <div style={{ fontSize: 9, color: "rgba(0,0,0,0.35)", marginTop: 5, textAlign: "center", whiteSpace: "nowrap" }}>
+                            {p.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                          </div>
+                        </div>
+                        {nextScore !== null && (
+                          <div style={{ width: 36, height: 3, flexShrink: 0, margin: "0 2px", marginBottom: 16, borderRadius: 2, background: nextScore > p.score ? "#10b981" : nextScore < p.score ? "#ef4444" : "rgba(0,0,0,0.12)", opacity: 0.5 }} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
-        {[0, 25, 50, 75, 100].map(v => (
-          <g key={v}>
-            <line x1={pad.l} y1={yS(v)} x2={W - pad.r} y2={yS(v)} stroke="rgba(0,0,0,0.05)" strokeWidth={1} strokeDasharray={v > 0 ? "3,3" : undefined} />
-            <text x={pad.l - 5} y={yS(v) + 3} textAnchor="end" fontSize={8} fill="rgba(0,0,0,0.28)">{v}</text>
-          </g>
-        ))}
-        {tickDates.map(d => (
-          <text key={d} x={xS(d)} y={H - 2} textAnchor="middle" fontSize={8} fill="rgba(0,0,0,0.3)">
-            {new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-          </text>
-        ))}
-        {repData.map(e => (
-          <g key={e.repName}>
-            {e.pts.length > 1 && (
-              <polyline
-                points={e.pts.map(p => `${xS(p.date)},${yS(p.score)}`).join(" ")}
-                fill="none" stroke={e.color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-              />
-            )}
-            {e.pts.map((p, j) => (
-              <g key={j}>
-                <circle cx={xS(p.date)} cy={yS(p.score)} r={4} fill={e.color} stroke="#fff" strokeWidth={1.5} />
-                <text x={xS(p.date)} y={yS(p.score) - 8} textAnchor="middle" fontSize={8} fill={e.color} fontWeight="700">{p.score}</text>
-              </g>
-            ))}
-          </g>
-        ))}
-      </svg>
     </div>
   );
 }
