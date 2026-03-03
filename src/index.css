@@ -1,30 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #EEF2FF;
+  --color-brand-100: #E0E7FF;
+  --color-brand-500: #6366F1;
+  --color-brand-600: #4F46E5;
+  --color-brand-700: #4338CA;
+
+  --color-score-critical: #EF4444;
+  --color-score-needs-work: #F97316;
+  --color-score-average: #EAB308;
+  --color-score-good: #22C55E;
+  --color-score-excellent: #6366F1;
+
+  --radius-card: 12px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.08);
+
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  background: #F5F3F0;
+html {
+  font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  background: #F8FAFC;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.1);
+  background: rgba(0,0,0,0.12);
   border-radius: 3px;
 }
 
-input, select, textarea {
+input, select, textarea, button {
   font-family: inherit;
 }
 
 select option {
   background: #FFFFFF;
+}
+
+/* Tabular numbers for KPIs */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

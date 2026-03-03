@@ -1,6 +1,9 @@
 {
   "functions": {
     "api/analyze.js": { "maxDuration": 60 },
+    "api/revenue-bridge.js": { "maxDuration": 60 },
+    "api/assessment.js": { "maxDuration": 60 },
+    "api/coaching.js": { "maxDuration": 60 },
     "api/analyze-crm.js": { "maxDuration": 60 },
     "api/analyze-doc.js": { "maxDuration": 60 },
     "api/analyze-audit.js": { "maxDuration": 60 },
