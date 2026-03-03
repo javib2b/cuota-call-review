@@ -386,7 +386,7 @@ function AuthScreen({ onAuth }) {
           </div>
           {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
           {message && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: "#1a7a42" }}>{message}</div>}
-          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 10, cursor: "pointer", background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "inherit" }}>{loading ? "..." : mode === "login" ? "Log In" : "Create Account"}</button>
+          <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 10, cursor: "pointer", background: "#31CE81", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: "inherit" }}>{loading ? "..." : mode === "login" ? "Log In" : "Create Account"}</button>
         </div>
       </div>
     </div>
@@ -456,7 +456,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
   );
 
   const newReviewBtn = (
-    <button onClick={onNewCall} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
+    <button onClick={onNewCall} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
   );
 
   // ---- CLIENT FOLDERS VIEW ----
@@ -473,7 +473,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         <div key={client} style={{ position: "relative", background: isPast ? "#fafafa" : "#FFFFFF", border: `1px solid ${isPast ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.08)"}`, borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isPast ? 0.65 : (isEmpty ? 0.5 : 1), transition: "all 0.2s", boxShadow: isEmpty || isPast ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
           <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
             {isPast ? (
-              onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(99,102,241,0.1)", border: "none", color: "#6366F1", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
+              onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
             ) : (
               onArchiveClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) onArchiveClient(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }} title="Archive client">Archive</button>
             )}
@@ -569,7 +569,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 return (
                   <div key={client} style={{ position: "relative", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
                     <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
-                      {onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(99,102,241,0.1)", border: "none", color: "#6366F1", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
+                      {onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
                       {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "rgba(0,0,0,0.3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
                     </div>
                     <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
@@ -612,7 +612,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                   return (
                     <div key={client} style={{ position: "relative", background: "#f9f9f9", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.45, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
                       <div style={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}>
-                        {onRestoreFromArchived && <button onClick={(e) => { e.stopPropagation(); onRestoreFromArchived(client); }} style={{ background: "rgba(99,102,241,0.1)", border: "none", color: "#6366F1", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
+                        {onRestoreFromArchived && <button onClick={(e) => { e.stopPropagation(); onRestoreFromArchived(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
                       </div>
                       <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                         <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
@@ -913,7 +913,7 @@ function InviteModal({ token, profile, onClose }) {
             <option value="manager" style={{ background: "#FFFFFF" }}>Manager</option>
           </select>
         </div>
-        <button onClick={sendInvite} disabled={sending} style={{ width: "100%", padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>{sending ? "Sending..." : "Send Invite"}</button>
+        <button onClick={sendInvite} disabled={sending} style={{ width: "100%", padding: "10px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>{sending ? "Sending..." : "Send Invite"}</button>
         {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
         {sent && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>Invite created! They can sign up and will be added to your org.</div>}
         {invites.length > 0 && (
@@ -1048,7 +1048,7 @@ function GongSettingsModal({ token, getValidToken, onClose, client }) {
             {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
               {configured && (
                 <button onClick={handleTest} disabled={testing} style={{ padding: "10px 16px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{testing ? "Testing..." : "Test"}</button>
               )}
@@ -1169,7 +1169,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
               </div>
               {statusBadge(call.status)}
               {(call.status === "new" || call.status === "failed") && (
-                <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                <button onClick={() => processCall(call.gongCallId)} disabled={processing === call.gongCallId} style={{ padding: "5px 12px", border: "none", borderRadius: 7, background: "#31CE81", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.gongCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
                   {processing === call.gongCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
                 </button>
               )}
@@ -1188,7 +1188,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                       <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>{isOpen ? "▾" : "▸"}</span>
                       <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>{ae}</span>
                       <span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginRight: 6 }}>{aeCalls.length} call{aeCalls.length !== 1 ? "s" : ""}</span>
-                      {newCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(99,102,241,0.1)", color: "#6366F1", fontWeight: 600 }}>{newCount} new</span>}
+                      {newCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(49,206,129,0.12)", color: "#31CE81", fontWeight: 600 }}>{newCount} new</span>}
                       {doneCount > 0 && <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 8, background: "rgba(49,206,129,0.1)", color: "#31CE81", fontWeight: 600 }}>{doneCount} reviewed</span>}
                     </button>
                     {isOpen && (
@@ -1332,7 +1332,7 @@ function DiioSettingsModal({ getValidToken, onClose, client }) {
             {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
 
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Credentials"}</button>
               {configured && (
                 <button onClick={handleTest} disabled={testing} style={{ padding: "10px 16px", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 8, background: "rgba(59,130,246,0.08)", color: "#3b82f6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{testing ? "Testing..." : "Test"}</button>
               )}
@@ -1452,7 +1452,7 @@ function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                   </div>
                   {statusBadge(call.status)}
                   {(call.status === "new" || call.status === "failed") && (
-                    <button onClick={() => processCall(call.diioCallId, call.rawId, call.callType)} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.diioCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                    <button onClick={() => processCall(call.diioCallId, call.rawId, call.callType)} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== call.diioCallId ? 0.4 : 1, whiteSpace: "nowrap" }}>
                       {processing === call.diioCallId ? "Processing..." : call.status === "failed" ? "Retry" : "Review"}
                     </button>
                   )}
@@ -1515,7 +1515,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
         {diioSyncClient && <DiioSyncModal getValidToken={getValidToken} client={diioSyncClient} onClose={() => setDiioSyncClient(null)} onCallProcessed={loadCalls} />}
 
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-          <span onClick={() => setSelectedClient(null)} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
+          <span onClick={() => setSelectedClient(null)} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
           <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
           <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{selectedClient}</span>
         </div>
@@ -1536,7 +1536,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: gongCfg ? "#31CE81" : "rgba(0,0,0,0.2)", display: "inline-block" }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setGongSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => setGongSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 {gongCfg ? "Edit Credentials" : "Connect Gong"}
               </button>
               {gongCfg && (
@@ -1566,7 +1566,7 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: diioCfg ? "#31CE81" : "rgba(0,0,0,0.2)", display: "inline-block" }} />
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setDiioSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+              <button onClick={() => setDiioSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
                 {diioCfg ? "Edit Credentials" : "Connect Diio"}
               </button>
               {diioCfg && (
@@ -1763,7 +1763,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
       <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>Recent Call Reviews</div>
-          <button onClick={() => onNavigate("calls")} style={{ fontSize: 11, color: "#6366F1", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View all →</button>
+          <button onClick={() => onNavigate("calls")} style={{ fontSize: 11, color: "#31CE81", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View all →</button>
         </div>
         {recentCalls.length === 0 ? (
           <div style={{ textAlign: "center", padding: "24px 0", color: "rgba(0,0,0,0.35)", fontSize: 13 }}>No calls reviewed yet.</div>
@@ -1808,7 +1808,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C" }}>{client}</div>
                   <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>avg {avg}%</div>
                 </div>
-                <button onClick={() => onClientClick && onClientClick(client)} style={{ fontSize: 11, color: "#6366F1", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View →</button>
+                <button onClick={() => onClientClick && onClientClick(client)} style={{ fontSize: 11, color: "#31CE81", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View →</button>
               </div>
             ))}
           </div>
@@ -1817,7 +1817,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
 
       {/* Section D: Quick Actions */}
       <div style={{ display: "flex", gap: 10, marginBottom: 32 }}>
-        <button onClick={() => onNavigate("review")} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Call Review</button>
+        <button onClick={() => onNavigate("review")} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Call Review</button>
         <button onClick={() => onNavigate("gtm")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Run Assessment</button>
         <button onClick={() => onNavigate("enablement")} style={{ padding: "10px 20px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 10, background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Upload Doc</button>
       </div>
@@ -2386,7 +2386,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     <div>
       {/* Breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-        <span onClick={onBack} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Clients</span>
+        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Clients</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span style={{ color: "#1A2B3C", fontWeight: 600 }}>{client}</span>
       </div>
@@ -3437,7 +3437,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20, fontSize: 13 }}>
-        <span onClick={onBack} style={{ color: "#6366F1", cursor: "pointer", fontWeight: 600 }}>Home</span>
+        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Home</span>
         <span style={{ color: "rgba(0,0,0,0.4)" }}>/</span>
         <span style={{ color: "#1A2B3C", fontWeight: 600 }}>New GTM Assessment</span>
       </div>
@@ -3508,7 +3508,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
         <button
           onClick={generate}
           disabled={!canGenerate}
-          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "linear-gradient(135deg, #6366F1, #4F46E5)" : "rgba(0,0,0,0.07)", color: canGenerate ? "#fff" : "rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
+          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "#31CE81" : "rgba(0,0,0,0.07)", color: canGenerate ? "#fff" : "rgba(0,0,0,0.3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
         >
           {generating ? "Analyzing documents..." : "Generate GTM Assessment ✦"}
         </button>
@@ -4728,7 +4728,7 @@ export default function CuotaCallReview() {
       {page !== "review" && (
         <button onClick={startNewReview} style={{
           position: "fixed", bottom: 28, right: 28, zIndex: 200,
-          background: "linear-gradient(135deg, #6366F1, #4F46E5)",
+          background: "#31CE81",
           border: "none", borderRadius: 28, padding: "12px 20px",
           color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
           boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
@@ -4867,7 +4867,7 @@ export default function CuotaCallReview() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1A2B3C", margin: 0 }}>Call Transcript</h3>
-                  <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
+                  <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(0,0,0,0.05)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
                     {analyzing ? "Analyzing..." : "Analyze with AI \u2726"}
                   </button>
                 </div>
@@ -4988,7 +4988,7 @@ export default function CuotaCallReview() {
             <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "flex-end" }}>
               {saveSuccess && <span style={{ padding: "12px 0", fontSize: 13, color: "#6366F1", fontWeight: 600 }}>Saved successfully!</span>}
               {error && !analyzing && <span style={{ padding: "12px 0", fontSize: 13, color: "#ef4444" }}>{error}</span>}
-              <button onClick={saveCall} disabled={saving} style={{ padding: "14px 32px", border: "none", borderRadius: 12, cursor: "pointer", background: "linear-gradient(135deg, #6366F1, #4F46E5)", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
+              <button onClick={saveCall} disabled={saving} style={{ padding: "14px 32px", border: "none", borderRadius: 12, cursor: "pointer", background: "#31CE81", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
                 {saving ? "Saving..." : selectedCall ? "Update Call" : "Save This Call"}
               </button>
             </div>
