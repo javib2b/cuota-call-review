@@ -2078,20 +2078,22 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         const RepGroup = ({ repName, repCalls, avg, isSdr }) => {
           const [open, setOpen] = useState(true);
           return (
-            <div style={{ border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, overflow: "hidden", marginBottom: 8 }}>
-              <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", cursor: "pointer", background: "#fafafa" }}>
-                <CircularScore score={avg} size={38} strokeWidth={3} />
+            <div style={{ border: "1px solid rgba(99,102,241,0.15)", borderRadius: 12, overflow: "hidden", marginBottom: 10 }}>
+              {/* Rep header — visually distinct */}
+              <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer", background: "rgba(99,102,241,0.04)", borderBottom: open ? "1px solid rgba(99,102,241,0.1)" : "none" }}>
+                <CircularScore score={avg} size={42} strokeWidth={4} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1A2B3C", display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#6366F1", display: "flex", alignItems: "center", gap: 8 }}>
                     {repName}
-                    {isSdr && <span style={{ background: "rgba(99,102,241,0.1)", color: "#6366F1", fontSize: 10, fontWeight: 600, padding: "1px 6px", borderRadius: 4 }}>SDR</span>}
+                    {isSdr && <span style={{ background: "rgba(99,102,241,0.12)", color: "#6366F1", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 4, letterSpacing: 0.5 }}>SDR</span>}
                   </div>
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 1 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · {getScoreLabel(avg)}</div>
+                  <div style={{ fontSize: 11, color: "rgba(99,102,241,0.6)", marginTop: 2, fontWeight: 500 }}>{repCalls.length} call{repCalls.length !== 1 ? "s" : ""} · avg {getScoreLabel(avg)}</div>
                 </div>
-                <span style={{ fontSize: 11, color: "rgba(0,0,0,0.3)" }}>{open ? "▲" : "▼"}</span>
+                <span style={{ fontSize: 12, color: "rgba(99,102,241,0.4)", fontWeight: 600 }}>{open ? "▲" : "▼"}</span>
               </div>
-              {open && repCalls.map(call => (
-                <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px 10px 18px", borderTop: "1px solid rgba(0,0,0,0.04)", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
+              {/* Call rows */}
+              {open && repCalls.map((call, idx) => (
+                <div key={call.id} onClick={() => onViewCall(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderTop: idx > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", cursor: "pointer", background: "#fff" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.015)"} onMouseLeave={e => e.currentTarget.style.background = "#fff"}>
                   <CircularScore score={call.overall_score || 0} size={34} strokeWidth={3} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#1A2B3C", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
