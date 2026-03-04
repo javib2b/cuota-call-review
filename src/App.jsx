@@ -146,6 +146,22 @@ function saveClients(clients) {
   localStorage.setItem("cuota_clients", JSON.stringify(clients));
 }
 
+function getRepSegment(calls) {
+  const valued = calls.filter(c => c.deal_value && Number(c.deal_value) > 0);
+  if (valued.length === 0) return null;
+  const avg = valued.reduce((s, c) => s + Number(c.deal_value), 0) / valued.length;
+  if (avg >= 200000) return "Enterprise";
+  if (avg >= 25000) return "Mid-Market";
+  return "SMB";
+}
+
+function getSegmentColor(seg) {
+  if (seg === "Enterprise") return { color: "#7c3aed", bg: "rgba(124,58,237,0.09)" };
+  if (seg === "Mid-Market") return { color: "#0369a1", bg: "rgba(3,105,161,0.09)" };
+  if (seg === "SMB") return { color: "#15803d", bg: "rgba(21,128,61,0.09)" };
+  return { color: "rgba(0,0,0,0.4)", bg: "rgba(0,0,0,0.05)" };
+}
+
 function isNewFormat(call) {
   const cs = call.category_scores;
   if (!cs) return false;
@@ -760,9 +776,23 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: 24, marginBottom: 16, display: "flex", alignItems: "center", gap: 20 }}>
         <CircularScore score={latestScore} size={80} strokeWidth={6} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#012441" }}>{folderAE}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 20, fontWeight: 700, color: "#012441" }}>{folderAE}</span>
+            {(() => { const seg = getRepSegment(aeCalls); if (!seg) return null; const sc = getSegmentColor(seg); return <span style={{ fontSize: 11, fontWeight: 700, color: sc.color, background: sc.bg, padding: "2px 8px", borderRadius: 6 }}>{seg}</span>; })()}
+          </div>
           <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", marginTop: 4 }}>
             {sortedAeCalls.length} call{sortedAeCalls.length !== 1 ? "s" : ""} reviewed
+            {(() => {
+              const smb = aeCalls.filter(c => c.deal_value && Number(c.deal_value) > 0 && Number(c.deal_value) < 25000).length;
+              const mm = aeCalls.filter(c => c.deal_value && Number(c.deal_value) >= 25000 && Number(c.deal_value) < 200000).length;
+              const ent = aeCalls.filter(c => c.deal_value && Number(c.deal_value) >= 200000).length;
+              const parts = [];
+              if (smb > 0) parts.push(`${smb} SMB`);
+              if (mm > 0) parts.push(`${mm} Mid-Market`);
+              if (ent > 0) parts.push(`${ent} Enterprise`);
+              if (parts.length === 0) return null;
+              return <span style={{ marginLeft: 6, color: "rgba(0,0,0,0.3)", fontSize: 12 }}>· {parts.join(" · ")}</span>;
+            })()}
           </div>
         </div>
         {sortedAeCalls.length > 1 && (
@@ -2412,7 +2442,7 @@ function ScoreTrendsChart({ repEntries }) {
 }
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const [logoFailed, setLogoFailed] = useState(false);
@@ -2590,7 +2620,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ id: "calls", label: "📞 Call Reviews", count: clientCalls.length }, { id: "docs", label: "📄 Doc Intakes", count: clientDocs.length }].map(tab => (
+        {[{ id: "calls", label: "📞 Call Reviews", count: clientCalls.length }, { id: "docs", label: "📄 Doc Intakes", count: clientDocs.length }, { id: "gtm", label: "GTM Profile" }].map(tab => (
           <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #6366F1" : "1.5px solid rgba(0,0,0,0.09)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(99,102,241,0.06)" : "#fff", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.5)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(99,102,241,0.15)" : "rgba(0,0,0,0.06)", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.4)" }}>{tab.count}</span>}
@@ -2621,8 +2651,8 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                   </select>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 106px 84px", padding: "8px 18px 6px", borderBottom: "1px solid rgba(0,0,0,0.04)", fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", textTransform: "uppercase", letterSpacing: 1, gap: 8 }}>
-                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span>Top Weakness</span><span>Last Call</span>
+              <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 90px 106px 84px", padding: "8px 18px 6px", borderBottom: "1px solid rgba(0,0,0,0.04)", fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.28)", textTransform: "uppercase", letterSpacing: 1, gap: 8 }}>
+                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span style={{ textAlign: "center" }}>Segment</span><span>Top Weakness</span><span>Last Call</span>
               </div>
               {filteredReps.length === 0 ? (
                 <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "rgba(0,0,0,0.35)" }}>No reps match your search.</div>
@@ -2632,7 +2662,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                   <div
                     key={e.repName}
                     onClick={() => onBrowseByRep(e.repName)}
-                    style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 106px 84px", padding: "11px 18px", cursor: "pointer", alignItems: "center", gap: 8, background: idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)", borderLeft: "3px solid transparent", transition: "background 0.1s ease, border-color 0.1s ease" }}
+                    style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 90px 106px 84px", padding: "11px 18px", cursor: "pointer", alignItems: "center", gap: 8, background: idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)", borderLeft: "3px solid transparent", transition: "background 0.1s ease, border-color 0.1s ease" }}
                     onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(99,102,241,0.04)"; ev.currentTarget.style.borderLeftColor = "#6366F1"; }}
                     onMouseLeave={ev => { ev.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)"; ev.currentTarget.style.borderLeftColor = "transparent"; }}
                   >
@@ -2657,6 +2687,9 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                       {e.trend !== null
                         ? <span style={{ fontSize: 12, fontWeight: 700, color: e.trend > 5 ? "#10B981" : e.trend < -5 ? "#EF4444" : "rgba(0,0,0,0.3)" }}>{e.trend > 5 ? `↑${e.trend}` : e.trend < -5 ? `↓${Math.abs(e.trend)}` : "→"}</span>
                         : <span style={{ color: "rgba(0,0,0,0.2)", fontSize: 12 }}>—</span>}
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      {(() => { const seg = getRepSegment(e.repCalls); const sc = getSegmentColor(seg); return seg ? <span style={{ fontSize: 10, fontWeight: 700, color: sc.color, background: sc.bg, padding: "2px 7px", borderRadius: 6 }}>{seg}</span> : <span style={{ fontSize: 10, color: "rgba(0,0,0,0.25)" }}>—</span>; })()}
                     </div>
                     <div>
                       {e.topWeakness
@@ -2689,6 +2722,216 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           </Section>
         </div>
       )}
+
+      {/* GTM TAB */}
+      {activeTab === "gtm" && (
+        <GTMProfileTab client={client} getValidToken={getValidToken} />
+      )}
+    </div>
+  );
+}
+
+// ==================== GTM PROFILE TAB ====================
+function GTMProfileTab({ client, getValidToken }) {
+  const [draft, setDraft] = useState({ icp_description: "", sell_to: "", competitors: [], partners: [] });
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  useEffect(() => { loadProfile(); }, [client]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadProfile = async () => {
+    setLoading(true);
+    setSaveError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch(`/api/gtm-profile?client=${encodeURIComponent(client)}`, {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const p = data.profile || { icp_description: "", sell_to: "", competitors: [], partners: [] };
+        setProfile(data.profile || null);
+        setDraft({ icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
+      }
+    } catch (e) {
+      console.warn("GTM load error:", e);
+    }
+    setLoading(false);
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setSaveError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gtm-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ client, action: "generate" }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setDraft(prev => ({
+          ...prev,
+          icp_description: data.draft.icp_description || prev.icp_description,
+          sell_to: data.draft.sell_to || prev.sell_to,
+          competitors: data.draft.competitors?.length ? data.draft.competitors : prev.competitors,
+          partners: data.draft.partners?.length ? data.draft.partners : prev.partners,
+        }));
+        if (data.draft.ai_generated_at) {
+          setProfile(prev => ({ ...(prev || {}), ai_generated_at: data.draft.ai_generated_at }));
+        }
+      } else {
+        const e = await r.json().catch(() => ({}));
+        setSaveError(e.error || "Generation failed");
+      }
+    } catch (e) {
+      setSaveError("Generation failed: " + e.message);
+    }
+    setGenerating(false);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/gtm-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ client, action: "save", ...draft }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setProfile(data.profile || { ...draft });
+      } else {
+        const e = await r.json().catch(() => ({}));
+        setSaveError(e.error || "Save failed");
+      }
+    } catch (e) {
+      setSaveError("Save failed: " + e.message);
+    }
+    setSaving(false);
+  };
+
+  const updateList = (field, idx, value) => {
+    setDraft(prev => { const arr = [...(prev[field] || [])]; arr[idx] = value; return { ...prev, [field]: arr }; });
+  };
+  const removeFromList = (field, idx) => {
+    setDraft(prev => { const arr = [...(prev[field] || [])]; arr.splice(idx, 1); return { ...prev, [field]: arr }; });
+  };
+  const addToList = (field) => {
+    setDraft(prev => ({ ...prev, [field]: [...(prev[field] || []), ""] }));
+  };
+
+  const inputStyle = { width: "100%", fontSize: 13, padding: "9px 12px", border: "1px solid rgba(0,0,0,0.12)", borderRadius: 8, fontFamily: "inherit", color: "#012441", outline: "none", boxSizing: "border-box", background: "#fff" };
+  const labelStyle = { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "rgba(0,0,0,0.4)", marginBottom: 8, display: "block" };
+  const sectionStyle = { background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 };
+
+  if (loading) {
+    return <div style={{ padding: 40, textAlign: "center", fontSize: 13, color: "rgba(0,0,0,0.4)" }}>Loading GTM profile…</div>;
+  }
+
+  const genDate = profile?.ai_generated_at
+    ? new Date(profile.ai_generated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            style={{ fontSize: 13, fontWeight: 700, padding: "9px 18px", borderRadius: 10, border: "none", background: generating ? "rgba(99,102,241,0.5)" : "#6366F1", color: "#fff", cursor: generating ? "default" : "pointer", fontFamily: "inherit", marginRight: 10 }}
+          >
+            {generating ? "Generating…" : "✦ Generate with AI"}
+          </button>
+          {genDate && <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>Last generated: {genDate}</span>}
+          {!genDate && !generating && <span style={{ fontSize: 12, color: "rgba(0,0,0,0.3)" }}>Not yet generated</span>}
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{ fontSize: 13, fontWeight: 600, padding: "9px 18px", borderRadius: 10, border: "1.5px solid rgba(0,0,0,0.12)", background: saving ? "rgba(0,0,0,0.04)" : "#fff", color: saving ? "rgba(0,0,0,0.35)" : "#012441", cursor: saving ? "default" : "pointer", fontFamily: "inherit" }}
+        >
+          {saving ? "Saving…" : "Save Changes"}
+        </button>
+      </div>
+      {saveError && <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#dc2626", marginBottom: 16 }}>{saveError}</div>}
+
+      {/* WHO THEY SELL TO */}
+      <div style={sectionStyle}>
+        <label style={labelStyle}>Who They Sell To</label>
+        <textarea
+          value={draft.icp_description}
+          onChange={e => setDraft(prev => ({ ...prev, icp_description: e.target.value }))}
+          placeholder="Describe the Ideal Customer Profile — company type, size, industry, key buyer persona…"
+          rows={4}
+          style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+        />
+        {draft.sell_to && (
+          <div style={{ marginTop: 12 }}>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>Primary Buyers</label>
+            <textarea
+              value={draft.sell_to}
+              onChange={e => setDraft(prev => ({ ...prev, sell_to: e.target.value }))}
+              placeholder="Who are the primary buyers? (titles, departments)"
+              rows={2}
+              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+            />
+          </div>
+        )}
+        {!draft.sell_to && (
+          <button onClick={() => setDraft(prev => ({ ...prev, sell_to: " " }))} style={{ marginTop: 8, fontSize: 12, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Add primary buyers</button>
+        )}
+      </div>
+
+      {/* COMPETITORS */}
+      <div style={sectionStyle}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span style={labelStyle}>Competitors</span>
+          <button onClick={() => addToList("competitors")} style={{ fontSize: 12, fontWeight: 600, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Add Competitor</button>
+        </div>
+        {draft.competitors.length === 0 && <p style={{ fontSize: 13, color: "rgba(0,0,0,0.3)", margin: 0 }}>No competitors added yet.</p>}
+        {draft.competitors.map((item, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 14, color: "rgba(0,0,0,0.3)" }}>●</span>
+            <input
+              value={item}
+              onChange={e => updateList("competitors", idx, e.target.value)}
+              placeholder="Competitor name"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button onClick={() => removeFromList("competitors", idx)} style={{ fontSize: 16, color: "rgba(0,0,0,0.35)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1, fontFamily: "inherit" }}>×</button>
+          </div>
+        ))}
+      </div>
+
+      {/* PARTNERS */}
+      <div style={sectionStyle}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <span style={labelStyle}>Partners / Ecosystem</span>
+          <button onClick={() => addToList("partners")} style={{ fontSize: 12, fontWeight: 600, color: "#6366F1", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Add Partner</button>
+        </div>
+        {draft.partners.length === 0 && <p style={{ fontSize: 13, color: "rgba(0,0,0,0.3)", margin: 0 }}>No partners added yet.</p>}
+        {draft.partners.map((item, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 14, color: "rgba(0,0,0,0.3)" }}>●</span>
+            <input
+              value={item}
+              onChange={e => updateList("partners", idx, e.target.value)}
+              placeholder="Partner / integration name"
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button onClick={() => removeFromList("partners", idx)} style={{ fontSize: 16, color: "rgba(0,0,0,0.35)", background: "none", border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1, fontFamily: "inherit" }}>×</button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -4913,6 +5156,7 @@ export default function CuotaCallReview() {
           onNavigate={(p) => setPage(p)}
           activeTab={clientPageTab}
           onTabChange={setClientPageTab}
+          getValidToken={getValidToken}
         />}
 
         {/* SALES READINESS */}
