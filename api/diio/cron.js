@@ -17,9 +17,11 @@ function fetchWithTimeout(url, options, ms) {
 }
 const DAYS_BACK = 7;               // scan last 7 days
 const MAX_TRANSCRIPT_CHARS = 10000; // ~1700 words — faster Claude, fits parallel budget
-const CLAUDE_TIMEOUT_MS = 22000;    // 22s per call; 3 parallel batches fit in 60s window
-const CONCURRENCY = 3;              // parallel Claude calls per batch
-const MAX_CALLS_PER_RUN = 20;       // safety cap — prevents runaway on huge backlogs
+// NOTE: Diio listing API takes ~28s. Budget: 52s (watchdog). 28s listing + 20s Claude = 48s.
+// Run 3 Claude calls in parallel in a single batch to fit within the 52s window.
+const CLAUDE_TIMEOUT_MS = 20000;    // 20s per call (parallel batches of 3)
+const CONCURRENCY = 3;              // 3 parallel Claude calls per batch
+const MAX_CALLS_PER_RUN = 3;        // single batch only — daily cron runs frequently enough
 
 // Get the Anthropic API key for an org: env var first, then org admin's stored key
 async function getOrgApiKey(orgId) {

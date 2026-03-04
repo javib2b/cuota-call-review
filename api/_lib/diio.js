@@ -1,6 +1,6 @@
 // Diio API client for fetching meetings, phone calls, and transcripts
 
-const FETCH_TIMEOUT_MS = 10000; // 10s per individual Diio HTTP call
+const FETCH_TIMEOUT_MS = 35000; // 35s per individual Diio HTTP call (listing endpoints take 25-30s)
 
 // AbortController-based fetch timeout (more reliable than AbortSignal.timeout in some runtimes)
 function fetchWithTimeout(url, options, ms) {
