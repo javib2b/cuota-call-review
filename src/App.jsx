@@ -2153,13 +2153,15 @@ const REP_COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B
 
 function ScoreTrendsChart({ repEntries }) {
   const [tooltip, setTooltip] = useState(null);
+
+  // Build per-rep call list sorted by date
   const repData = repEntries.map((entry, i) => {
     const pts = entry.repCalls
       .filter(c => c.call_date || c.created_at)
       .map(c => ({
         date: new Date(c.call_date || c.created_at),
         score: c.overall_score || 0,
-        callType: c.category_scores?.call_type || c.call_type || "Call"
+        callType: c.category_scores?.call_type || c.call_type || "Call",
       }))
       .sort((a, b) => a.date - b.date);
     return { repName: entry.repName, pts, color: REP_COLORS[i % REP_COLORS.length] };
@@ -2167,100 +2169,126 @@ function ScoreTrendsChart({ repEntries }) {
 
   if (repData.length === 0) return null;
 
-  const allTimestamps = repData.flatMap(e => e.pts.map(p => p.date.getTime()));
-  const minDate = new Date(Math.min(...allTimestamps));
-  const maxDate = new Date(Math.max(...allTimestamps));
-  // Always 0–100 Y axis — clean, readable, no floating data
-  const PAD_L = 36, PAD_R = 24, PAD_T = 12, PAD_B = 32;
-  const W = 760, H = 280;
+  // Sequential X: collect all calls across all reps sorted by date,
+  // assign evenly-spaced X slots so data always fills the full width.
+  const allPtsSorted = repData
+    .flatMap(e => e.pts.map(p => ({ ...p, repName: e.repName })))
+    .sort((a, b) => a.date - b.date);
+  const totalSlots = allPtsSorted.length;
+
+  const PAD_L = 36, PAD_R = 20, PAD_T = 14, PAD_B = 34;
+  const W = 760, H = 260;
   const chartW = W - PAD_L - PAD_R;
   const chartH = H - PAD_T - PAD_B;
-  // X: add 5% padding on each side so points don't hug the edges
-  const rawRange = maxDate.getTime() - minDate.getTime();
-  const xPad = rawRange > 0 ? rawRange * 0.06 : 7 * 24 * 60 * 60 * 1000;
-  const xMin = minDate.getTime() - xPad;
-  const xMax = maxDate.getTime() + xPad;
-  const xRange = xMax - xMin;
-  const toX = (date) => PAD_L + ((date.getTime() - xMin) / xRange) * chartW;
+
+  // Map each call to its sequential slot index
+  const slotMap = new Map(); // key: repName+dateString → slotX
+  allPtsSorted.forEach((p, i) => {
+    const key = `${p.repName}|${p.date.toISOString()}`;
+    const x = totalSlots === 1
+      ? PAD_L + chartW / 2
+      : PAD_L + (i / (totalSlots - 1)) * chartW;
+    slotMap.set(key, x);
+  });
+
+  const getX = (repName, date) => {
+    const key = `${repName}|${date.toISOString()}`;
+    return slotMap.get(key) ?? PAD_L;
+  };
   const toY = (score) => PAD_T + chartH - (score / 100) * chartH;
+
+  // X-axis labels: show up to 7 evenly-spaced date labels
+  const labelStep = Math.max(1, Math.floor(totalSlots / 7));
+  const xLabels = allPtsSorted.filter((_, i) => i % labelStep === 0 || i === totalSlots - 1);
 
   return (
     <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 14 }}>Score Trends</div>
       <div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280, display: "block" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 260, display: "block" }}>
           <defs>
             {repData.map(e => {
               const gradId = `grad-${e.repName.replace(/[^a-zA-Z0-9]/g, "-")}`;
               return (
                 <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={e.color} stopOpacity="0.14" />
+                  <stop offset="0%" stopColor={e.color} stopOpacity="0.15" />
                   <stop offset="100%" stopColor={e.color} stopOpacity="0" />
                 </linearGradient>
               );
             })}
           </defs>
-          {/* Grid lines at 0, 25, 50, 75, 100 */}
+
+          {/* Horizontal grid lines */}
           {[0, 25, 50, 75, 100].map(s => (
             <g key={s}>
               <line x1={PAD_L} x2={W - PAD_R} y1={toY(s)} y2={toY(s)}
-                stroke={s === 50 || s === 75 ? "rgba(0,0,0,0.09)" : "rgba(0,0,0,0.04)"}
+                stroke={s === 50 || s === 75 ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.04)"}
                 strokeWidth={1} strokeDasharray={s === 50 || s === 75 ? "5 3" : "3 5"} />
               <text x={PAD_L - 6} y={toY(s) + 3.5} textAnchor="end" fontSize={9}
-                fill={s === 50 || s === 75 ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.2)"}>{s}</text>
+                fill={s === 50 || s === 75 ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.18)"}>{s}</text>
             </g>
           ))}
+
           {/* Area fills */}
           {repData.map(e => {
             if (e.pts.length < 2) return null;
             const gradId = `grad-${e.repName.replace(/[^a-zA-Z0-9]/g, "-")}`;
-            const firstX = toX(e.pts[0].date);
-            const lastX = toX(e.pts[e.pts.length - 1].date);
-            const linePts = e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ");
-            return <path key={`fill-${e.repName}`} d={`M ${firstX},${toY(0)} L ${linePts} L ${lastX},${toY(0)} Z`} fill={`url(#${gradId})`} />;
+            const coords = e.pts.map(p => `${getX(e.repName, p.date)},${toY(p.score)}`).join(" L ");
+            const firstX = getX(e.repName, e.pts[0].date);
+            const lastX = getX(e.repName, e.pts[e.pts.length - 1].date);
+            return <path key={`fill-${e.repName}`}
+              d={`M ${firstX},${toY(0)} L ${coords} L ${lastX},${toY(0)} Z`}
+              fill={`url(#${gradId})`} />;
           })}
+
           {/* Lines */}
           {repData.map(e => {
             if (e.pts.length < 2) return null;
-            const d = `M ${e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ")}`;
-            return <path key={`line-${e.repName}`} d={d} fill="none" stroke={e.color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
+            const d = `M ${e.pts.map(p => `${getX(e.repName, p.date)},${toY(p.score)}`).join(" L ")}`;
+            return <path key={`line-${e.repName}`} d={d} fill="none"
+              stroke={e.color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />;
           })}
+
           {/* Dots */}
-          {repData.map(e => e.pts.map((p, i) => (
-            <circle key={`${e.repName}-${i}`} cx={toX(p.date)} cy={toY(p.score)} r={4.5}
-              fill="#fff" stroke={e.color} strokeWidth={2.5} style={{ cursor: "pointer" }}
-              onMouseEnter={(ev) => {
-                const rect = ev.currentTarget.closest("svg").getBoundingClientRect();
-                setTooltip({
-                  x: toX(p.date) * (rect.width / W),
-                  y: toY(p.score) * (rect.height / H),
-                  rep: e.repName, score: p.score, color: e.color,
-                  callType: p.callType,
-                  date: p.date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
-                });
-              }}
-            />
-          )))}
+          {repData.map(e => e.pts.map((p, i) => {
+            const cx = getX(e.repName, p.date);
+            const cy = toY(p.score);
+            return (
+              <circle key={`${e.repName}-${i}`} cx={cx} cy={cy} r={5}
+                fill="#fff" stroke={e.color} strokeWidth={2.5} style={{ cursor: "pointer" }}
+                onMouseEnter={(ev) => {
+                  const rect = ev.currentTarget.closest("svg").getBoundingClientRect();
+                  setTooltip({
+                    x: cx * (rect.width / W),
+                    y: cy * (rect.height / H),
+                    rep: e.repName, score: p.score, color: e.color,
+                    callType: p.callType,
+                    date: p.date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+                  });
+                }}
+              />
+            );
+          }))}
+
           {/* X-axis date labels */}
-          {(() => {
-            const allPts = repData.flatMap(e => e.pts).sort((a, b) => a.date - b.date);
-            const unique = [...new Map(allPts.map(p => [p.date.toDateString(), p])).values()];
-            const step = Math.max(1, Math.floor(unique.length / 6));
-            return unique.filter((_, i) => i % step === 0 || i === unique.length - 1).map((p, i) => (
-              <text key={i} x={toX(p.date)} y={H - 6} textAnchor="middle" fontSize={9} fill="rgba(0,0,0,0.35)">
-                {p.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-              </text>
-            ));
-          })()}
+          {xLabels.map((p, i) => (
+            <text key={i} x={getX(p.repName, p.date)} y={H - 6}
+              textAnchor="middle" fontSize={9} fill="rgba(0,0,0,0.35)">
+              {p.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </text>
+          ))}
         </svg>
+
         {tooltip && (
-          <div style={{ position: "absolute", left: tooltip.x + 14, top: Math.max(4, tooltip.y - 52), background: "#012441", color: "#fff", borderRadius: 8, padding: "7px 11px", fontSize: 11, pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}>
+          <div style={{ position: "absolute", left: Math.min(tooltip.x + 14, 240), top: Math.max(4, tooltip.y - 56), background: "#012441", color: "#fff", borderRadius: 8, padding: "7px 11px", fontSize: 11, pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}>
             <div style={{ fontWeight: 700, color: tooltip.color, marginBottom: 2 }}>{tooltip.rep}</div>
             <div>{tooltip.callType} · <span style={{ fontWeight: 700 }}>{tooltip.score}%</span></div>
             <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, marginTop: 1 }}>{tooltip.date}</div>
           </div>
         )}
       </div>
+
+      {/* Legend */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginTop: 12 }}>
         {repData.map(e => (
           <div key={e.repName} style={{ display: "flex", alignItems: "center", gap: 6 }}>
