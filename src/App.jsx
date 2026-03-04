@@ -2168,40 +2168,47 @@ function ScoreTrendsChart({ repEntries }) {
   if (repData.length === 0) return null;
 
   const allTimestamps = repData.flatMap(e => e.pts.map(p => p.date.getTime()));
+  const allScores = repData.flatMap(e => e.pts.map(p => p.score));
   const minDate = new Date(Math.min(...allTimestamps));
   const maxDate = new Date(Math.max(...allTimestamps));
-  const PAD_L = 36, PAD_R = 16, PAD_T = 12, PAD_B = 34;
-  const W = 760, H = 180;
+  // Dynamic Y range — zoom into actual score band with 10pt padding each side
+  const rawMin = Math.min(...allScores);
+  const rawMax = Math.max(...allScores);
+  const yMin = Math.max(0, Math.floor((rawMin - 12) / 10) * 10);
+  const yMax = Math.min(100, Math.ceil((rawMax + 12) / 10) * 10);
+  const yRange = yMax - yMin || 1;
+  const PAD_L = 40, PAD_R = 16, PAD_T = 16, PAD_B = 36;
+  const W = 760, H = 260;
   const chartW = W - PAD_L - PAD_R;
   const chartH = H - PAD_T - PAD_B;
   const dateRange = maxDate.getTime() - minDate.getTime() || 1;
   const toX = (date) => PAD_L + ((date.getTime() - minDate.getTime()) / dateRange) * chartW;
-  const toY = (score) => PAD_T + chartH - (score / 100) * chartH;
+  const toY = (score) => PAD_T + chartH - ((score - yMin) / yRange) * chartH;
+  // Grid lines at every 10pts within range
+  const gridLines = [];
+  for (let s = Math.ceil(yMin / 10) * 10; s <= yMax; s += 10) gridLines.push(s);
 
   return (
     <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 14 }}>Score Trends</div>
       <div style={{ position: "relative" }} onMouseLeave={() => setTooltip(null)}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 180, display: "block" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 260, display: "block" }}>
           <defs>
             {repData.map(e => {
               const gradId = `grad-${e.repName.replace(/[^a-zA-Z0-9]/g, "-")}`;
               return (
                 <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={e.color} stopOpacity="0.18" />
+                  <stop offset="0%" stopColor={e.color} stopOpacity="0.15" />
                   <stop offset="100%" stopColor={e.color} stopOpacity="0" />
                 </linearGradient>
               );
             })}
           </defs>
-          {[50, 75].map(s => (
+          {gridLines.map(s => (
             <g key={s}>
-              <line x1={PAD_L} x2={W - PAD_R} y1={toY(s)} y2={toY(s)} stroke="rgba(0,0,0,0.07)" strokeWidth={1} strokeDasharray="4 3" />
-              <text x={PAD_L - 5} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(0,0,0,0.28)">{s}</text>
+              <line x1={PAD_L} x2={W - PAD_R} y1={toY(s)} y2={toY(s)} stroke={s === 75 || s === 50 ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.05)"} strokeWidth={s === 75 || s === 50 ? 1 : 0.75} strokeDasharray={s === 75 || s === 50 ? "5 3" : "3 4"} />
+              <text x={PAD_L - 6} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill={s === 75 || s === 50 ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.2)"}>{s}</text>
             </g>
-          ))}
-          {[0, 100].map(s => (
-            <text key={s} x={PAD_L - 5} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(0,0,0,0.2)">{s}</text>
           ))}
           {repData.map(e => {
             if (e.pts.length < 2) return null;
@@ -2209,7 +2216,7 @@ function ScoreTrendsChart({ repEntries }) {
             const firstX = toX(e.pts[0].date);
             const lastX = toX(e.pts[e.pts.length - 1].date);
             const linePts = e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ");
-            const fillD = `M ${firstX},${toY(0)} L ${linePts} L ${lastX},${toY(0)} Z`;
+            const fillD = `M ${firstX},${toY(yMin)} L ${linePts} L ${lastX},${toY(yMin)} Z`;
             return <path key={`fill-${e.repName}`} d={fillD} fill={`url(#${gradId})`} />;
           })}
           {repData.map(e => {
