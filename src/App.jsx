@@ -2230,8 +2230,9 @@ function ScoreTrendsChart({ repEntries }) {
   const chartW = W - PAD_L - PAD_R;
   const chartH = H - PAD_T - PAD_B;
 
+  const Y_MIN = 25, Y_MAX = 100;
   const toX = (date) => PAD_L + ((date.getTime() - minT) / dateSpan) * chartW;
-  const toY = (score) => PAD_T + chartH - (score / 100) * chartH;
+  const toY = (score) => PAD_T + chartH - ((score - Y_MIN) / (Y_MAX - Y_MIN)) * chartH;
 
   // Team average per unique day
   const dayMap = new Map();
@@ -2296,23 +2297,23 @@ function ScoreTrendsChart({ repEntries }) {
           </defs>
 
           {/* Score zone bands */}
-          <rect x={PAD_L} y={toY(40)} width={chartW} height={toY(0) - toY(40)} fill="rgba(239,68,68,0.045)" />
+          <rect x={PAD_L} y={toY(40)} width={chartW} height={toY(25) - toY(40)} fill="rgba(239,68,68,0.045)" />
           <rect x={PAD_L} y={toY(60)} width={chartW} height={toY(40) - toY(60)} fill="rgba(245,158,11,0.05)" />
           <rect x={PAD_L} y={toY(100)} width={chartW} height={toY(60) - toY(100)} fill="rgba(16,185,129,0.04)" />
 
           {/* Zone labels (right margin) */}
-          <text x={PAD_L + chartW + 6} y={toY(20) + 4} fontSize={9} fill="rgba(239,68,68,0.6)" fontWeight="600">Critical</text>
+          <text x={PAD_L + chartW + 6} y={toY(32) + 4} fontSize={9} fill="rgba(239,68,68,0.6)" fontWeight="600">Critical</text>
           <text x={PAD_L + chartW + 6} y={toY(50) + 4} fontSize={9} fill="rgba(245,158,11,0.7)" fontWeight="600">At Risk</text>
           <text x={PAD_L + chartW + 6} y={toY(80) + 4} fontSize={9} fill="rgba(16,185,129,0.7)" fontWeight="600">Good</text>
 
-          {/* Grid lines at 25, 50, 75 only */}
-          {[25, 50, 75].map(s => (
+          {/* Grid lines at 50, 75 only */}
+          {[50, 75].map(s => (
             <line key={s} x1={PAD_L} x2={PAD_L + chartW} y1={toY(s)} y2={toY(s)}
               stroke="#e2e8f0" strokeWidth={1} strokeDasharray="4 3" />
           ))}
 
           {/* Y-axis labels */}
-          {[0, 25, 50, 75, 100].map(s => (
+          {[25, 50, 75, 100].map(s => (
             <text key={s} x={PAD_L - 6} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(0,0,0,0.25)">{s}</text>
           ))}
 
