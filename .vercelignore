@@ -1,8 +1,8 @@
 # Exclude old API functions not used by the current app
 # (Vercel Hobby plan: max 12 serverless functions)
+# Currently 10/12 deployed after adding gong/settings back
 api/analyze-crm.js
 api/analyze-audit.js
 api/analyze-doc.js
 api/gdrive/sync.js
 api/notion/sync.js
-api/gong/settings.js
