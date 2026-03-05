@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import PptxGenJS from "pptxgenjs";
 
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
@@ -4836,217 +4835,320 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
   );
 }
 
-// PRESENTATIONS PAGE
-function PresentationsPage({ getValidToken }) {
-  const [prospect, setProspect] = useState("");
-  const [company, setCompany] = useState("");
-  const [product, setProduct] = useState("");
-  const [context, setContext] = useState("");
-  const [brand, setBrand] = useState("cuota");
-  const [slides, setSlides] = useState(null);
-  const [loading, setLoading] = useState(false);
+// ==================== DECK BUILDER ====================
+const SLIDE_TYPE_LABELS = {
+  title: "Cover", agenda: "Agenda", problem: "Problem", solution: "Solution",
+  features: "Differentiators", proof: "Social Proof", roi: "ROI", timeline: "Timeline", cta: "CTA",
+};
 
-  const brandPresets = {
-    cuota: { color: "#31CE81", name: "Cuota" },
-    corporate: { color: "#3B82F6", name: "Corporate Blue" },
-    orange: { color: "#F97316", name: "Warm Orange" },
-    purple: { color: "#A855F7", name: "Purple Tech" },
+function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
+  const [brand, setBrand] = useState(() => loadStored("cuota_deck_brand") || {
+    logoBase64: null, logoFileName: null,
+    primaryColor: "#012441", secondaryColor: "#31CE81",
+    companyName: "",
+  });
+  const [ctx, setCtx] = useState({
+    client: "", prospectCompany: "", repName: "",
+    dealStage: "Mid-Pipe", callType: "Demo", painPoints: "",
+  });
+  const [refText, setRefText] = useState("");
+  const [slides, setSlides] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState("");
+
+  const saveBrand = (updates) => {
+    const updated = { ...brand, ...updates };
+    setBrand(updated);
+    localStorage.setItem("cuota_deck_brand", JSON.stringify(updated));
   };
 
-  const handleGenerateDeck = async () => {
-    if (!prospect.trim() || !company.trim() || !product.trim()) return;
-    setLoading(true);
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => saveBrand({ logoBase64: ev.target.result, logoFileName: file.name });
+    reader.readAsDataURL(file);
+  };
+
+  const generateDeck = async () => {
+    if (!ctx.client && !ctx.prospectCompany) { setError("Enter at least a client or prospect company."); return; }
+    setGenerating(true); setError(""); setSlides(null);
     try {
-      const token = await getValidToken();
-      const res = await fetch("/api/deck-generate", {
+      const validToken = await getValidToken();
+      const res = await fetch("/api/generate-deck", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prospect, company, product, context }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
+        body: JSON.stringify({
+          context: { ...ctx, companyName: brand.companyName, referenceText: refText },
+          apiKey: apiKey || undefined,
+        }),
       });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Generation failed"); }
       const data = await res.json();
       setSlides(data.slides || []);
-    } catch (err) {
-      console.error("Deck generation error:", err);
-      setSlides([{ title: "Error", content: "Failed to generate deck" }]);
+    } catch (e) { setError(e.message); }
+    finally { setGenerating(false); }
+  };
+
+  const exportToPPTX = async () => {
+    if (!slides?.length) return;
+    setExporting(true);
+    try {
+      const { default: PptxGenJS } = await import("pptxgenjs");
+      const pptx = new PptxGenJS();
+      pptx.layout = "LAYOUT_16x9"; // 10" × 5.63"
+
+      const pri = brand.primaryColor.replace("#", "");
+      const sec = brand.secondaryColor.replace("#", "");
+
+      for (const slide of slides) {
+        const s = pptx.addSlide();
+        s.background = { color: "FFFFFF" };
+
+        if (slide.type === "title") {
+          s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 5, h: 5.63, fill: { color: pri }, line: { color: pri, width: 0 } });
+          if (brand.companyName) {
+            s.addText(brand.companyName.toUpperCase(), { x: 0.35, y: 0.4, w: 4.3, h: 0.35, fontSize: 9, color: "FFFFFF", bold: true, charSpacing: 4 });
+          }
+          s.addText(slide.title, { x: 0.35, y: 1.4, w: 4.3, h: 2.2, fontSize: 30, bold: true, color: "FFFFFF", wrap: true, valign: "middle" });
+          if (slide.subtitle) {
+            s.addText(slide.subtitle, { x: 0.35, y: 4.05, w: 4.3, h: 0.6, fontSize: 12, color: "C0C8D0", wrap: true });
+          }
+          if (ctx.prospectCompany || ctx.client) {
+            s.addText(ctx.prospectCompany || ctx.client, { x: 5.4, y: 1.7, w: 4.2, h: 0.85, fontSize: 26, bold: true, color: pri, wrap: true });
+          }
+          s.addText(ctx.dealStage || "", { x: 5.4, y: 2.7, w: 4.2, h: 0.45, fontSize: 12, color: "888888" });
+          s.addText(new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }), { x: 5.4, y: 3.2, w: 4.2, h: 0.4, fontSize: 12, color: "AAAAAA" });
+          if (brand.logoBase64) {
+            try { s.addImage({ data: brand.logoBase64, x: 5.4, y: 4.85, w: 1.6, h: 0.55, sizing: { type: "contain", w: 1.6, h: 0.55 } }); } catch { /* skip */ }
+          }
+
+        } else {
+          s.addText(slide.title, {
+            x: 0, y: 0, w: 10, h: 0.72, fontSize: 20, bold: true, color: "FFFFFF",
+            fill: { color: pri }, margin: [0, 0, 0, 0.35], valign: "middle",
+          });
+          s.addShape(pptx.ShapeType.rect, { x: 0.35, y: 0.78, w: 0.9, h: 0.04, fill: { color: sec }, line: { color: sec, width: 0 } });
+
+          const BY = 1.0;
+
+          if (slide.type === "agenda" || slide.type === "problem" || slide.type === "solution") {
+            (slide.points || []).slice(0, 5).forEach((pt, i) => {
+              s.addText(pt, { x: 0.35, y: BY + i * 0.83, w: 9.3, h: 0.72, fontSize: 14, color: "333333", bullet: true, wrap: true, valign: "middle" });
+            });
+          } else if (slide.type === "features") {
+            const cols = (slide.columns || []).slice(0, 3);
+            const cw = (9.3 / cols.length) - 0.2;
+            cols.forEach((col, i) => {
+              const cx = 0.35 + i * (cw + 0.2);
+              s.addText(col.heading, { x: cx, y: BY, w: cw, h: 0.55, fontSize: 13, bold: true, color: "FFFFFF", fill: { color: sec }, align: "center", valign: "middle" });
+              s.addText(col.body || "", { x: cx, y: BY + 0.6, w: cw, h: 3.6, fontSize: 11, color: "444444", fill: { color: "F7F7F7" }, margin: 0.18, valign: "top", wrap: true });
+            });
+          } else if (slide.type === "proof") {
+            if (slide.quote) {
+              s.addText(`\u201c${slide.quote}\u201d`, { x: 0.35, y: BY, w: 9.3, h: 2.0, fontSize: 15, italic: true, color: "333333", fill: { color: pri, transparency: 92 }, margin: 0.25, valign: "middle", wrap: true });
+            }
+            if (slide.attribution) {
+              s.addText(`\u2014 ${slide.attribution}`, { x: 0.35, y: BY + 2.1, w: 9.3, h: 0.4, fontSize: 11, bold: true, color: "888888" });
+            }
+            (slide.metrics || []).slice(0, 3).forEach((m, i) => {
+              s.addText(m, { x: 0.35 + i * 3.15, y: BY + 2.65, w: 2.9, h: 1.0, fontSize: 12, bold: true, color: pri, fill: { color: sec, transparency: 80 }, align: "center", valign: "middle", wrap: true });
+            });
+          } else if (slide.type === "roi") {
+            (slide.metrics || []).slice(0, 4).forEach((m, i) => {
+              const col = i % 2, row = Math.floor(i / 2);
+              const mx = 0.35 + col * 4.75, my = BY + row * 2.1;
+              s.addText(m.value || "", { x: mx, y: my, w: 4.35, h: 1.1, fontSize: 38, bold: true, color: pri, fill: { color: "F5F5F5" }, align: "center", valign: "middle" });
+              s.addText(m.label || "", { x: mx, y: my + 1.15, w: 4.35, h: 0.7, fontSize: 12, color: "666666", fill: { color: "EBEBEB" }, align: "center", valign: "middle" });
+            });
+          } else if (slide.type === "timeline") {
+            const steps = (slide.steps || []).slice(0, 4);
+            const sw = 9.3 / steps.length - 0.15;
+            steps.forEach((step, i) => {
+              const tx = 0.35 + i * (sw + 0.15);
+              s.addText(step.phase || `Phase ${i + 1}`, { x: tx, y: BY, w: sw, h: 0.55, fontSize: 11, bold: true, color: "FFFFFF", fill: { color: sec }, align: "center", valign: "middle" });
+              s.addText(step.description || "", { x: tx, y: BY + 0.62, w: sw, h: 3.5, fontSize: 11, color: "444444", wrap: true, valign: "top" });
+            });
+          } else if (slide.type === "cta") {
+            (slide.points || []).slice(0, 3).forEach((pt, i) => {
+              s.addText(`${i + 1}   ${pt}`, { x: 0.35, y: BY + i * 1.3, w: 9.3, h: 1.1, fontSize: 15, color: "333333", fill: { color: pri, transparency: 92 }, margin: [0, 0, 0, 0.3], valign: "middle", wrap: true });
+            });
+            if (slide.closing) {
+              s.addText(slide.closing, { x: 0.35, y: 4.6, w: 9.3, h: 0.7, fontSize: 14, italic: true, color: pri, align: "center", wrap: true });
+            }
+          }
+
+          if (brand.logoBase64) {
+            try { s.addImage({ data: brand.logoBase64, x: 8.5, y: 5.1, w: 1.3, h: 0.42, sizing: { type: "contain", w: 1.3, h: 0.42 } }); } catch { /* skip */ }
+          }
+        }
+      }
+
+      const fileName = `${(ctx.client || ctx.prospectCompany || "Sales").replace(/\s+/g, "_")}_Deck.pptx`;
+      await pptx.writeFile({ fileName });
+    } catch (e) {
+      console.error("PPTX export error:", e);
+      setError("Export failed: " + e.message);
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
-  const generatePptx = () => {
-    if (!slides || slides.length === 0) return;
-
-    const pres = new PptxGenJS();
-    const brandColor = brandPresets[brand].color;
-
-    slides.forEach((slide) => {
-      const s = pres.addSlide();
-      s.background = { fill: "#FFFFFF" };
-
-      // Title
-      s.addText(slide.title || "", {
-        x: 0.5,
-        y: 0.5,
-        w: 9,
-        h: 0.8,
-        fontSize: 32,
-        bold: true,
-        color: "#012441",
-        fontFace: "Arial",
-      });
-
-      // Accent line
-      s.addShape(pres.ShapeType.rect, {
-        x: 0.5,
-        y: 1.4,
-        w: 1,
-        h: 0.08,
-        fill: { color: brandColor },
-        line: { color: brandColor, width: 0 },
-      });
-
-      // Content
-      if (slide.content) {
-        s.addText(slide.content, {
-          x: 0.5,
-          y: 1.7,
-          w: 9,
-          h: 5,
-          fontSize: 14,
-          color: "rgba(0,0,0,0.7)",
-          fontFace: "Arial",
-          valign: "top",
-        });
-      }
-
-      // Footer
-      s.addText(`${company} | ${prospect}`, {
-        x: 0.5,
-        y: 6.8,
-        w: 9,
-        h: 0.4,
-        fontSize: 10,
-        color: "rgba(0,0,0,0.3)",
-        fontFace: "Arial",
-      });
-    });
-
-    pres.writeFile({ fileName: `${prospect}_Presentation.pptx` });
-  };
+  const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, fontSize: 13, color: "#012441", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#FFFFFF" };
+  const labelStyle = { fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5 };
+  const cardStyle = { background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px 18px" };
+  const sectionLabelStyle = { fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 14 };
 
   return (
-    <div style={{ background: "#F5F3F0", minHeight: "100vh", padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Presentations</h1>
-      <p style={{ fontSize: 13, color: "rgba(0,0,0,0.5)", marginTop: 4 }}>AI-powered sales deck generation</p>
-
-      <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        {/* INPUT CARD */}
-        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Prospect Company *</label>
-          <input
-            type="text"
-            value={prospect}
-            onChange={(e) => setProspect(e.target.value)}
-            placeholder="e.g., Salesforce"
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
-          />
-
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Your Company *</label>
-          <input
-            type="text"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="e.g., Cuota"
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
-          />
-
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Product *</label>
-          <input
-            type="text"
-            value={product}
-            onChange={(e) => setProduct(e.target.value)}
-            placeholder="e.g., AI Sales Coach"
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
-          />
-
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Additional Context</label>
-          <textarea
-            value={context}
-            onChange={(e) => setContext(e.target.value)}
-            placeholder="Any additional information for the deck..."
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, resize: "vertical", marginBottom: 16 }}
-          />
-
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Brand Preset</label>
-          <select
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, fontFamily: "inherit", marginBottom: 16 }}
-          >
-            {Object.entries(brandPresets).map(([key, { name }]) => (
-              <option key={key} value={key}>
-                {name}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={handleGenerateDeck}
-            disabled={loading}
-            style={{ padding: "12px 24px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%" }}
-          >
-            {loading ? "Generating..." : "Generate Deck"}
-          </button>
+    <div>
+      <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Deck Builder</h1>
+          <p style={{ fontSize: 13, color: "rgba(0,0,0,0.4)", margin: "4px 0 0" }}>AI-generated sales deck with your branding → export .pptx for Google Slides or Canva</p>
         </div>
+        {slides && (
+          <button onClick={exportToPPTX} disabled={exporting} style={{ padding: "10px 22px", background: "#31CE81", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit", flexShrink: 0 }}>
+            {exporting ? "Exporting..." : "\u2193 Download .pptx"}
+          </button>
+        )}
+      </div>
 
-        {/* PREVIEW */}
-        {slides && slides.length > 0 && (
-          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, margin: "0 0 16px" }}>
-              Slide Preview ({slides.length} slides)
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, maxHeight: 300, overflowY: "auto" }}>
-              {slides.map((slide, i) => (
-                <div
-                  key={i}
-                  style={{
-                    background: "rgba(0,0,0,0.02)",
-                    border: "1px solid rgba(0,0,0,0.06)",
-                    borderRadius: 8,
-                    padding: 12,
-                    fontSize: 11,
-                    color: "#012441",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    Slide {i + 1}
-                  </div>
-                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.5)", lineHeight: 1.4 }}>
-                    {slide.title}
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 24, alignItems: "start" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Brand */}
+          <div style={cardStyle}>
+            <div style={sectionLabelStyle}>Brand</div>
+            <div style={{ marginBottom: 12 }}>
+              <span style={labelStyle}>Logo</span>
+              <div onClick={() => document.getElementById("deck-logo-input").click()} style={{ border: "1px dashed rgba(0,0,0,0.15)", borderRadius: 8, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, background: "rgba(0,0,0,0.01)", minHeight: 44 }}>
+                {brand.logoBase64
+                  ? <><img src={brand.logoBase64} alt="logo" style={{ height: 28, maxWidth: 80, objectFit: "contain" }} /><span style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{brand.logoFileName}</span><button onClick={e => { e.stopPropagation(); saveBrand({ logoBase64: null, logoFileName: null }); }} style={{ marginLeft: "auto", fontSize: 11, color: "rgba(0,0,0,0.3)", border: "none", background: "none", cursor: "pointer" }}>Remove</button></>
+                  : <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>Click to upload logo (PNG / SVG / JPG)</span>
+                }
+              </div>
+              <input id="deck-logo-input" type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Your Company Name</label>
+              <input value={brand.companyName} onChange={e => saveBrand({ companyName: e.target.value })} placeholder="e.g. Cuota" style={inputStyle} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {[{ key: "primaryColor", label: "Primary" }, { key: "secondaryColor", label: "Accent" }].map(c => (
+                <div key={c.key}>
+                  <span style={labelStyle}>{c.label}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input type="color" value={brand[c.key]} onChange={e => saveBrand({ [c.key]: e.target.value })} style={{ width: 32, height: 32, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, cursor: "pointer", padding: 2 }} />
+                    <input value={brand[c.key]} onChange={e => saveBrand({ [c.key]: e.target.value })} style={{ flex: 1, padding: "6px 8px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 6, fontSize: 12, color: "#012441", outline: "none", fontFamily: "monospace" }} />
                   </div>
                 </div>
               ))}
             </div>
-            <button
-              onClick={generatePptx}
-              style={{
-                marginTop: 16,
-                padding: "10px 20px",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-                background: brandPresets[brand].color,
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 700,
-                fontFamily: "inherit",
-                width: "100%",
-              }}
-            >
-              Download .pptx
-            </button>
           </div>
-        )}
+
+          {/* Context */}
+          <div style={cardStyle}>
+            <div style={sectionLabelStyle}>Deck Context</div>
+            {[
+              { key: "client", label: "Client", type: "select", options: clients },
+              { key: "prospectCompany", label: "Prospect Company", placeholder: "e.g. Meijer" },
+              { key: "repName", label: "Rep Name", placeholder: "e.g. Sarah Chen" },
+              { key: "dealStage", label: "Deal Stage", type: "select", options: ["Early", "Mid-Pipe", "Late Stage", "Negotiation"] },
+              { key: "callType", label: "Deck Type", type: "select", options: ["Discovery", "Demo", "Follow-up", "QBR", "Closing"] },
+            ].map(f => (
+              <div key={f.key} style={{ marginBottom: 10 }}>
+                <label style={labelStyle}>{f.label}</label>
+                {f.type === "select"
+                  ? <select value={ctx[f.key]} onChange={e => setCtx(p => ({ ...p, [f.key]: e.target.value }))} style={{ ...inputStyle, color: ctx[f.key] ? "#012441" : "rgba(0,0,0,0.35)" }}>
+                      {!ctx[f.key] && <option value="">Select...</option>}
+                      {(f.options || []).map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  : <input value={ctx[f.key]} onChange={e => setCtx(p => ({ ...p, [f.key]: e.target.value }))} placeholder={f.placeholder} style={inputStyle} />
+                }
+              </div>
+            ))}
+            <div>
+              <label style={labelStyle}>Pain Points / Key Themes</label>
+              <textarea value={ctx.painPoints} onChange={e => setCtx(p => ({ ...p, painPoints: e.target.value }))} placeholder="e.g. Reps missing quota, no pipeline visibility, long sales cycles..." rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+            </div>
+          </div>
+
+          {/* Reference */}
+          <div style={cardStyle}>
+            <div style={sectionLabelStyle}>Reference Material <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 10, color: "rgba(0,0,0,0.25)" }}>— optional</span></div>
+            <p style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", margin: "0 0 10px" }}>Upload a previous deck, brand copy, or case study for AI to match your style and messaging.</p>
+            <FileDropZone value={refText} onChange={setRefText} placeholder="Paste copy here, or drop a .txt / .pdf / .docx file..." minHeight={90} accept=".txt,.md,.pdf,.docx" />
+          </div>
+
+          {error && <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.18)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
+
+          <button onClick={generateDeck} disabled={generating} style={{ padding: "13px 20px", background: generating ? "rgba(0,0,0,0.05)" : "#6366F1", border: "none", borderRadius: 12, color: generating ? "rgba(0,0,0,0.4)" : "#fff", fontSize: 14, fontWeight: 700, cursor: generating ? "wait" : "pointer", fontFamily: "inherit", width: "100%" }}>
+            {generating ? "Generating deck\u2026" : "Generate Deck \u2726"}
+          </button>
+        </div>
+
+        {/* Preview */}
+        <div>
+          {!slides && !generating && (
+            <div style={{ border: "1px dashed rgba(0,0,0,0.12)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(0,0,0,0.01)" }}>
+              <div style={{ fontSize: 36, marginBottom: 14 }}>🎨</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#012441", marginBottom: 6 }}>Your deck will appear here</div>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.35)" }}>Fill in the context on the left and click Generate Deck</div>
+            </div>
+          )}
+          {generating && (
+            <div style={{ border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "#FFFFFF" }}>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", marginBottom: 6 }}>Building your personalized deck\u2026</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)" }}>Usually takes 15–20 seconds</div>
+            </div>
+          )}
+          {slides && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: 1.2 }}>{slides.length} slides generated</span>
+                <button onClick={exportToPPTX} disabled={exporting} style={{ padding: "8px 16px", background: "#31CE81", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}>
+                  {exporting ? "Exporting\u2026" : "\u2193 Download .pptx"}
+                </button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+                {slides.map((slide, idx) => {
+                  const typeLabel = SLIDE_TYPE_LABELS[slide.type] || slide.type;
+                  const previewLines =
+                    slide.points ||
+                    slide.steps?.map(s => `${s.phase} — ${s.description}`) ||
+                    slide.metrics?.map(m => typeof m === "string" ? m : `${m.value}  ${m.label}`) ||
+                    slide.columns?.map(c => c.heading) ||
+                    (slide.quote ? [slide.quote] : null) ||
+                    (slide.subtitle ? [slide.subtitle] : []);
+                  return (
+                    <div key={idx} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, overflow: "hidden" }}>
+                      <div style={{ background: brand.primaryColor, padding: "10px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#FFFFFF", lineHeight: 1.35, flex: 1 }}>{slide.title}</span>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, whiteSpace: "nowrap", marginTop: 1 }}>{typeLabel}</span>
+                      </div>
+                      <div style={{ padding: "10px 14px 6px" }}>
+                        {(previewLines || []).slice(0, 3).map((line, i) => (
+                          <div key={i} style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", marginBottom: 4, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <span style={{ color: brand.secondaryColor, marginRight: 6, fontWeight: 700, fontSize: 10 }}>·</span>
+                            {typeof line === "string" ? line : JSON.stringify(line)}
+                          </div>
+                        ))}
+                        {(previewLines?.length || 0) > 3 && <div style={{ fontSize: 10, color: "rgba(0,0,0,0.2)", marginTop: 2 }}>+{previewLines.length - 3} more</div>}
+                      </div>
+                      <div style={{ padding: "0 14px 8px" }}>
+                        <span style={{ fontSize: 10, color: "rgba(0,0,0,0.18)", fontFamily: "monospace" }}>{idx + 1} / {slides.length}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", marginTop: 16, textAlign: "center" }}>
+                Open .pptx in Google Slides (File → Import slides) or Canva (Create design → Import file) to polish and present.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -5595,8 +5697,8 @@ export default function CuotaCallReview() {
           </button>
 
           {/* PRESENTATIONS */}
-          <button onClick={() => setPage("presentations")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: page === "presentations" ? "#31CE81" : "#FFFFFF" }}>Presentations</span>
+          <button onClick={() => setPage("deck")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: page === "deck" ? "#31CE81" : "#FFFFFF" }}>Decks</span>
           </button>
 
           {/* ADMIN */}
@@ -5680,7 +5782,7 @@ export default function CuotaCallReview() {
         {page === "cuotaAgent" && <CuotaAgentPage getValidToken={getValidToken} savedCalls={savedCalls} />}
 
         {/* PRESENTATIONS */}
-        {page === "presentations" && <PresentationsPage getValidToken={getValidToken} />}
+        {page === "deck" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
