@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import PptxGenJS from "pptxgenjs";
 
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
@@ -4505,6 +4506,552 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
   );
 }
 
+// CLIENT INTEL PAGE
+function ClientIntelPage({ getValidToken, clients }) {
+  const [company, setCompany] = useState("");
+  const [context, setContext] = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState({});
+
+  const handleResearch = async () => {
+    if (!company.trim()) return;
+    setLoading(true);
+    try {
+      const token = await getValidToken();
+      const res = await fetch("/api/client-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ company, context }),
+      });
+      const data = await res.json();
+      setResults(data);
+    } catch (err) {
+      console.error("Client research error:", err);
+      setResults({ error: "Failed to fetch research" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleExpanded = (section) => {
+    setExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const sections = [
+    { id: "overview", label: "Company Overview", key: "company_overview" },
+    { id: "prep", label: "Call Preparation", key: "call_preparation" },
+    { id: "pain", label: "Pain Points", key: "pain_points" },
+    { id: "people", label: "Key People", key: "key_people" },
+    { id: "competitive", label: "Competitive Landscape", key: "competitive_landscape" },
+    { id: "deal", label: "Deal Intelligence", key: "deal_intelligence" },
+    { id: "news", label: "Recent News", key: "recent_news" },
+  ];
+
+  return (
+    <div style={{ background: "#F5F3F0", minHeight: "100vh", padding: "32px 40px" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Client Intel</h1>
+      <p style={{ fontSize: 13, color: "rgba(0,0,0,0.5)", marginTop: 4 }}>AI-powered company research and deal intelligence</p>
+
+      <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {/* INPUT CARD */}
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Company Name *</label>
+          <input
+            type="text"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="e.g., Salesforce, HubSpot"
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
+          />
+
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Additional Context (optional)</label>
+          <textarea
+            value={context}
+            onChange={(e) => setContext(e.target.value)}
+            placeholder="e.g., recent funding, product focus, industry vertical"
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: 100, resize: "vertical", marginBottom: 16 }}
+          />
+
+          <button
+            onClick={handleResearch}
+            disabled={loading}
+            style={{ padding: "12px 24px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%" }}
+          >
+            {loading ? "Researching..." : "Research"}
+          </button>
+
+          {/* QUICK SELECT */}
+          {clients.length > 0 && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 8 }}>Quick Select</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {clients.slice(0, 5).map((c, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setCompany(c.name); setContext(""); }}
+                    style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: "rgba(49,206,129,0.1)", color: "#31CE81", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RESULTS */}
+        {results && (
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
+            {results.error ? (
+              <p style={{ color: "red", fontSize: 13 }}>{results.error}</p>
+            ) : (
+              <div>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#012441", marginTop: 0, marginBottom: 12 }}>
+                  {company} - Research Results
+                </h3>
+                <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0 }}>
+                  Click sections below to expand detailed intelligence
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* COLLAPSIBLE SECTIONS */}
+      {results && !results.error && (
+        <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {sections.map((section) => {
+            const content = results[section.key] || "No data available";
+            const isExpanded = expanded[section.id];
+            return (
+              <div key={section.id} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden" }}>
+                <button
+                  onClick={() => toggleExpanded(section.id)}
+                  style={{
+                    width: "100%",
+                    padding: 16,
+                    border: "none",
+                    background: "#FFFFFF",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontFamily: "inherit",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderBottom: isExpanded ? "1px solid rgba(0,0,0,0.06)" : "none",
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1 }}>
+                    {section.label}
+                  </span>
+                  <span style={{ fontSize: 18, color: "#31CE81" }}>{isExpanded ? "−" : "+"}</span>
+                </button>
+                {isExpanded && (
+                  <div style={{ padding: 16, paddingTop: 12, fontSize: 13, color: "rgba(0,0,0,0.7)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
+                    {content}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// CUOTA AGENT PAGE
+function CuotaAgentPage({ getValidToken, savedCalls }) {
+  const [transcript, setTranscript] = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [expandedSection, setExpandedSection] = useState(null);
+
+  const handleAgentReview = async () => {
+    if (!transcript.trim()) return;
+    setLoading(true);
+    try {
+      const token = await getValidToken();
+      const res = await fetch("/api/agent-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transcript }),
+      });
+      const data = await res.json();
+      setResults(data);
+    } catch (err) {
+      console.error("Agent review error:", err);
+      setResults({ error: "Failed to run agent review" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const frameColors = {
+    Connect: "#31CE81",
+    Uncover: "#eab308",
+    Orient: "#f97316",
+    Transform: "#0360ab",
+    Advance: "#a855f7",
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  return (
+    <div style={{ background: "#F5F3F0", minHeight: "100vh", padding: "32px 40px" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Cuota Agent Review</h1>
+      <p style={{ fontSize: 13, color: "rgba(0,0,0,0.5)", marginTop: 4 }}>AI-powered sales call analysis using the C.U.O.T.A. framework</p>
+
+      <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {/* INPUT CARD */}
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, gridColumn: "1 / 2" }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Call Transcript *</label>
+          <textarea
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+            placeholder="Paste your sales call transcript here..."
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: 200, resize: "vertical", marginBottom: 16 }}
+          />
+
+          <button
+            onClick={handleAgentReview}
+            disabled={loading}
+            style={{ padding: "12px 24px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%", marginBottom: 16 }}
+          >
+            {loading ? "Analyzing..." : "Run Agent Review"}
+          </button>
+
+          {/* QUICK SELECT */}
+          {savedCalls.length > 0 && (
+            <div style={{ paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 8 }}>Recent Calls</label>
+              {savedCalls.slice(0, 5).map((call, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setTranscript(call.transcript || ""); setResults(null); }}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "8px 10px",
+                    marginBottom: 6,
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    borderRadius: 6,
+                    background: "#FFFFFF",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    color: "#012441",
+                    textAlign: "left",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  {call.prospect_company} - {call.rep_name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* FRAMEWORK SCORES */}
+        {results && !results.error && (
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, margin: "0 0 16px" }}>C.U.O.T.A. Scores</h3>
+            {Object.entries(frameColors).map(([frame, color]) => {
+              const score = results[`${frame.toLowerCase()}_score`] || 0;
+              return (
+                <div key={frame} style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#012441" }}>{frame}</span>
+                    <span style={{ fontSize: 12, color: color, fontWeight: 700 }}>{Math.round(score)}%</span>
+                  </div>
+                  <div style={{ width: "100%", height: 6, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 3 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* RESULTS SECTIONS */}
+      {results && !results.error && (
+        <div style={{ marginTop: 28 }}>
+          {[
+            { id: "assessment", label: "Deal Assessment", keys: ["win_probability", "deal_health", "next_play"] },
+            { id: "wellDone", label: "What Went Well", key: "what_went_well" },
+            { id: "misses", label: "Critical Misses", key: "critical_misses" },
+            { id: "rewritten", label: "Rewritten Moments", key: "rewritten_moments" },
+            { id: "talkTrack", label: "Talk Track Suggestions", key: "talk_track_suggestions" },
+            { id: "coaching", label: "Coaching Plan", key: "coaching_plan" },
+          ].map((section) => (
+            <div key={section.id} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
+              <button
+                onClick={() => toggleSection(section.id)}
+                style={{
+                  width: "100%",
+                  padding: 16,
+                  border: "none",
+                  background: "#FFFFFF",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  borderBottom: expandedSection === section.id ? "1px solid rgba(0,0,0,0.06)" : "none",
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1 }}>
+                  {section.label}
+                </span>
+                <span style={{ fontSize: 18, color: "#31CE81" }}>{expandedSection === section.id ? "−" : "+"}</span>
+              </button>
+              {expandedSection === section.id && (
+                <div style={{ padding: 16, paddingTop: 12, fontSize: 13, color: "rgba(0,0,0,0.7)", lineHeight: 1.6 }}>
+                  {section.keys ? (
+                    <div>
+                      {section.keys.map((key) => (
+                        <div key={key} style={{ marginBottom: 12 }}>
+                          <strong style={{ color: "#012441", textTransform: "capitalize" }}>{key.replace(/_/g, " ")}:</strong>
+                          <p style={{ margin: "4px 0 0", whiteSpace: "pre-wrap" }}>{results[key] || "N/A"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{results[section.key] || "N/A"}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {results?.error && <p style={{ color: "red", fontSize: 13, marginTop: 20 }}>{results.error}</p>}
+    </div>
+  );
+}
+
+// PRESENTATIONS PAGE
+function PresentationsPage({ getValidToken }) {
+  const [prospect, setProspect] = useState("");
+  const [company, setCompany] = useState("");
+  const [product, setProduct] = useState("");
+  const [context, setContext] = useState("");
+  const [brand, setBrand] = useState("cuota");
+  const [slides, setSlides] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const brandPresets = {
+    cuota: { color: "#31CE81", name: "Cuota" },
+    corporate: { color: "#3B82F6", name: "Corporate Blue" },
+    orange: { color: "#F97316", name: "Warm Orange" },
+    purple: { color: "#A855F7", name: "Purple Tech" },
+  };
+
+  const handleGenerateDeck = async () => {
+    if (!prospect.trim() || !company.trim() || !product.trim()) return;
+    setLoading(true);
+    try {
+      const token = await getValidToken();
+      const res = await fetch("/api/deck-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ prospect, company, product, context }),
+      });
+      const data = await res.json();
+      setSlides(data.slides || []);
+    } catch (err) {
+      console.error("Deck generation error:", err);
+      setSlides([{ title: "Error", content: "Failed to generate deck" }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generatePptx = () => {
+    if (!slides || slides.length === 0) return;
+
+    const pres = new PptxGenJS();
+    const brandColor = brandPresets[brand].color;
+
+    slides.forEach((slide) => {
+      const s = pres.addSlide();
+      s.background = { fill: "#FFFFFF" };
+
+      // Title
+      s.addText(slide.title || "", {
+        x: 0.5,
+        y: 0.5,
+        w: 9,
+        h: 0.8,
+        fontSize: 32,
+        bold: true,
+        color: "#012441",
+        fontFace: "Arial",
+      });
+
+      // Accent line
+      s.addShape(pres.ShapeType.rect, {
+        x: 0.5,
+        y: 1.4,
+        w: 1,
+        h: 0.08,
+        fill: { color: brandColor },
+        line: { color: brandColor, width: 0 },
+      });
+
+      // Content
+      if (slide.content) {
+        s.addText(slide.content, {
+          x: 0.5,
+          y: 1.7,
+          w: 9,
+          h: 5,
+          fontSize: 14,
+          color: "rgba(0,0,0,0.7)",
+          fontFace: "Arial",
+          valign: "top",
+        });
+      }
+
+      // Footer
+      s.addText(`${company} | ${prospect}`, {
+        x: 0.5,
+        y: 6.8,
+        w: 9,
+        h: 0.4,
+        fontSize: 10,
+        color: "rgba(0,0,0,0.3)",
+        fontFace: "Arial",
+      });
+    });
+
+    pres.writeFile({ fileName: `${prospect}_Presentation.pptx` });
+  };
+
+  return (
+    <div style={{ background: "#F5F3F0", minHeight: "100vh", padding: "32px 40px" }}>
+      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Presentations</h1>
+      <p style={{ fontSize: 13, color: "rgba(0,0,0,0.5)", marginTop: 4 }}>AI-powered sales deck generation</p>
+
+      <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        {/* INPUT CARD */}
+        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Prospect Company *</label>
+          <input
+            type="text"
+            value={prospect}
+            onChange={(e) => setProspect(e.target.value)}
+            placeholder="e.g., Salesforce"
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
+          />
+
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Your Company *</label>
+          <input
+            type="text"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="e.g., Cuota"
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
+          />
+
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Product *</label>
+          <input
+            type="text"
+            value={product}
+            onChange={(e) => setProduct(e.target.value)}
+            placeholder="e.g., AI Sales Coach"
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
+          />
+
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Additional Context</label>
+          <textarea
+            value={context}
+            onChange={(e) => setContext(e.target.value)}
+            placeholder="Any additional information for the deck..."
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: 80, resize: "vertical", marginBottom: 16 }}
+          />
+
+          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Brand Preset</label>
+          <select
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, fontFamily: "inherit", marginBottom: 16 }}
+          >
+            {Object.entries(brandPresets).map(([key, { name }]) => (
+              <option key={key} value={key}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={handleGenerateDeck}
+            disabled={loading}
+            style={{ padding: "12px 24px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%" }}
+          >
+            {loading ? "Generating..." : "Generate Deck"}
+          </button>
+        </div>
+
+        {/* PREVIEW */}
+        {slides && slides.length > 0 && (
+          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, margin: "0 0 16px" }}>
+              Slide Preview ({slides.length} slides)
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, maxHeight: 300, overflowY: "auto" }}>
+              {slides.map((slide, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "rgba(0,0,0,0.02)",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 11,
+                    color: "#012441",
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 8, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    Slide {i + 1}
+                  </div>
+                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.5)", lineHeight: 1.4 }}>
+                    {slide.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={generatePptx}
+              style={{
+                marginTop: 16,
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                background: brandPresets[brand].color,
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: "inherit",
+                width: "100%",
+              }}
+            >
+              Download .pptx
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -5037,6 +5584,21 @@ export default function CuotaCallReview() {
             <span style={{ fontSize: 14, fontWeight: 700, color: ["gtm","tof","crm","hiring","metrics"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Assessments</span>
           </button>
 
+          {/* CLIENT INTEL */}
+          <button onClick={() => setPage("clientIntel")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: page === "clientIntel" ? "#31CE81" : "#FFFFFF" }}>Client Intel</span>
+          </button>
+
+          {/* CUOTA AGENT */}
+          <button onClick={() => setPage("cuotaAgent")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: page === "cuotaAgent" ? "#31CE81" : "#FFFFFF" }}>Cuota Agent</span>
+          </button>
+
+          {/* PRESENTATIONS */}
+          <button onClick={() => setPage("presentations")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: page === "presentations" ? "#31CE81" : "#FFFFFF" }}>Presentations</span>
+          </button>
+
           {/* ADMIN */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
             <button onClick={() => setPage(profile?.role === "admin" ? "integrations" : "admin")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
@@ -5110,6 +5672,15 @@ export default function CuotaCallReview() {
 
         {/* METRICS */}
         {page === "metrics" && <MetricsPage assessments={metricsAssessments} getValidToken={getValidToken} profile={profile} clients={clients} onUpdate={loadMetricsAssessments} />}
+
+        {/* CLIENT INTEL */}
+        {page === "clientIntel" && <ClientIntelPage getValidToken={getValidToken} clients={clients} />}
+
+        {/* CUOTA AGENT */}
+        {page === "cuotaAgent" && <CuotaAgentPage getValidToken={getValidToken} savedCalls={savedCalls} />}
+
+        {/* PRESENTATIONS */}
+        {page === "presentations" && <PresentationsPage getValidToken={getValidToken} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
