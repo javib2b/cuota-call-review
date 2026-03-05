@@ -4611,7 +4611,7 @@ export default function CuotaCallReview() {
   const [gongSyncClient, setGongSyncClient] = useState(null);
 
   // Review state
-  const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "", repType: "AE" });
+  const [callInfo, setCallInfo] = useState({ client: "", repName: "", prospectName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "", repType: "AE" });
   const [scores, setScores] = useState({});
   const [notes, setNotes] = useState("");
   const [activeTab, setActiveTab] = useState("transcript");
@@ -4945,7 +4945,7 @@ export default function CuotaCallReview() {
         call_type: callInfo.callType,
         deal_stage: callInfo.dealStage,
         deal_value: callInfo.dealValue ? Number(callInfo.dealValue) : null,
-        category_scores: { ...scores, rep_name: callInfo.repName, prospect_name: aiAnalysis?.metadata?.prospect_name || "", client: callInfo.client, rep_type: callInfo.repType || "AE" },
+        category_scores: { ...scores, rep_name: callInfo.repName, prospect_name: callInfo.prospectName || aiAnalysis?.metadata?.prospect_name || "", client: callInfo.client, rep_type: callInfo.repType || "AE" },
         overall_score: overallScore,
         momentum_score: null,
         close_probability: null,
@@ -4974,7 +4974,7 @@ export default function CuotaCallReview() {
 
   const loadCallIntoReview = (call) => {
     setSelectedCall(call);
-    setCallInfo({ client: call.category_scores?.client || "", repName: call.category_scores?.rep_name || "", prospectCompany: call.prospect_company || "", callDate: call.call_date || "", callType: call.call_type || "Discovery", dealStage: call.deal_stage || "Early", dealValue: call.deal_value || "", repType: call.category_scores?.rep_type || "AE" });
+    setCallInfo({ client: call.category_scores?.client || "", repName: call.category_scores?.rep_name || "", prospectName: call.category_scores?.prospect_name || "", prospectCompany: call.prospect_company || "", callDate: call.call_date || "", callType: call.call_type || "Discovery", dealStage: call.deal_stage || "Early", dealValue: call.deal_value || "", repType: call.category_scores?.rep_type || "AE" });
     // Detect old format (boolean criteria) vs new format ({ score, details })
     const cs = call.category_scores || {};
     const isOld = OLD_CATEGORY_IDS.some(id => cs[id] && typeof Object.values(cs[id])[0] === "boolean");
@@ -4993,7 +4993,7 @@ export default function CuotaCallReview() {
 
   const startNewReview = () => {
     setSelectedCall(null);
-    setCallInfo({ client: "", repName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "", repType: "AE" });
+    setCallInfo({ client: "", repName: "", prospectName: "", prospectCompany: "", callDate: new Date().toISOString().split("T")[0], callType: "Discovery", dealStage: "Early", dealValue: "", repType: "AE" });
     setScores({}); setNotes(""); setTranscript(""); setAiAnalysis(null); setError("");
     setPage("review"); setActiveTab("transcript");
   };
@@ -5027,23 +5027,20 @@ export default function CuotaCallReview() {
           />
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-          {/* WORKSPACE section */}
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "4px 12px 4px 12px" }}>Workspace</div>
-
           {/* CLIENTS */}
           <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: page === "calls" || page === "client" ? "#31CE81" : "#FFFFFF" }}>Clients</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: page === "calls" || page === "client" ? "#31CE81" : "#FFFFFF" }}>Clients</span>
           </button>
 
           {/* ASSESSMENTS */}
           <button onClick={() => setPage("gtm")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 18, fontWeight: 700, color: ["gtm","tof","crm","hiring","metrics"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Assessments</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: ["gtm","tof","crm","hiring","metrics"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Assessments</span>
           </button>
 
           {/* ADMIN */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
             <button onClick={() => setPage(profile?.role === "admin" ? "integrations" : "admin")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-              <span style={{ fontSize: 18, fontWeight: 700, color: ["integrations","docsync","admin"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Admin</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: ["integrations","docsync","admin"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Admin</span>
             </button>
           )}
         </div>
@@ -5134,11 +5131,13 @@ export default function CuotaCallReview() {
             {/* Call Info — grouped WHO / WHAT & WHEN */}
             <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 8 }}>Who</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
                 {[
                   { key: "client", label: "Client", options: clients, required: true },
                   { key: "repName", label: "Rep Name", placeholder: "e.g. Sarah Chen" },
                   { key: "repType", label: "Rep Type", options: ["AE", "SDR"] },
+                  { key: "prospectName", label: "Prospect Name", placeholder: "e.g. John Smith" },
+                  { key: "prospectCompany", label: "Prospect Co.", placeholder: "e.g. Meijer" },
                 ].map(f => (
                   <div key={f.key}>
                     <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 6 }}>{f.label}</label>
@@ -5154,9 +5153,8 @@ export default function CuotaCallReview() {
                 ))}
               </div>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 8, marginTop: 16 }}>What & When</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
                 {[
-                  { key: "prospectCompany", label: "Prospect Co.", placeholder: "e.g. Meijer" },
                   { key: "callDate", label: "Date", type: "date" },
                   { key: "callType", label: "Call Type", options: ["Discovery", "Demo", "Follow-up", "Negotiation", "Closing"] },
                   { key: "dealStage", label: "Deal Stage", options: ["Early", "Mid-Pipe", "Late Stage", "Negotiation"] },
