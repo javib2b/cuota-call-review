@@ -5040,107 +5040,21 @@ export default function CuotaCallReview() {
           {/* WORKSPACE section */}
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "4px 12px 4px 12px" }}>Workspace</div>
 
-          {/* CLIENTS SECTION */}
+          {/* CLIENTS */}
           <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: page === "calls" || page === "client" ? "#31CE81" : "#FFFFFF" }}>Clients</span>
           </button>
-          {clients.map(clientName => {
-            const isOpen = !!sidebarOpenClients[clientName];
-            const isActiveClient = page === "client" && selectedClientProfile === clientName;
-            const callCount = savedCalls.filter(c => c.category_scores?.client === clientName || (c.prospect_company || "").toLowerCase().includes(clientName.toLowerCase())).length;
-            const docCount = enablementDocs.filter(d => d.client === clientName).length;
-            return (
-              <div key={clientName}>
-                <button onClick={() => setSidebarOpenClients(prev => ({ ...prev, [clientName]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px", border: "none", background: isActiveClient && !isOpen ? "rgba(255,255,255,0.08)" : "transparent", color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
-                  <div style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(255,255,255,0.15)", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <ClientLogo client={clientName} website={clientProfiles[clientName]?.website} size={16} style={{ borderRadius: 3 }} letterStyle={{ fontSize: 9, fontWeight: 700, color: "#FFFFFF" }} />
-                  </div>
-                  <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{isOpen ? "▾" : "▸"}</span>
-                </button>
-                {isOpen && (
-                  <div style={{ marginBottom: 4 }}>
-                    {[
-                      { tab: "calls", label: "Call Reviews", icon: "📞", count: callCount },
-                      { tab: "docs", label: "Doc Intakes", icon: "📄", count: docCount },
-                    ].map(({ tab, label, icon, count }) => {
-                      const isActive = isActiveClient && clientPageTab === tab;
-                      return (
-                        <button key={tab} onClick={() => { setSelectedClientProfile(clientName); setClientPageTab(tab); setPage("client"); setSidebarOpenClients(prev => ({ ...prev, [clientName]: true })); }} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "6px 8px 6px 36px", border: "none", borderLeft: isActive ? "3px solid #31CE81" : "3px solid transparent", background: isActive ? "rgba(255,255,255,0.1)" : "transparent", color: isActive ? "#FFFFFF" : "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: isActive ? 600 : 400, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
-                          <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
-                          <span style={{ flex: 1 }}>{label}</span>
-                          {count > 0 && <span style={{ fontSize: 10, padding: "1px 5px", borderRadius: 8, background: isActive ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.1)", color: "#FFFFFF", flexShrink: 0 }}>{count}</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
 
-          {/* TOOLS section */}
-          <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 12px 0" }} />
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Tools</div>
-
-          {/* ASSESSMENTS SECTION */}
-          <button onClick={() => { setPage("gtm"); setSidebarSections(p => ({ ...p, assessments: !p.assessments })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+          {/* ASSESSMENTS */}
+          <button onClick={() => setPage("gtm")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: ["gtm","tof","crm","hiring","metrics"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Assessments</span>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{sidebarSections.assessments ? "▾" : "▸"}</span>
           </button>
-          {sidebarSections.assessments && [
-            { id: "gtm", label: "GTM Strategy", icon: "🎯" },
-            { id: "tof", label: "Top of Funnel", icon: "📣" },
-            { id: "crm", label: "RevOps", icon: "📊" },
-            { id: "hiring", label: "Hiring", icon: "👥" },
-            { id: "metrics", label: "Metrics", icon: "📈" },
-          ].map(nav => {
-            const active = page === nav.id;
-            return (
-              <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #31CE81" : "3px solid transparent", background: active ? "rgba(255,255,255,0.1)" : "transparent", color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
-                <span style={{ width: 18, textAlign: "center", fontSize: 13 }}>{nav.icon}</span>
-                <span>{nav.label}</span>
-              </button>
-            );
-          })}
 
-          {/* SETTINGS section */}
+          {/* ADMIN */}
           {(profile?.role === "manager" || profile?.role === "admin") && (
-            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 12px 0" }} />
-          )}
-          {(profile?.role === "manager" || profile?.role === "admin") && (
-            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Settings</div>
-          )}
-
-          {/* ADMIN SECTION */}
-          {(profile?.role === "manager" || profile?.role === "admin") && (
-            <>
-              <button onClick={() => { setPage(profile?.role === "admin" ? "integrations" : "admin"); setSidebarSections(p => ({ ...p, admin: !p.admin })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-                <span style={{ fontSize: 18, fontWeight: 700, color: ["integrations","docsync","admin"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Admin</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{sidebarSections.admin ? "▾" : "▸"}</span>
-              </button>
-              {sidebarSections.admin && (
-                <>
-                  {profile?.role === "admin" && [
-                    { id: "integrations", label: "Integrations", icon: "⚙️" },
-                    { id: "docsync", label: "Doc Sync", icon: "🔄" },
-                    { id: "admin", label: "Admin", icon: "👑" },
-                  ].map(nav => {
-                    const active = page === nav.id;
-                    return (
-                      <button key={nav.id} onClick={() => setPage(nav.id)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: active ? "3px solid #31CE81" : "3px solid transparent", background: active ? "rgba(255,255,255,0.1)" : "transparent", color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
-                        <span style={{ width: 18, textAlign: "center", fontSize: 13 }}>{nav.icon}</span>
-                        <span>{nav.label}</span>
-                      </button>
-                    );
-                  })}
-                  <button onClick={() => setShowInvite(true)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 8px 9px 11px", border: "none", borderLeft: "3px solid transparent", background: "transparent", color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 2, boxSizing: "border-box", textAlign: "left" }}>
-                    <span style={{ width: 18, textAlign: "center", fontSize: 13 }}>✉️</span>
-                    <span>Invite User</span>
-                  </button>
-                </>
-              )}
-            </>
+            <button onClick={() => setPage(profile?.role === "admin" ? "integrations" : "admin")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+              <span style={{ fontSize: 18, fontWeight: 700, color: ["integrations","docsync","admin"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Admin</span>
+            </button>
           )}
         </div>
 
