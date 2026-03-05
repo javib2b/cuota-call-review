@@ -1,30 +1,18 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: #F5F3F0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root {
+  --bg: #011e38; --surface: #022a4a; --surface-2: #03345c; --surface-3: #011829;
+  --border: #0c3d63; --border-soft: #072d4e;
+  --text-1: #e8f3fb; --text-2: #6da0c2; --text-3: #2e5c80;
+  --accent: #31CE81; --accent-dim: rgba(49,206,129,0.12); --accent-glow: rgba(49,206,129,0.06);
+  --red: #f04438; --red-dim: rgba(240,68,56,0.12);
+  --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.12);
+  --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12);
+  --purple: #a855f7; --purple-dim: rgba(168,85,247,0.12);
 }
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.1);
-  border-radius: 3px;
-}
-
-input, select, textarea {
-  font-family: inherit;
-}
-
-select option {
-  background: #FFFFFF;
-}
+body { background: var(--bg); color: var(--text-1); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+input, select, textarea { font-family: inherit; background: var(--surface); color: var(--text-1); border-color: var(--border-soft); }
+select option { background: var(--surface); color: var(--text-1); }
