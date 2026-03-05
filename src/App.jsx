@@ -4511,7 +4511,6 @@ function ClientIntelPage({ getValidToken, clients }) {
   const [context, setContext] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState({});
 
   const handleResearch = async () => {
     if (!company.trim()) return;
@@ -4533,130 +4532,101 @@ function ClientIntelPage({ getValidToken, clients }) {
     }
   };
 
-  const toggleExpanded = (section) => {
-    setExpanded((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
-
   const sections = [
-    { id: "overview", label: "Company Overview", key: "company_overview" },
-    { id: "prep", label: "Call Preparation", key: "call_preparation" },
-    { id: "pain", label: "Pain Points", key: "pain_points" },
-    { id: "people", label: "Key People", key: "key_people" },
-    { id: "competitive", label: "Competitive Landscape", key: "competitive_landscape" },
-    { id: "deal", label: "Deal Intelligence", key: "deal_intelligence" },
-    { id: "news", label: "Recent News", key: "recent_news" },
+    { label: "Company Overview", key: "company_overview" },
+    { label: "Call Preparation", key: "call_preparation" },
+    { label: "Pain Points", key: "pain_points" },
+    { label: "Key People", key: "key_people" },
+    { label: "Competitive Landscape", key: "competitive_landscape" },
+    { label: "Deal Intelligence", key: "deal_intelligence" },
+    { label: "Recent News", key: "recent_news" },
   ];
 
+  const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, fontSize: 13, color: "#012441", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#FFFFFF" };
+  const labelStyle = { fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(0,0,0,0.35)", display: "block", marginBottom: 5, fontWeight: 700 };
+  const cardStyle = { background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px 18px" };
+  const sectionLabelStyle = { fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 14 };
+
   return (
-    <div style={{ background: "#F5F3F0", minHeight: "100vh", padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Client Intel</h1>
-      <p style={{ fontSize: 13, color: "rgba(0,0,0,0.5)", marginTop: 4 }}>AI-powered company research and deal intelligence</p>
-
-      <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        {/* INPUT CARD */}
-        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Company Name *</label>
-          <input
-            type="text"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="e.g., Salesforce, HubSpot"
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 16 }}
-          />
-
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Additional Context (optional)</label>
-          <textarea
-            value={context}
-            onChange={(e) => setContext(e.target.value)}
-            placeholder="e.g., recent funding, product focus, industry vertical"
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: 100, resize: "vertical", marginBottom: 16 }}
-          />
-
-          <button
-            onClick={handleResearch}
-            disabled={loading}
-            style={{ padding: "12px 24px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%" }}
-          >
-            {loading ? "Researching..." : "Research"}
-          </button>
-
-          {/* QUICK SELECT */}
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Client Intel</h1>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.4)", margin: "4px 0 0" }}>AI-powered company research and deal intelligence</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 24, alignItems: "start" }}>
+        {/* LEFT PANEL */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={cardStyle}>
+            <div style={sectionLabelStyle}>Research Target</div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Company Name *</label>
+              <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g., Salesforce, HubSpot" style={inputStyle} onKeyDown={e => e.key === "Enter" && handleResearch()} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>Additional Context</label>
+              <textarea value={context} onChange={e => setContext(e.target.value)} placeholder="e.g., recent funding, product focus, vertical" rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+            </div>
+            <button onClick={handleResearch} disabled={loading} style={{ padding: "11px 20px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%" }}>
+              {loading ? "Researching\u2026" : "Research"}
+            </button>
+          </div>
           {clients.length > 0 && (
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 8 }}>Quick Select</label>
+            <div style={cardStyle}>
+              <div style={sectionLabelStyle}>Quick Select</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {clients.slice(0, 5).map((c, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setCompany(c.name); setContext(""); }}
-                    style={{ fontSize: 11, padding: "4px 10px", borderRadius: 20, background: "rgba(49,206,129,0.1)", color: "#31CE81", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-                  >
-                    {c.name}
-                  </button>
+                {clients.slice(0, 8).map((c, i) => (
+                  <button key={i} onClick={() => { setCompany(c.name); setContext(""); }} style={{ fontSize: 11, padding: "5px 12px", borderRadius: 20, background: company === c.name ? "#31CE81" : "rgba(49,206,129,0.1)", color: company === c.name ? "#fff" : "#31CE81", border: "none", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{c.name}</button>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* RESULTS */}
-        {results && (
-          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
-            {results.error ? (
-              <p style={{ color: "red", fontSize: 13 }}>{results.error}</p>
-            ) : (
-              <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: "#012441", marginTop: 0, marginBottom: 12 }}>
-                  {company} - Research Results
-                </h3>
-                <p style={{ fontSize: 12, color: "rgba(0,0,0,0.5)", margin: 0 }}>
-                  Click sections below to expand detailed intelligence
-                </p>
+        {/* MAIN AREA */}
+        <div>
+          {!results && !loading && (
+            <div style={{ border: "1px dashed rgba(0,0,0,0.12)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(0,0,0,0.01)" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#012441", marginBottom: 6 }}>Enter a company to research</div>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.35)" }}>AI generates company overview, pain points, competitive landscape, and deal prep</div>
+            </div>
+          )}
+          {loading && (
+            <div style={{ border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "#FFFFFF" }}>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", marginBottom: 6 }}>Researching {company}\u2026</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)" }}>Usually takes 10\u201315 seconds</div>
+            </div>
+          )}
+          {results && results.error && (
+            <div style={{ padding: "16px 20px", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, color: "#dc2626", fontSize: 13 }}>{results.error}</div>
+          )}
+          {results && !results.error && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#012441" }}>{company}</div>
+                  <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>Intelligence Report</div>
+                </div>
+                <button onClick={() => { setResults(null); setCompany(""); setContext(""); }} style={{ fontSize: 11, padding: "6px 12px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", cursor: "pointer", color: "rgba(0,0,0,0.4)", fontFamily: "inherit" }}>Clear</button>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* COLLAPSIBLE SECTIONS */}
-      {results && !results.error && (
-        <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          {sections.map((section) => {
-            const content = results[section.key] || "No data available";
-            const isExpanded = expanded[section.id];
-            return (
-              <div key={section.id} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden" }}>
-                <button
-                  onClick={() => toggleExpanded(section.id)}
-                  style={{
-                    width: "100%",
-                    padding: 16,
-                    border: "none",
-                    background: "#FFFFFF",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    fontFamily: "inherit",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderBottom: isExpanded ? "1px solid rgba(0,0,0,0.06)" : "none",
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1 }}>
-                    {section.label}
-                  </span>
-                  <span style={{ fontSize: 18, color: "#31CE81" }}>{isExpanded ? "−" : "+"}</span>
-                </button>
-                {isExpanded && (
-                  <div style={{ padding: 16, paddingTop: 12, fontSize: 13, color: "rgba(0,0,0,0.7)", lineHeight: 1.6, whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
-                    {content}
-                  </div>
-                )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {sections.map(sec => {
+                  const content = results[sec.key];
+                  if (!content || content === "N/A" || content === "No data available") return null;
+                  return (
+                    <div key={sec.key} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, overflow: "hidden" }}>
+                      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(1,36,65,0.03)" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1 }}>{sec.label}</span>
+                      </div>
+                      <div style={{ padding: "12px 16px", fontSize: 12, color: "rgba(0,0,0,0.65)", lineHeight: 1.65, maxHeight: 200, overflowY: "auto", whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{content}</div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -4666,7 +4636,6 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
   const [transcript, setTranscript] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [expandedSection, setExpandedSection] = useState(null);
 
   const handleAgentReview = async () => {
     if (!transcript.trim()) return;
@@ -4696,141 +4665,112 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
     Advance: "#a855f7",
   };
 
-  const toggleSection = (section) => {
-    setExpandedSection(expandedSection === section ? null : section);
-  };
+  const inputStyle = { width: "100%", padding: "8px 10px", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 8, fontSize: 13, color: "#012441", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "#FFFFFF" };
+  const cardStyle = { background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px 18px" };
+  const sectionLabelStyle = { fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 14 };
 
   return (
-    <div style={{ background: "#F5F3F0", minHeight: "100vh", padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Cuota Agent Review</h1>
-      <p style={{ fontSize: 13, color: "rgba(0,0,0,0.5)", marginTop: 4 }}>AI-powered sales call analysis using the C.U.O.T.A. framework</p>
-
-      <div style={{ marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-        {/* INPUT CARD */}
-        <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, gridColumn: "1 / 2" }}>
-          <label style={{ fontSize: 13, fontWeight: 700, color: "#012441", display: "block", marginBottom: 8 }}>Call Transcript *</label>
-          <textarea
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            placeholder="Paste your sales call transcript here..."
-            style={{ width: "100%", padding: "10px 12px", background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, color: "#012441", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: 200, resize: "vertical", marginBottom: 16 }}
-          />
-
-          <button
-            onClick={handleAgentReview}
-            disabled={loading}
-            style={{ padding: "12px 24px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%", marginBottom: 16 }}
-          >
-            {loading ? "Analyzing..." : "Run Agent Review"}
-          </button>
-
-          {/* QUICK SELECT */}
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#012441", margin: 0 }}>Cuota Agent</h1>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.4)", margin: "4px 0 0" }}>AI-powered sales call analysis using the C.U.O.T.A. framework</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 24, alignItems: "start" }}>
+        {/* LEFT PANEL */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={cardStyle}>
+            <div style={sectionLabelStyle}>Call Transcript</div>
+            <textarea value={transcript} onChange={e => setTranscript(e.target.value)} placeholder="Paste your sales call transcript here\u2026" style={{ ...inputStyle, minHeight: 220, resize: "vertical", marginBottom: 12 }} />
+            <button onClick={handleAgentReview} disabled={loading} style={{ padding: "11px 20px", border: "none", borderRadius: 10, cursor: loading ? "not-allowed" : "pointer", background: loading ? "rgba(49,206,129,0.4)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", width: "100%" }}>
+              {loading ? "Analyzing\u2026" : "Run Agent Review"}
+            </button>
+          </div>
           {savedCalls.length > 0 && (
-            <div style={{ paddingTop: 16, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, display: "block", marginBottom: 8 }}>Recent Calls</label>
+            <div style={cardStyle}>
+              <div style={sectionLabelStyle}>Recent Calls</div>
               {savedCalls.slice(0, 5).map((call, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setTranscript(call.transcript || ""); setResults(null); }}
-                  style={{
-                    display: "block",
-                    width: "100%",
-                    padding: "8px 10px",
-                    marginBottom: 6,
-                    border: "1px solid rgba(0,0,0,0.06)",
-                    borderRadius: 6,
-                    background: "#FFFFFF",
-                    cursor: "pointer",
-                    fontSize: 12,
-                    color: "#012441",
-                    textAlign: "left",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {call.prospect_company} - {call.rep_name}
+                <button key={i} onClick={() => { setTranscript(call.transcript || ""); setResults(null); }} style={{ display: "block", width: "100%", padding: "8px 10px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, background: "#FFFFFF", cursor: "pointer", fontSize: 12, color: "#012441", textAlign: "left", fontFamily: "inherit" }}>
+                  {call.prospect_company || call.client} \u2014 {call.rep_name}
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* FRAMEWORK SCORES */}
-        {results && !results.error && (
-          <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1, margin: "0 0 16px" }}>C.U.O.T.A. Scores</h3>
-            {Object.entries(frameColors).map(([frame, color]) => {
-              const score = results[`${frame.toLowerCase()}_score`] || 0;
-              return (
-                <div key={frame} style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#012441" }}>{frame}</span>
-                    <span style={{ fontSize: 12, color: color, fontWeight: 700 }}>{Math.round(score)}%</span>
-                  </div>
-                  <div style={{ width: "100%", height: 6, background: "rgba(0,0,0,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 3 }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* RESULTS SECTIONS */}
-      {results && !results.error && (
-        <div style={{ marginTop: 28 }}>
-          {[
-            { id: "assessment", label: "Deal Assessment", keys: ["win_probability", "deal_health", "next_play"] },
-            { id: "wellDone", label: "What Went Well", key: "what_went_well" },
-            { id: "misses", label: "Critical Misses", key: "critical_misses" },
-            { id: "rewritten", label: "Rewritten Moments", key: "rewritten_moments" },
-            { id: "talkTrack", label: "Talk Track Suggestions", key: "talk_track_suggestions" },
-            { id: "coaching", label: "Coaching Plan", key: "coaching_plan" },
-          ].map((section) => (
-            <div key={section.id} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
-              <button
-                onClick={() => toggleSection(section.id)}
-                style={{
-                  width: "100%",
-                  padding: 16,
-                  border: "none",
-                  background: "#FFFFFF",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  fontFamily: "inherit",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  borderBottom: expandedSection === section.id ? "1px solid rgba(0,0,0,0.06)" : "none",
-                }}
-              >
-                <span style={{ fontSize: 13, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1 }}>
-                  {section.label}
-                </span>
-                <span style={{ fontSize: 18, color: "#31CE81" }}>{expandedSection === section.id ? "−" : "+"}</span>
-              </button>
-              {expandedSection === section.id && (
-                <div style={{ padding: 16, paddingTop: 12, fontSize: 13, color: "rgba(0,0,0,0.7)", lineHeight: 1.6 }}>
-                  {section.keys ? (
-                    <div>
-                      {section.keys.map((key) => (
-                        <div key={key} style={{ marginBottom: 12 }}>
-                          <strong style={{ color: "#012441", textTransform: "capitalize" }}>{key.replace(/_/g, " ")}:</strong>
-                          <p style={{ margin: "4px 0 0", whiteSpace: "pre-wrap" }}>{results[key] || "N/A"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{results[section.key] || "N/A"}</p>
-                  )}
-                </div>
-              )}
+        {/* MAIN AREA */}
+        <div>
+          {!results && !loading && (
+            <div style={{ border: "1px dashed rgba(0,0,0,0.12)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(0,0,0,0.01)" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🤖</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#012441", marginBottom: 6 }}>Paste a transcript to begin</div>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.35)" }}>Agent scores the call on C.U.O.T.A. and surfaces coaching insights</div>
             </div>
-          ))}
+          )}
+          {loading && (
+            <div style={{ border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "#FFFFFF" }}>
+              <div style={{ fontSize: 13, color: "rgba(0,0,0,0.45)", marginBottom: 6 }}>Analyzing your call\u2026</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.25)" }}>Usually takes 15\u201320 seconds</div>
+            </div>
+          )}
+          {results && results.error && (
+            <div style={{ padding: "16px 20px", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, color: "#dc2626", fontSize: 13 }}>{results.error}</div>
+          )}
+          {results && !results.error && (
+            <div>
+              {/* C.U.O.T.A. Score Strip */}
+              <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
+                <div style={sectionLabelStyle}>C.U.O.T.A. Framework Scores</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+                  {Object.entries(frameColors).map(([frame, color]) => {
+                    const score = results[`${frame.toLowerCase()}_score`] || 0;
+                    return (
+                      <div key={frame} style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{Math.round(score)}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.4)", textTransform: "uppercase", letterSpacing: 1, margin: "5px 0 8px" }}>{frame}</div>
+                        <div style={{ height: 4, background: "rgba(0,0,0,0.07)", borderRadius: 2 }}>
+                          <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 2, transition: "width 0.4s ease" }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Result Section Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  { label: "Deal Assessment", keys: ["win_probability", "deal_health", "next_play"] },
+                  { label: "What Went Well", key: "what_went_well" },
+                  { label: "Critical Misses", key: "critical_misses" },
+                  { label: "Rewritten Moments", key: "rewritten_moments" },
+                  { label: "Talk Track Suggestions", key: "talk_track_suggestions" },
+                  { label: "Coaching Plan", key: "coaching_plan" },
+                ].map(section => {
+                  let content;
+                  if (section.keys) {
+                    const parts = section.keys.map(k => {
+                      const val = results[k];
+                      if (!val || val === "N/A") return null;
+                      return `${k.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}: ${val}`;
+                    }).filter(Boolean);
+                    content = parts.join("\n\n");
+                  } else {
+                    content = results[section.key];
+                  }
+                  if (!content) return null;
+                  return (
+                    <div key={section.label} style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, overflow: "hidden" }}>
+                      <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(0,0,0,0.06)", background: "rgba(1,36,65,0.03)" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#012441", textTransform: "uppercase", letterSpacing: 1 }}>{section.label}</span>
+                      </div>
+                      <div style={{ padding: "12px 16px", fontSize: 12, color: "rgba(0,0,0,0.65)", lineHeight: 1.65, maxHeight: 220, overflowY: "auto", whiteSpace: "pre-wrap" }}>{content}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
-      )}
-
-      {results?.error && <p style={{ color: "red", fontSize: 13, marginTop: 20 }}>{results.error}</p>}
+      </div>
     </div>
   );
 }
@@ -5666,50 +5606,44 @@ export default function CuotaCallReview() {
 
       {/* SIDEBAR */}
       <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "#012441", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", zIndex: 100 }}>
-        {/* Logo — click to go home */}
         <div style={{ padding: "20px 16px 16px" }}>
-          <img
-            src="/cuota_logo_official_White.png"
-            alt="Cuota"
-            onClick={() => setPage("home")}
-            style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }}
-          />
+          <img src="/cuota_logo_official_White.png" alt="Cuota" onClick={() => setPage("home")} style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }} />
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-          {/* CLIENTS */}
-          <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: page === "calls" || page === "client" ? "#31CE81" : "#FFFFFF" }}>Clients</span>
-          </button>
-
-          {/* ASSESSMENTS */}
-          <button onClick={() => setPage("gtm")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: ["gtm","tof","crm","hiring","metrics"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Assessments</span>
-          </button>
-
-          {/* CLIENT INTEL */}
-          <button onClick={() => setPage("clientIntel")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: page === "clientIntel" ? "#31CE81" : "#FFFFFF" }}>Client Intel</span>
-          </button>
-
-          {/* CUOTA AGENT */}
-          <button onClick={() => setPage("cuotaAgent")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: page === "cuotaAgent" ? "#31CE81" : "#FFFFFF" }}>Cuota Agent</span>
-          </button>
-
-          {/* PRESENTATIONS */}
-          <button onClick={() => setPage("deck")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: page === "deck" ? "#31CE81" : "#FFFFFF" }}>Decks</span>
-          </button>
-
-          {/* ADMIN */}
-          {(profile?.role === "manager" || profile?.role === "admin") && (
-            <button onClick={() => setPage(profile?.role === "admin" ? "integrations" : "admin")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: ["integrations","docsync","admin"].includes(page) ? "#31CE81" : "#FFFFFF" }}>Admin</span>
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 10px" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", padding: "8px 6px 4px" }}>Core</div>
+          {[
+            { label: "Clients", active: page === "calls" || page === "client", onClick: () => { setPage("calls"); setFolderClient(null); setFolderAE(null); } },
+            { label: "Assessments", active: ["gtm","tof","crm","hiring","metrics"].includes(page), onClick: () => setPage("gtm") },
+          ].map(item => (
+            <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: item.active ? "#31CE81" : "rgba(255,255,255,0.55)" }}>{item.label}</span>
+              {item.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
             </button>
-          )}
+          ))}
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", padding: "12px 6px 4px" }}>AI Tools</div>
+          {[
+            { label: "Client Intel", active: page === "clientIntel", onClick: () => setPage("clientIntel") },
+            { label: "Cuota Agent", active: page === "cuotaAgent", onClick: () => setPage("cuotaAgent") },
+            { label: "Decks", active: page === "deck", onClick: () => setPage("deck") },
+          ].map(item => (
+            <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: item.active ? "#31CE81" : "rgba(255,255,255,0.55)" }}>{item.label}</span>
+              {item.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
+            </button>
+          ))}
+          {(profile?.role === "manager" || profile?.role === "admin") && (() => {
+            const adminActive = ["integrations","docsync","admin"].includes(page);
+            return (
+              <>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", padding: "12px 6px 4px" }}>Settings</div>
+                <button onClick={() => setPage(profile?.role === "admin" ? "integrations" : "admin")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: adminActive ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: adminActive ? "#31CE81" : "rgba(255,255,255,0.55)" }}>Admin</span>
+                  {adminActive && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
+                </button>
+              </>
+            );
+          })()}
         </div>
-
-        {/* User + Logout */}
         <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.user?.email}</div>
           <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
