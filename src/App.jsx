@@ -438,29 +438,24 @@ function CategoryBar({ category, scores, onScoreChange }) {
   const score = cs.score || 0;
   const details = cs.details || "";
   const pct = Math.round((score / 10) * 100);
-  const [expanded, setExpanded] = useState(false);
+  const color = getScoreColor10(score);
   return (
-    <div style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", overflow: "hidden" }}>
-      <div onClick={() => setExpanded(!expanded)} style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{category.name}</span>
-            <span style={{ fontSize: 12, padding: "2px 10px", borderRadius: 20, background: getScoreColor10(score) + "22", color: getScoreColor10(score), fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{score}/10</span>
-          </div>
-          <div style={{ height: 4, background: "rgba(0,0,0,0.08)", borderRadius: 4 }}><div style={{ height: "100%", width: pct + "%", background: getScoreColor10(score), borderRadius: 4, transition: "width 0.5s" }} /></div>
+    <div style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", padding: "16px 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{category.name}</span>
+          <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 20, background: color + "22", color, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{score}/10</span>
         </div>
-        <span style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", transform: expanded ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s" }}>{"\u25BC"}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button onClick={() => onScoreChange(category.id, Math.max(0, score - 1))} style={{ width: 28, height: 28, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
+          <span style={{ width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color, fontFamily: "'Space Mono', monospace" }}>{score}</span>
+          <button onClick={() => onScoreChange(category.id, Math.min(10, score + 1))} style={{ width: 28, height: 28, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
+        </div>
       </div>
-      {expanded && (
-        <div style={{ padding: "4px 18px 14px", borderTop: "1px solid rgba(0,0,0,0.04)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "10px 0 12px" }}>
-            <label style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", fontWeight: 600 }}>Score:</label>
-            <input type="number" min={0} max={10} value={score} onChange={e => onScoreChange(category.id, Math.max(0, Math.min(10, parseInt(e.target.value) || 0)))} style={{ width: 56, padding: "6px 8px", border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, fontSize: 14, fontWeight: 700, textAlign: "center", fontFamily: "'Space Mono', monospace", outline: "none" }} />
-            <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>/10</span>
-          </div>
-          {details && <p style={{ fontSize: 13, color: "rgba(0,0,0,0.6)", margin: "0 0 4px", lineHeight: 1.6 }}>{details}</p>}
-        </div>
-      )}
+      <div style={{ height: 5, background: "rgba(0,0,0,0.07)", borderRadius: 4, marginBottom: details ? 12 : 0 }}>
+        <div style={{ height: "100%", width: pct + "%", background: color, borderRadius: 4, transition: "width 0.4s ease" }} />
+      </div>
+      {details && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", margin: 0, lineHeight: 1.65 }}>{details}</p>}
     </div>
   );
 }
@@ -5187,15 +5182,20 @@ export default function CuotaCallReview() {
               </div>
             </div>
 
-            {/* Score Dashboard — CircularScore + status badge only */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}>
-              <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <CircularScore score={overallScore} size={100} label="overall" />
-                <div style={{ textAlign: "center" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace" }}>{totalRaw}/90</span>
-                  <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", marginLeft: 6 }}>({overallScore}%)</span>
+            {/* Score Hero */}
+            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "20px 24px", marginBottom: 24 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
+                  <span style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace" }}>{overallScore}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: getScoreColor(overallScore), background: getScoreColor(overallScore) + "18", padding: "4px 12px", borderRadius: 20, textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, color: getScoreColor(overallScore), textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono', monospace" }}>{totalRaw} / {activeCategories.length * 10} pts</div>
+                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", marginTop: 2 }}>{activeCategories.length} categories</div>
+                </div>
+              </div>
+              <div style={{ height: 6, background: "rgba(0,0,0,0.07)", borderRadius: 6 }}>
+                <div style={{ height: "100%", width: overallScore + "%", background: getScoreColor(overallScore), borderRadius: 6, transition: "width 0.6s ease" }} />
               </div>
             </div>
 
@@ -5223,25 +5223,13 @@ export default function CuotaCallReview() {
 
             {/* Scorecard */}
             {activeTab === "scorecard" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {Object.keys(scores).length > 0 && (
-                  <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "14px 16px", marginBottom: 6 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 10 }}>Category Overview</div>
-                    {activeCategories.map(cat => {
-                      const s = scores[cat.id]?.score || 0;
-                      return (
-                        <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-                          <span style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", width: 145, flexShrink: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cat.name}</span>
-                          <div style={{ flex: 1, height: 5, background: "rgba(0,0,0,0.05)", borderRadius: 3 }}>
-                            <div style={{ width: `${(s / 10) * 100}%`, height: "100%", background: getScoreColor10(s), borderRadius: 3, transition: "width 0.4s ease" }} />
-                          </div>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: getScoreColor10(s), width: 18, textAlign: "right", fontFamily: "monospace" }}>{s > 0 ? s : "—"}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                {activeCategories.map(cat => <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />)}
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 12 }}>Category Scores</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {activeCategories.map(cat => (
+                    <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />
+                  ))}
+                </div>
               </div>
             )}
 
