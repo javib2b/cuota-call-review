@@ -96,8 +96,16 @@ const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "d
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://logo.clearbit.com/${domain}` : null; }
 
 // ClientLogo: tries /logos/{client}.png → Clearbit → Google favicon → letter fallback
-function ClientLogo({ client, size = 32, style = {}, letterStyle = {} }) {
-  const domain = CLIENT_DOMAINS[client];
+// Pass `website` (e.g. "https://11x.ai") to derive domain instead of the hardcoded CLIENT_DOMAINS map
+function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
+  let domain = null;
+  if (website) {
+    try {
+      const url = website.startsWith("http") ? website : `https://${website}`;
+      domain = new URL(url).hostname.replace(/^www\./, "");
+    } catch {}
+  }
+  if (!domain) domain = CLIENT_DOMAINS[client]; // fallback for clients without a saved website
   const [srcIdx, setSrcIdx] = useState(0);
   const sources = [
     `/logos/${client.toLowerCase()}.png`,
@@ -467,7 +475,7 @@ function getClientTrend(clientCalls) {
   return { direction: diff > 5 ? "up" : diff < -5 ? "down" : "flat", diff };
 }
 
-function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient, pastClients, onArchiveClient, onRestoreClient, onClientClick, archivedClients, onArchiveFromPast, onRestoreFromArchived }) {
+function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderClient, folderAE, setFolderAE, error, onRetry, clients, onAddClient, onDeleteClient, pastClients, onArchiveClient, onRestoreClient, onClientClick, archivedClients, onArchiveFromPast, onRestoreFromArchived, clientProfiles = {} }) {
   const [showArchived, setShowArchived] = useState(false);
   const allKnownClients = [...clients, ...(pastClients || []), ...(archivedClients || [])];
   const grouped = groupCallsByClientAndAE(calls, allKnownClients);
@@ -510,7 +518,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           </div>
           <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-              <ClientLogo client={client} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#6366F1" }} />
+              <ClientLogo client={client} website={clientProfiles[client]?.website} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#6366F1" }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.45)" : "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -602,7 +610,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                     </div>
                     <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                        <ClientLogo client={client} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.25)" }} />
+                        <ClientLogo client={client} website={clientProfiles[client]?.website} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.25)" }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -642,7 +650,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                       </div>
                       <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                         <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                          <ClientLogo client={client} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.18)" }} />
+                          <ClientLogo client={client} website={clientProfiles[client]?.website} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.18)" }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -2452,7 +2460,7 @@ function ScoreTrendsChart({ repEntries }) {
 }
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
@@ -2579,7 +2587,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         <div style={{ position: "absolute", inset: 0, opacity: 0.04, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "20px 20px", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, background: "rgba(255,255,255,0.08)", border: "2px solid rgba(99,102,241,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "#fff", boxShadow: "0 0 30px rgba(99,102,241,0.3)", overflow: "hidden" }}>
-            <ClientLogo client={client} size={44} letterStyle={{ fontSize: 26, fontWeight: 800, color: "#fff" }} />
+            <ClientLogo client={client} website={clientProfiles[client]?.website} size={44} letterStyle={{ fontSize: 26, fontWeight: 800, color: "#fff" }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: "0 0 10px", letterSpacing: -0.5 }}>{client}</h2>
@@ -2731,15 +2739,15 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* GTM TAB */}
       {activeTab === "gtm" && (
-        <GTMProfileTab client={client} getValidToken={getValidToken} />
+        <GTMProfileTab client={client} getValidToken={getValidToken} onProfileUpdate={onProfileUpdate} />
       )}
     </div>
   );
 }
 
 // ==================== GTM PROFILE TAB ====================
-function GTMProfileTab({ client, getValidToken }) {
-  const [draft, setDraft] = useState({ icp_description: "", sell_to: "", competitors: [], partners: [] });
+function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
+  const [draft, setDraft] = useState({ website: "", icp_description: "", sell_to: "", competitors: [], partners: [] });
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -2758,9 +2766,9 @@ function GTMProfileTab({ client, getValidToken }) {
       });
       if (r.ok) {
         const data = await r.json();
-        const p = data.profile || { icp_description: "", sell_to: "", competitors: [], partners: [] };
+        const p = data.profile || { website: "", icp_description: "", sell_to: "", competitors: [], partners: [] };
         setProfile(data.profile || null);
-        setDraft({ icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
+        setDraft({ website: p.website || "", icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
       }
     } catch (e) {
       console.warn("GTM load error:", e);
@@ -2813,6 +2821,7 @@ function GTMProfileTab({ client, getValidToken }) {
       if (r.ok) {
         const data = await r.json();
         setProfile(data.profile || { ...draft });
+        if (onProfileUpdate) onProfileUpdate();
       } else {
         const e = await r.json().catch(() => ({}));
         setSaveError(e.error || "Save failed");
@@ -2869,6 +2878,26 @@ function GTMProfileTab({ client, getValidToken }) {
         </button>
       </div>
       {saveError && <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#dc2626", marginBottom: 16 }}>{saveError}</div>}
+
+      {/* WEBSITE */}
+      <div style={sectionStyle}>
+        <label style={labelStyle}>Website</label>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="text"
+            value={draft.website}
+            onChange={e => setDraft(prev => ({ ...prev, website: e.target.value }))}
+            placeholder="https://company.com"
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          {draft.website && (
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.08)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+              <ClientLogo client={client} website={draft.website} size={22} letterStyle={{ fontSize: 11, fontWeight: 700, color: "#6366F1" }} />
+            </div>
+          )}
+        </div>
+        <p style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", margin: "6px 0 0" }}>Used to automatically pull the company logo.</p>
+      </div>
 
       {/* WHO THEY SELL TO */}
       <div style={sectionStyle}>
@@ -4492,6 +4521,7 @@ export default function CuotaCallReview() {
   const [page, setPage] = useState("home");
   const [savedCalls, setSavedCalls] = useState([]);
   const [enablementDocs, setEnablementDocs] = useState([]);
+  const [clientProfiles, setClientProfiles] = useState({}); // { clientName: { website, icp_description, ... } }
   const [crmSnapshots, setCrmSnapshots] = useState([]);
   const [gtmAssessments, setGtmAssessments] = useState([]);
   const [tofAssessments, setTofAssessments] = useState([]);
@@ -4713,6 +4743,20 @@ export default function CuotaCallReview() {
     try { const data = await (await supabase.from("gtm_reports", t)).select("*"); if (Array.isArray(data)) setGtmReports(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))); } catch (e) { console.warn("GTM reports not available:", e.message); }
   }, [getValidToken]);
 
+  const loadClientProfiles = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try {
+      const data = await (await supabase.from("client_gtm_profiles", t)).select("*");
+      if (Array.isArray(data)) {
+        const map = {};
+        data.forEach(p => { map[p.client] = p; });
+        setClientProfiles(map);
+      }
+    } catch (e) {
+      console.warn("Client profiles not available:", e.message);
+    }
+  }, [getValidToken]);
+
   // Validate stored session on mount
   const hasValidated = useRef(false);
   useEffect(() => {
@@ -4764,9 +4808,9 @@ export default function CuotaCallReview() {
   // Load all data whenever token changes
   useEffect(() => {
     if (token) {
-      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments(), loadGtmReports()]).finally(() => setLoading(false));
+      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments(), loadGtmReports(), loadClientProfiles()]).finally(() => setLoading(false));
     } else { setLoading(false); }
-  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments, loadGtmReports]);
+  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments, loadGtmReports, loadClientProfiles]);
 
   // Auto-refresh token every 50 minutes to prevent expiration during use
   useEffect(() => {
@@ -5009,7 +5053,7 @@ export default function CuotaCallReview() {
               <div key={clientName}>
                 <button onClick={() => setSidebarOpenClients(prev => ({ ...prev, [clientName]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px", border: "none", background: isActiveClient && !isOpen ? "rgba(255,255,255,0.08)" : "transparent", color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
                   <div style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(255,255,255,0.15)", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <ClientLogo client={clientName} size={16} style={{ borderRadius: 3 }} letterStyle={{ fontSize: 9, fontWeight: 700, color: "#FFFFFF" }} />
+                    <ClientLogo client={clientName} website={clientProfiles[clientName]?.website} size={16} style={{ borderRadius: 3 }} letterStyle={{ fontSize: 9, fontWeight: 700, color: "#FFFFFF" }} />
                   </div>
                   <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName}</span>
                   <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{isOpen ? "▾" : "▸"}</span>
@@ -5147,10 +5191,12 @@ export default function CuotaCallReview() {
           activeTab={clientPageTab}
           onTabChange={setClientPageTab}
           getValidToken={getValidToken}
+          clientProfiles={clientProfiles}
+          onProfileUpdate={loadClientProfiles}
         />}
 
         {/* SALES READINESS */}
-        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} />}
+        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} clientProfiles={clientProfiles} />}
 
         {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
