@@ -4993,22 +4993,8 @@ export default function CuotaCallReview() {
           />
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "0 8px" }}>
-          {/* HOME */}
-          <button onClick={() => setPage("home")} style={{
-            display: "flex", alignItems: "center", gap: 8, width: "100%",
-            padding: "9px 12px", border: "none",
-            borderLeft: page === "home" ? "3px solid #31CE81" : "3px solid transparent",
-            background: page === "home" ? "rgba(255,255,255,0.1)" : "transparent",
-            color: "#FFFFFF",
-            fontSize: 14, fontWeight: page === "home" ? 700 : 500,
-            cursor: "pointer", fontFamily: "inherit", borderRadius: 8, boxSizing: "border-box"
-          }}>
-            <span style={{ fontSize: 13 }}>🏠</span> Home
-          </button>
-
           {/* WORKSPACE section */}
-          <div style={{ height: 1, background: "rgba(255,255,255,0.08)", margin: "8px 12px 0" }} />
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Workspace</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "4px 12px 4px 12px" }}>Workspace</div>
 
           {/* CLIENTS SECTION */}
           <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
