@@ -436,26 +436,21 @@ function AuthScreen({ onAuth }) {
 function CategoryBar({ category, scores, onScoreChange }) {
   const cs = scores[category.id] || {};
   const score = cs.score || 0;
-  const details = cs.details || "";
   const pct = Math.round((score / 10) * 100);
   const color = getScoreColor10(score);
   return (
-    <div style={{ background: "#FFFFFF", borderRadius: 12, border: "1px solid rgba(0,0,0,0.08)", padding: "16px 20px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#012441" }}>{category.name}</span>
-          <span style={{ fontSize: 12, padding: "3px 10px", borderRadius: 20, background: color + "22", color, fontWeight: 700, fontFamily: "'Space Mono', monospace" }}>{score}/10</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={() => onScoreChange(category.id, Math.max(0, score - 1))} style={{ width: 28, height: 28, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
-          <span style={{ width: 28, textAlign: "center", fontSize: 15, fontWeight: 700, color, fontFamily: "'Space Mono', monospace" }}>{score}</span>
-          <button onClick={() => onScoreChange(category.id, Math.min(10, score + 1))} style={{ width: 28, height: 28, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, background: "#FFFFFF", cursor: "pointer", fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
+    <div style={{ background: "#FFFFFF", borderRadius: 10, border: "1px solid rgba(0,0,0,0.08)", padding: "10px 14px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "#012441", lineHeight: 1.3 }}>{category.name}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+          <button onClick={() => onScoreChange(category.id, Math.max(0, score - 1))} style={{ width: 24, height: 24, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, background: "#FFFFFF", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
+          <span style={{ width: 26, textAlign: "center", fontSize: 13, fontWeight: 700, color, fontFamily: "'Space Mono', monospace" }}>{score}</span>
+          <button onClick={() => onScoreChange(category.id, Math.min(10, score + 1))} style={{ width: 24, height: 24, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 6, background: "#FFFFFF", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
         </div>
       </div>
-      <div style={{ height: 5, background: "rgba(0,0,0,0.07)", borderRadius: 4, marginBottom: details ? 12 : 0 }}>
+      <div style={{ height: 4, background: "rgba(0,0,0,0.07)", borderRadius: 4 }}>
         <div style={{ height: "100%", width: pct + "%", background: color, borderRadius: 4, transition: "width 0.4s ease" }} />
       </div>
-      {details && <p style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", margin: 0, lineHeight: 1.65 }}>{details}</p>}
     </div>
   );
 }
@@ -5183,24 +5178,24 @@ export default function CuotaCallReview() {
             </div>
 
             {/* Score Hero */}
-            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 16, padding: "20px 24px", marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-                  <span style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace" }}>{overallScore}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: getScoreColor(overallScore), background: getScoreColor(overallScore) + "18", padding: "4px 12px", borderRadius: 20, textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
+            <div style={{ background: "#FFFFFF", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 14, padding: "12px 18px", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                  <span style={{ fontSize: 40, fontWeight: 700, lineHeight: 1, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace" }}>{overallScore}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(overallScore), background: getScoreColor(overallScore) + "18", padding: "3px 10px", borderRadius: 20, textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono', monospace" }}>{totalRaw} / {activeCategories.length * 10} pts</div>
-                  <div style={{ fontSize: 11, color: "rgba(0,0,0,0.3)", marginTop: 2 }}>{activeCategories.length} categories</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(0,0,0,0.4)", fontFamily: "'Space Mono', monospace" }}>{totalRaw} / {activeCategories.length * 10} pts</div>
+                  <div style={{ fontSize: 10, color: "rgba(0,0,0,0.3)", marginTop: 2 }}>{activeCategories.length} categories</div>
                 </div>
               </div>
-              <div style={{ height: 6, background: "rgba(0,0,0,0.07)", borderRadius: 6 }}>
-                <div style={{ height: "100%", width: overallScore + "%", background: getScoreColor(overallScore), borderRadius: 6, transition: "width 0.6s ease" }} />
+              <div style={{ height: 5, background: "rgba(0,0,0,0.07)", borderRadius: 5 }}>
+                <div style={{ height: "100%", width: overallScore + "%", background: getScoreColor(overallScore), borderRadius: 5, transition: "width 0.6s ease" }} />
               </div>
             </div>
 
             {/* Tabs — underline style */}
-            <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid rgba(0,0,0,0.08)", overflowX: "auto" }}>
+            <div style={{ display: "flex", gap: 0, marginBottom: 12, borderBottom: "1px solid rgba(0,0,0,0.08)", overflowX: "auto" }}>
               {tabs.map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: "10px 16px 10px", border: "none", borderBottom: activeTab === tab.id ? "2px solid #6366F1" : "2px solid transparent", background: "transparent", cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, whiteSpace: "nowrap", color: activeTab === tab.id ? "#6366F1" : "rgba(0,0,0,0.45)", fontFamily: "inherit", marginBottom: -1 }}>{tab.label}</button>
               ))}
@@ -5224,8 +5219,8 @@ export default function CuotaCallReview() {
             {/* Scorecard */}
             {activeTab === "scorecard" && (
               <div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 12 }}>Category Scores</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(0,0,0,0.3)", marginBottom: 8 }}>Category Scores</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {activeCategories.map(cat => (
                     <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />
                   ))}
