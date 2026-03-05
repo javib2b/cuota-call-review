@@ -95,6 +95,21 @@ const DEFAULT_PAST_CLIENTS = ["Rapido"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://logo.clearbit.com/${domain}` : null; }
 
+// ClientLogo: tries /logos/{client}.png → Clearbit → Google favicon → letter fallback
+function ClientLogo({ client, size = 32, style = {}, letterStyle = {} }) {
+  const domain = CLIENT_DOMAINS[client];
+  const [srcIdx, setSrcIdx] = useState(0);
+  const sources = [
+    `/logos/${client.toLowerCase()}.png`,
+    domain ? `https://logo.clearbit.com/${domain}` : null,
+    domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
+  ].filter(Boolean);
+  if (srcIdx >= sources.length) {
+    return <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", ...letterStyle }}>{client.charAt(0).toUpperCase()}</span>;
+  }
+  return <img src={sources[srcIdx]} alt={client} style={{ width: size, height: size, objectFit: "contain", ...style }} onError={() => setSrcIdx(i => i + 1)} />;
+}
+
 function loadPastClients() {
   try {
     const stored = localStorage.getItem("cuota_past_clients");
@@ -484,7 +499,6 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       const callCount = clientCalls.length;
       const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
       const isEmpty = callCount === 0;
-      const logoUrl = getClientLogo(client);
       return (
         <div key={client} style={{ position: "relative", background: isPast ? "#fafafa" : "#FFFFFF", border: `1px solid ${isPast ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.08)"}`, borderRadius: 16, padding: 0, cursor: isEmpty ? "default" : "pointer", overflow: "hidden", opacity: isPast ? 0.65 : (isEmpty ? 0.5 : 1), transition: "all 0.2s", boxShadow: isEmpty || isPast ? "none" : "0 2px 8px rgba(0,0,0,0.04)" }} onClick={() => !isEmpty && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
           <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
@@ -496,8 +510,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           </div>
           <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-              {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-              <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#6366F1", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+              <ClientLogo client={client} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.25)" : "#6366F1" }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "rgba(0,0,0,0.45)" : "#012441", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -581,7 +594,6 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 const clientCalls = Object.values(aes).flat();
                 const callCount = clientCalls.length;
                 const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
-                const logoUrl = getClientLogo(client);
                 return (
                   <div key={client} style={{ position: "relative", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
                     <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
@@ -590,8 +602,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                     </div>
                     <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                        {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-                        <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.25)", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+                        <ClientLogo client={client} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.25)" }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.45)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -624,7 +635,6 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                   const aes = grouped[client] || {};
                   const clientCalls = Object.values(aes).flat();
                   const callCount = clientCalls.length;
-                  const logoUrl = getClientLogo(client);
                   return (
                     <div key={client} style={{ position: "relative", background: "#f9f9f9", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.45, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
                       <div style={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}>
@@ -632,8 +642,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                       </div>
                       <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                         <div style={{ width: 48, height: 48, borderRadius: 12, background: "#f8f9fa", border: "1px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                          {logoUrl ? <img src={logoUrl} alt={client} style={{ width: 32, height: 32, objectFit: "contain" }} onError={(e) => { e.target.style.display = "none"; const fb = e.target.parentNode.querySelector("[data-fallback]"); if (fb) fb.style.display = "flex"; }} /> : null}
-                          <span data-fallback style={{ display: logoUrl ? "none" : "flex", fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.18)", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{client.charAt(0).toUpperCase()}</span>
+                          <ClientLogo client={client} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "rgba(0,0,0,0.18)" }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 16, fontWeight: 700, color: "rgba(0,0,0,0.3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -2446,7 +2455,6 @@ function ScoreTrendsChart({ repEntries }) {
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
-  const [logoFailed, setLogoFailed] = useState(false);
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
   const docCategory = (docType) => ENABLEMENT_DOC_TYPES.find(t => t.id === docType)?.category || "enablement";
 
@@ -2463,7 +2471,6 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length)
     : null;
 
-  const logoUrl = getClientLogo(client);
 
   const byRep = {};
   clientCalls.forEach(call => {
@@ -2572,9 +2579,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         <div style={{ position: "absolute", inset: 0, opacity: 0.04, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "20px 20px", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, background: "rgba(255,255,255,0.08)", border: "2px solid rgba(99,102,241,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "#fff", boxShadow: "0 0 30px rgba(99,102,241,0.3)", overflow: "hidden" }}>
-            {logoUrl && !logoFailed
-              ? <img src={logoUrl} alt={client} style={{ width: 44, height: 44, objectFit: "contain" }} onError={() => setLogoFailed(true)} />
-              : <span>{client.charAt(0)}</span>}
+            <ClientLogo client={client} size={44} letterStyle={{ fontSize: 26, fontWeight: 800, color: "#fff" }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: "0 0 10px", letterSpacing: -0.5 }}>{client}</h2>
@@ -5006,11 +5011,10 @@ export default function CuotaCallReview() {
           <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: 1.5, textTransform: "uppercase", padding: "12px 12px 4px 12px" }}>Workspace</div>
 
           {/* CLIENTS SECTION */}
-          <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); setSidebarSections(p => ({ ...p, clients: !p.clients })); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
+          <button onClick={() => { setPage("calls"); setFolderClient(null); setFolderAE(null); }} style={{ display: "flex", alignItems: "center", width: "100%", padding: "10px 8px 8px", border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", boxSizing: "border-box", textAlign: "left" }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: page === "calls" || page === "client" ? "#31CE81" : "#FFFFFF" }}>Clients</span>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{sidebarSections.clients ? "▾" : "▸"}</span>
           </button>
-          {sidebarSections.clients && clients.map(clientName => {
+          {clients.map(clientName => {
             const isOpen = !!sidebarOpenClients[clientName];
             const isActiveClient = page === "client" && selectedClientProfile === clientName;
             const callCount = savedCalls.filter(c => c.category_scores?.client === clientName || (c.prospect_company || "").toLowerCase().includes(clientName.toLowerCase())).length;
@@ -5018,10 +5022,9 @@ export default function CuotaCallReview() {
             return (
               <div key={clientName}>
                 <button onClick={() => setSidebarOpenClients(prev => ({ ...prev, [clientName]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 8px", border: "none", background: isActiveClient && !isOpen ? "rgba(255,255,255,0.08)" : "transparent", color: "#FFFFFF", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRadius: 8, marginBottom: 1, boxSizing: "border-box", textAlign: "left" }}>
-                  {getClientLogo(clientName)
-                    ? <img src={getClientLogo(clientName)} style={{ width: 16, height: 16, borderRadius: 3, objectFit: "contain", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
-                    : <span style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(255,255,255,0.15)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#FFFFFF", flexShrink: 0 }}>{clientName[0]}</span>
-                  }
+                  <div style={{ width: 16, height: 16, borderRadius: 3, background: "rgba(255,255,255,0.15)", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <ClientLogo client={clientName} size={16} style={{ borderRadius: 3 }} letterStyle={{ fontSize: 9, fontWeight: 700, color: "#FFFFFF" }} />
+                  </div>
                   <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{clientName}</span>
                   <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{isOpen ? "▾" : "▸"}</span>
                 </button>
