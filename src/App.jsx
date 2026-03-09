@@ -6003,7 +6003,7 @@ export default function CuotaCallReview() {
       </div>
 
       {/* Floating Action Button */}
-      {page !== "review" && (
+      {page !== "review" && page !== "deck" && (
         <button onClick={startNewReview} style={{
           position: "fixed", bottom: 28, right: 28, zIndex: 200,
           background: "#31CE81",
