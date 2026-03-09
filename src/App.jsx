@@ -5980,6 +5980,20 @@ export default function CuotaCallReview() {
     />
   );
 
+  if (page === "clients" || page === "calls" || page === "reviews") return (
+    <ClientsPage
+      clients={clients}
+      pastClients={pastClients}
+      savedCalls={savedCalls}
+      onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }}
+      onNewReview={startNewReview}
+      onNavigate={setPage}
+      onAddClient={addClient}
+      onArchiveClient={archiveClient}
+      onRestoreClient={restoreClient}
+    />
+  );
+
   const tabs = [
     { id: "transcript", label: "Transcript" },
     { id: "scorecard", label: "Scorecard" },
@@ -6060,20 +6074,7 @@ export default function CuotaCallReview() {
           onRefresh={loadCalls}
         />}
 
-        {/* CLIENTS */}
-        {(page === "calls" || page === "clients" || page === "reviews") && (
-          <ClientsPage
-            clients={clients}
-            pastClients={pastClients}
-            savedCalls={savedCalls}
-            onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }}
-            onNewReview={startNewReview}
-            onNavigate={(p) => { setPage(p); if (p === "home") { /* nothing extra */ } }}
-            onAddClient={addClient}
-            onArchiveClient={archiveClient}
-            onRestoreClient={restoreClient}
-          />
-        )}
+        {/* CLIENTS — handled by early return above */}
 
         {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
