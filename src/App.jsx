@@ -2389,11 +2389,8 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       const t = await getValidToken();
       const ids = repCalls.map(c => c.id).filter(Boolean);
       if (ids.length === 0) { alert("No call IDs found for this rep."); return; }
-      const gongTable = await supabase.from("gong_processed_calls", t);
       const callTable = await supabase.from("call_reviews", t);
       for (const id of ids) {
-        // Delete FK-dependent rows first, then the call review
-        await gongTable.delete(`call_review_id=eq.${id}`);
         await callTable.delete(`id=eq.${id}`);
       }
       onRefresh && onRefresh();
