@@ -5975,6 +5975,7 @@ export default function CuotaCallReview() {
       userEmail={session.user?.email}
       onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
       onNewReview={startNewReview}
+      onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}
     />
   );
 

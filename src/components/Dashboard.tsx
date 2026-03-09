@@ -30,10 +30,11 @@ const statusStyle = (s: string) => ({
 interface Props {
   onNavigate?: (page: string) => void;
   onNewReview?: () => void;
+  onClientClick?: (client: string) => void;
   userEmail?: string;
 }
 
-export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: Props) {
+export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "" }: Props) {
   const hour = new Date().getHours();
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
@@ -52,7 +53,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
             src="/cuota_logo_official_White.png"
             alt="Cuota"
             onClick={() => onNavigate?.("home")}
-            style={{ height: 36, display: "block", maxWidth: "100%", cursor: "pointer" }}
+            style={{ height: 48, display: "block", maxWidth: "100%", cursor: "pointer" }}
           />
         </div>
 
@@ -176,6 +177,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
             return (
               <div
                 key={c.name}
+                onClick={() => onClientClick?.(c.name)}
                 style={{
                   display: "grid", gridTemplateColumns: "1fr 180px 70px 130px 100px",
                   padding: "15px 24px", gap: 16, alignItems: "center",
