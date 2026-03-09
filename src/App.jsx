@@ -5211,13 +5211,13 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
 
             {/* BRAND */}
             <div>
-              <div style={sectionLabel}>Brand</div>
+              <div style={sectionLabel}>Brand Guidelines</div>
               <div style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>Company</label>
                 <input value={companyName} onChange={e => handleCompanyNameChange(e.target.value)} placeholder="e.g. Cuota" style={inputStyle} />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {[{ label: "Primary", value: primaryColor, onChange: handlePrimaryChange }, { label: "Accent", value: accentColor, onChange: handleAccentChange }].map(c => (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[{ label: "Primary Color", value: primaryColor, onChange: handlePrimaryChange }, { label: "Accent Color", value: accentColor, onChange: handleAccentChange }].map(c => (
                   <div key={c.label}>
                     <label style={labelStyle}>{c.label}</label>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
