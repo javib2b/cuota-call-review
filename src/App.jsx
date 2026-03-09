@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Dashboard from "./components/Dashboard.tsx";
 import ClientsPage from "./components/ClientsPage.tsx";
+import RepDetailPage from "./components/RepDetailPage.tsx";
 
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
@@ -5484,6 +5485,7 @@ export default function CuotaCallReview() {
   const [pastClients, setPastClients] = useState(loadPastClients);
   const [archivedClients, setArchivedClients] = useState(loadArchivedClients);
   const [selectedClientProfile, setSelectedClientProfile] = useState(null);
+  const [selectedRep, setSelectedRep] = useState(null);
   const [clientPageTab, setClientPageTab] = useState("calls");
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
   const [sidebarSections, setSidebarSections] = useState({ clients: false, assessments: false, admin: false });
@@ -5994,6 +5996,24 @@ export default function CuotaCallReview() {
     />
   );
 
+  if (page === "rep" && selectedClientProfile && selectedRep) {
+    const repCalls = savedCalls.filter(c =>
+      (c.category_scores?.client === selectedClientProfile || (c.prospect_company || "").toLowerCase() === selectedClientProfile.toLowerCase()) &&
+      (c.category_scores?.rep_name === selectedRep || c.rep_name === selectedRep)
+    );
+    return (
+      <RepDetailPage
+        client={selectedClientProfile}
+        repName={selectedRep}
+        repCalls={repCalls}
+        onBack={() => setPage("client")}
+        onViewCall={loadCallIntoReview}
+        onNavigate={setPage}
+        onNewReview={startNewReview}
+      />
+    );
+  }
+
   const tabs = [
     { id: "transcript", label: "Transcript" },
     { id: "scorecard", label: "Scorecard" },
@@ -6059,9 +6079,9 @@ export default function CuotaCallReview() {
           client={selectedClientProfile}
           savedCalls={savedCalls}
           enablementDocs={enablementDocs}
-          onBack={() => { setPage("home"); setSelectedClientProfile(null); setFolderClient(null); setFolderAE(null); }}
+          onBack={() => { setPage("clients"); setSelectedClientProfile(null); }}
           onViewCall={(call) => { loadCallIntoReview(call); }}
-          onBrowseByRep={(repName) => { setPage("calls"); setFolderClient(selectedClientProfile); setFolderAE(repName || null); }}
+          onBrowseByRep={(repName) => { setSelectedRep(repName); setPage("rep"); }}
           onNavigate={(p) => setPage(p)}
           activeTab={clientPageTab}
           onTabChange={setClientPageTab}
