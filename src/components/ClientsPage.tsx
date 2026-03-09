@@ -14,6 +14,17 @@ const FAINT   = "rgba(245,243,240,0.25)";
 const FONT    = "'DM Sans', system-ui, sans-serif";
 const MONO    = "'IBM Plex Mono', monospace";
 
+// ─── Sidebar widths ───────────────────────────────────────────────
+const FULL = 220;
+const MINI = 64;
+
+function getSavedCollapsed() {
+  try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
+}
+function saveCollapsed(v: boolean) {
+  try { localStorage.setItem("sidebar_collapsed", v ? "1" : "0"); } catch {}
+}
+
 // ─── Client logo bg colors ────────────────────────────────────────
 const LOGO_BG: Record<string, string> = {
   "11x":       "#1a1a1a",
@@ -35,17 +46,11 @@ const CLIENT_SUBTITLE: Record<string, string> = {
   "Paymend": "New client",
 };
 
-function logoInitials(name: string) {
-  return name.slice(0, 2).toUpperCase();
-}
-function logoBg(name: string) {
-  return LOGO_BG[name] ?? "#1a2235";
-}
-function scoreColor(s: number) {
-  return s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
-}
+function logoInitials(name: string) { return name.slice(0, 2).toUpperCase(); }
+function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
+function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED; }
 
-// ─── Score ring (r=11, circ≈69.1) ────────────────────────────────
+// ─── Score ring ───────────────────────────────────────────────────
 const CIRC = 69.1;
 
 function ScoreRing({ score }: { score: number | null }) {
@@ -77,7 +82,6 @@ function ScoreRing({ score }: { score: number | null }) {
 
 // ─── Status badge ─────────────────────────────────────────────────
 type BadgeVariant = "red" | "amber" | "green" | "gray";
-
 const BADGE_STYLE: Record<BadgeVariant, { bg: string; color: string }> = {
   red:   { bg: "rgba(255,77,77,0.12)",   color: RED   },
   amber: { bg: "rgba(245,166,35,0.12)",  color: AMBER },
@@ -100,9 +104,7 @@ function Badge({ label, variant }: { label: string; variant: BadgeVariant }) {
       display: "inline-block", padding: "3px 9px", borderRadius: 6,
       fontSize: 11, fontWeight: 600, fontFamily: FONT,
       background: s.bg, color: s.color,
-    }}>
-      {label}
-    </span>
+    }}>{label}</span>
   );
 }
 
@@ -124,66 +126,6 @@ function computeMeta(client: string, savedCalls: any[]): ClientMeta {
   return { calls: calls.length, score: avgScore, reps };
 }
 
-// ─── Sidebar (shared look with Dashboard) ────────────────────────
-function Sidebar({ onNavigate, onNewReview }: { onNavigate: (p: string) => void; onNewReview: () => void }) {
-  return (
-    <aside style={{
-      width: 220, flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0,
-      background: SURFACE, borderRight: `1px solid ${BORDER}`,
-      display: "flex", flexDirection: "column", zIndex: 100,
-    }}>
-      <div style={{ padding: "24px 20px 20px" }}>
-        <img
-          src="/cuota_logo_official_White.png" alt="Cuota"
-          onClick={() => onNavigate("home")}
-          style={{ height: 48, display: "block", maxWidth: "100%", cursor: "pointer" }}
-        />
-      </div>
-
-      <nav style={{ flex: 1, padding: "4px 10px" }}>
-        {/* Clients — active */}
-        <button style={{
-          display: "flex", alignItems: "center", width: "100%",
-          padding: "9px 12px", marginBottom: 4, border: "none", borderRadius: 8,
-          background: "rgba(49,206,129,0.10)", cursor: "default",
-          fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: GREEN }}>Clients</span>
-        </button>
-
-        {/* + New Call Review */}
-        <button
-          onClick={onNewReview}
-          style={{
-            display: "flex", alignItems: "center", width: "100%",
-            padding: "9px 12px", border: "none", borderRadius: 8,
-            background: "rgba(49,206,129,0.12)", cursor: "pointer",
-            fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
-          }}
-        >
-          <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>+ New Call Review</span>
-        </button>
-      </nav>
-
-      <div style={{
-        padding: "16px 20px", borderTop: `1px solid ${BORDER}`,
-        display: "flex", alignItems: "center", gap: 10,
-      }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: "50%",
-          background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
-          flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
-        }}>JV</div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
-          <div style={{ fontSize: 10, color: FAINT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>javier@cuota.io</div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
 // ─── Props ────────────────────────────────────────────────────────
 interface Props {
   clients: string[];
@@ -197,7 +139,6 @@ interface Props {
   onRestoreClient: (name: string) => void;
 }
 
-// ─── Grid columns ────────────────────────────────────────────────
 const COL = "1fr 48px 56px 120px 48px 82px";
 
 // ─── Main ─────────────────────────────────────────────────────────
@@ -206,15 +147,21 @@ export default function ClientsPage({
   onClientClick, onNewReview, onNavigate,
   onAddClient, onArchiveClient, onRestoreClient,
 }: Props) {
+  const [collapsed, setCollapsed]     = useState(getSavedCollapsed);
   const [hoveredRow, setHoveredRow]   = useState<string | null>(null);
   const [hoveredPast, setHoveredPast] = useState<string | null>(null);
   const [addHovered, setAddHovered]   = useState(false);
 
-  // Compute stats for every client
+  function toggle() {
+    setCollapsed(prev => { saveCollapsed(!prev); return !prev; });
+  }
+
+  const W = collapsed ? MINI : FULL;
+
+  // Compute stats
   const metaMap: Record<string, ClientMeta> = {};
   [...clients, ...pastClients].forEach(c => { metaMap[c] = computeMeta(c, savedCalls); });
 
-  // Header aggregates
   const totalCalls = clients.reduce((s, c) => s + metaMap[c].calls, 0);
   const scores     = clients.map(c => metaMap[c].score).filter((s): s is number => s !== null);
   const avgScore   = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
@@ -222,13 +169,150 @@ export default function ClientsPage({
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT, fontFamily: FONT }}>
-      <Sidebar onNavigate={onNavigate} onNewReview={onNewReview} />
 
-      <main style={{ marginLeft: 220, flex: 1, padding: "40px 44px", minWidth: 0 }}>
+      {/* ── SIDEBAR ── */}
+      <aside style={{
+        width: W, flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0,
+        background: SURFACE, borderRight: `1px solid ${BORDER}`,
+        display: "flex", flexDirection: "column", zIndex: 100,
+        transition: "width 0.2s ease", overflow: "hidden",
+      }}>
+
+        {/* Logo */}
+        <div style={{
+          padding: collapsed ? "20px 0" : "24px 20px 20px",
+          display: "flex", justifyContent: collapsed ? "center" : "flex-start",
+        }}>
+          {collapsed ? (
+            <div
+              onClick={() => onNavigate("home")}
+              style={{
+                width: 34, height: 34, borderRadius: 8, cursor: "pointer",
+                background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: 800, color: GREEN,
+              }}
+            >C</div>
+          ) : (
+            <img
+              src="/cuota_logo_official_White.png" alt="Cuota"
+              onClick={() => onNavigate("home")}
+              style={{ height: 48, display: "block", maxWidth: "100%", cursor: "pointer" }}
+            />
+          )}
+        </div>
+
+        {/* Nav */}
+        <nav style={{
+          flex: 1, padding: collapsed ? "4px 8px" : "4px 10px",
+          display: "flex", flexDirection: "column", gap: 4,
+        }}>
+          {collapsed ? (
+            <>
+              {/* Clients icon — active */}
+              <button
+                title="Clients"
+                style={{
+                  width: "100%", padding: "10px 0", border: "none", borderRadius: 8,
+                  background: "rgba(49,206,129,0.10)", cursor: "default",
+                  display: "flex", justifyContent: "center", fontFamily: FONT,
+                }}
+              >
+                <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, letterSpacing: 0.5 }}>CL</span>
+              </button>
+              {/* New Review icon */}
+              <button
+                onClick={onNewReview}
+                title="New Call Review"
+                style={{
+                  width: "100%", padding: "10px 0", border: "none", borderRadius: 8,
+                  background: "rgba(49,206,129,0.12)", cursor: "pointer",
+                  display: "flex", justifyContent: "center", fontFamily: FONT,
+                }}
+              >
+                <span style={{ fontSize: 16, fontWeight: 700, color: GREEN, lineHeight: 1 }}>+</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Clients — active */}
+              <button style={{
+                display: "flex", alignItems: "center", width: "100%",
+                padding: "9px 12px", border: "none", borderRadius: 8,
+                background: "rgba(49,206,129,0.10)", cursor: "default",
+                fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: GREEN }}>Clients</span>
+              </button>
+              {/* + New Call Review */}
+              <button
+                onClick={onNewReview}
+                style={{
+                  display: "flex", alignItems: "center", width: "100%",
+                  padding: "9px 12px", border: "none", borderRadius: 8,
+                  background: "rgba(49,206,129,0.12)", cursor: "pointer",
+                  fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>+ New Call Review</span>
+              </button>
+            </>
+          )}
+
+          {/* Collapse toggle */}
+          <button
+            onClick={toggle}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            style={{
+              marginTop: "auto", width: "100%",
+              padding: collapsed ? "10px 0" : "8px 12px",
+              border: "none", borderRadius: 8,
+              background: "transparent", cursor: "pointer",
+              display: "flex", alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              fontFamily: FONT, gap: 8,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            <span style={{ fontSize: 14, color: FAINT, lineHeight: 1 }}>{collapsed ? "›" : "‹"}</span>
+            {!collapsed && <span style={{ fontSize: 11, color: FAINT }}>Collapse</span>}
+          </button>
+        </nav>
+
+        {/* User footer */}
+        <div style={{
+          padding: collapsed ? "16px 0" : "16px 20px",
+          borderTop: `1px solid ${BORDER}`,
+          display: "flex", alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: 10,
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
+            flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
+          }}>JV</div>
+          {!collapsed && (
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
+              <div style={{ fontSize: 10, color: FAINT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>javier@cuota.io</div>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ── MAIN ── */}
+      <main style={{
+        marginLeft: W, flex: 1,
+        padding: "36px 40px 40px 28px",
+        minWidth: 0, transition: "margin-left 0.2s ease",
+      }}>
         <div style={{ maxWidth: 820, margin: "0 auto" }}>
 
-          {/* ── Page header ── */}
-          <div style={{ marginBottom: 32 }}>
+          {/* Page header */}
+          <div style={{ marginBottom: 28 }}>
             <h1 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 700, color: TEXT, letterSpacing: "-0.3px" }}>
               Clients
             </h1>
@@ -237,10 +321,7 @@ export default function ClientsPage({
               {" · "}
               {totalCalls} reviews
               {" · avg score "}
-              <span style={{
-                fontWeight: 600,
-                color: avgScore !== null ? scoreColor(avgScore) : FAINT,
-              }}>
+              <span style={{ fontWeight: 600, color: avgScore !== null ? scoreColor(avgScore) : FAINT }}>
                 {avgScore ?? "—"}
               </span>
               {" · "}
@@ -248,15 +329,15 @@ export default function ClientsPage({
             </p>
           </div>
 
-          {/* ── Active clients table ── */}
+          {/* Active clients table */}
           <div style={{
             background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 14, overflow: "hidden", marginBottom: 36,
+            borderRadius: 14, overflow: "hidden", marginBottom: 32,
           }}>
             {/* Column headers */}
             <div style={{
               display: "grid", gridTemplateColumns: COL,
-              padding: "9px 20px", gap: 12,
+              padding: "9px 20px", gap: 12, alignItems: "center",
               borderBottom: `1px solid ${BORDER}`,
               fontSize: 10, fontWeight: 700, letterSpacing: 1.1,
               textTransform: "uppercase", color: FAINT,
@@ -269,11 +350,10 @@ export default function ClientsPage({
               <span />
             </div>
 
-            {/* Client rows */}
             {clients.map((client, i) => {
               const meta    = metaMap[client];
               const { label, variant } = statusInfo(meta.calls, meta.score);
-              const hovered = hoveredRow === client;
+              const hovered  = hoveredRow === client;
               const subtitle = CLIENT_SUBTITLE[client] ?? "";
 
               return (
@@ -298,16 +378,10 @@ export default function ClientsPage({
                       background: logoBg(client), border: `1px solid ${BORDER2}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, fontWeight: 700, color: TEXT, letterSpacing: 0.5,
-                    }}>
-                      {logoInitials(client)}
-                    </div>
+                    }}>{logoInitials(client)}</div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {client}
-                      </div>
-                      {subtitle && (
-                        <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{subtitle}</div>
-                      )}
+                      <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
+                      {subtitle && <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{subtitle}</div>}
                     </div>
                   </div>
 
@@ -316,46 +390,33 @@ export default function ClientsPage({
                     <ScoreRing score={meta.score} />
                   </div>
 
-                  {/* Call count */}
-                  <div style={{
-                    textAlign: "center", fontSize: 13, fontWeight: 600,
-                    color: meta.calls > 0 ? TEXT : FAINT, fontFamily: MONO,
-                  }}>
+                  {/* Calls */}
+                  <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: meta.calls > 0 ? TEXT : FAINT, fontFamily: MONO }}>
                     {meta.calls > 0 ? meta.calls : "—"}
                   </div>
 
-                  {/* Status badge */}
+                  {/* Status */}
                   <div><Badge label={label} variant={variant} /></div>
 
-                  {/* Rep count */}
-                  <div style={{
-                    textAlign: "center", fontSize: 13, fontWeight: 600,
-                    color: meta.reps > 0 ? TEXT : FAINT, fontFamily: MONO,
-                  }}>
+                  {/* Reps */}
+                  <div style={{ textAlign: "center", fontSize: 13, fontWeight: 600, color: meta.reps > 0 ? TEXT : FAINT, fontFamily: MONO }}>
                     {meta.reps > 0 ? meta.reps : "—"}
                   </div>
 
-                  {/* Archive button (hover only) */}
+                  {/* Archive (hover only) */}
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) {
-                          onArchiveClient(client);
-                        }
+                        if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) onArchiveClient(client);
                       }}
                       style={{
-                        opacity: hovered ? 1 : 0,
-                        transition: "opacity 0.1s",
-                        padding: "4px 10px", borderRadius: 6,
-                        border: `1px solid ${BORDER2}`,
+                        opacity: hovered ? 1 : 0, transition: "opacity 0.1s",
+                        padding: "4px 10px", borderRadius: 6, border: `1px solid ${BORDER2}`,
                         background: "transparent", color: MUTED,
-                        fontSize: 11, fontWeight: 500,
-                        cursor: "pointer", fontFamily: FONT,
+                        fontSize: 11, fontWeight: 500, cursor: "pointer", fontFamily: FONT,
                       }}
-                    >
-                      Archive
-                    </button>
+                    >Archive</button>
                   </div>
                 </div>
               );
@@ -365,10 +426,7 @@ export default function ClientsPage({
             <div
               onMouseEnter={() => setAddHovered(true)}
               onMouseLeave={() => setAddHovered(false)}
-              onClick={() => {
-                const name = window.prompt("Client name:");
-                if (name?.trim()) onAddClient(name.trim());
-              }}
+              onClick={() => { const name = window.prompt("Client name:"); if (name?.trim()) onAddClient(name.trim()); }}
               style={{
                 display: "flex", alignItems: "center", gap: 11,
                 padding: "12px 20px", cursor: "pointer",
@@ -382,33 +440,23 @@ export default function ClientsPage({
                 fontSize: 20, lineHeight: 1,
                 color: addHovered ? GREEN : FAINT,
                 transition: "all 0.15s",
-              }}>
-                +
-              </div>
-              <span style={{
-                fontSize: 13, fontWeight: 500,
-                color: addHovered ? GREEN : FAINT,
-                transition: "color 0.15s",
-              }}>
+              }}>+</div>
+              <span style={{ fontSize: 13, fontWeight: 500, color: addHovered ? GREEN : FAINT, transition: "color 0.15s" }}>
                 Add client
               </span>
             </div>
           </div>
 
-          {/* ── Past clients ── */}
+          {/* Past clients */}
           {pastClients.length > 0 && (
             <div>
               <div style={{
                 fontSize: 10, fontWeight: 700, color: FAINT,
-                textTransform: "uppercase", letterSpacing: 1.2,
-                marginBottom: 10,
+                textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10,
               }}>
                 Past clients
               </div>
-              <div style={{
-                background: SURFACE, border: `1px solid ${BORDER}`,
-                borderRadius: 14, overflow: "hidden",
-              }}>
+              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
                 {pastClients.map((client, i) => {
                   const meta    = metaMap[client];
                   const hovered = hoveredPast === client;
@@ -425,41 +473,29 @@ export default function ClientsPage({
                         transition: "opacity 0.15s",
                       }}
                     >
-                      {/* Logo */}
                       <div style={{
                         width: 30, height: 30, borderRadius: 7, flexShrink: 0,
                         background: logoBg(client), border: `1px solid ${BORDER2}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 10, fontWeight: 700, color: TEXT,
-                      }}>
-                        {logoInitials(client)}
-                      </div>
-
-                      {/* Name + call count */}
+                      }}>{logoInitials(client)}</div>
                       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{client}</span>
                         <span style={{ fontSize: 12, color: MUTED }}>
                           {meta.calls > 0 ? `${meta.calls} call${meta.calls !== 1 ? "s" : ""}` : "No calls"}
                         </span>
                       </div>
-
-                      {/* Score ring if applicable */}
                       {meta.score !== null && <ScoreRing score={meta.score} />}
-
-                      {/* Restore (hover only) */}
                       <button
                         onClick={() => onRestoreClient(client)}
                         style={{
-                          opacity: hovered ? 1 : 0,
-                          transition: "opacity 0.15s",
+                          opacity: hovered ? 1 : 0, transition: "opacity 0.15s",
                           padding: "4px 12px", borderRadius: 20,
                           background: "rgba(49,206,129,0.12)", border: "none",
                           color: GREEN, fontSize: 11, fontWeight: 600,
                           cursor: "pointer", fontFamily: FONT,
                         }}
-                      >
-                        Restore
-                      </button>
+                      >Restore</button>
                     </div>
                   );
                 })}

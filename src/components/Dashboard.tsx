@@ -1,3 +1,6 @@
+import { useState } from "react";
+
+// ─── Design tokens ────────────────────────────────────────────────
 const GREEN  = "#31CE81";
 const AMBER  = "#F5A623";
 const RED    = "#FF4D4D";
@@ -8,7 +11,19 @@ const BORDER = "var(--border)";
 const TEXT   = "#f0f0f0";
 const TEXT2  = "#9ca3af";
 const TEXT3  = "#4b5563";
+const FAINT  = "rgba(245,243,240,0.25)";
 const FONT   = "'DM Sans', system-ui, sans-serif";
+
+// ─── Sidebar widths ───────────────────────────────────────────────
+const FULL = 220;
+const MINI = 64;
+
+function getSavedCollapsed() {
+  try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
+}
+function saveCollapsed(v: boolean) {
+  try { localStorage.setItem("sidebar_collapsed", v ? "1" : "0"); } catch {}
+}
 
 const scoreColor = (s: number) => s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
 
@@ -37,77 +52,150 @@ interface Props {
 export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "" }: Props) {
   const hour = new Date().getHours();
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const [collapsed, setCollapsed] = useState(getSavedCollapsed);
+
+  function toggle() {
+    setCollapsed(prev => { saveCollapsed(!prev); return !prev; });
+  }
+
+  const W = collapsed ? MINI : FULL;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT, fontFamily: FONT }}>
 
       {/* ── SIDEBAR ── */}
       <aside style={{
-        width: 220, flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0,
+        width: W, flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0,
         background: SURFACE, borderRight: `1px solid ${BORDER}`,
         display: "flex", flexDirection: "column", zIndex: 100,
+        transition: "width 0.2s ease", overflow: "hidden",
       }}>
+
         {/* Logo */}
-        <div style={{ padding: "24px 20px 20px" }}>
-          <img
-            src="/cuota_logo_official_White.png"
-            alt="Cuota"
-            onClick={() => onNavigate?.("home")}
-            style={{ height: 48, display: "block", maxWidth: "100%", cursor: "pointer" }}
-          />
+        <div style={{ padding: collapsed ? "20px 0" : "24px 20px 20px", display: "flex", justifyContent: collapsed ? "center" : "flex-start" }}>
+          {collapsed ? (
+            <div
+              onClick={() => onNavigate?.("home")}
+              style={{
+                width: 34, height: 34, borderRadius: 8, cursor: "pointer",
+                background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 13, fontWeight: 800, color: GREEN,
+              }}
+            >C</div>
+          ) : (
+            <img
+              src="/cuota_logo_official_White.png" alt="Cuota"
+              onClick={() => onNavigate?.("home")}
+              style={{ height: 48, display: "block", maxWidth: "100%", cursor: "pointer" }}
+            />
+          )}
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "4px 10px" }}>
-          {/* Clients */}
+        <nav style={{ flex: 1, padding: collapsed ? "4px 8px" : "4px 10px", display: "flex", flexDirection: "column", gap: 4 }}>
+          {collapsed ? (
+            <>
+              <button
+                onClick={() => onNavigate?.("clients")}
+                title="Clients"
+                style={{
+                  width: "100%", padding: "10px 0", border: "none", borderRadius: 8,
+                  background: "transparent", cursor: "pointer", display: "flex", justifyContent: "center",
+                  fontFamily: FONT,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 11, fontWeight: 700, color: TEXT2, letterSpacing: 0.5 }}>CL</span>
+              </button>
+              <button
+                onClick={onNewReview}
+                title="New Call Review"
+                style={{
+                  width: "100%", padding: "10px 0", border: "none", borderRadius: 8,
+                  background: "rgba(49,206,129,0.12)", cursor: "pointer", display: "flex", justifyContent: "center",
+                  fontFamily: FONT,
+                }}
+              >
+                <span style={{ fontSize: 16, fontWeight: 700, color: GREEN, lineHeight: 1 }}>+</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => onNavigate?.("clients")}
+                style={{
+                  display: "flex", alignItems: "center", width: "100%",
+                  padding: "9px 12px", border: "none", borderRadius: 8,
+                  background: "transparent", cursor: "pointer",
+                  fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontSize: 13, fontWeight: 500, color: TEXT2 }}>Clients</span>
+              </button>
+              <button
+                onClick={onNewReview}
+                style={{
+                  display: "flex", alignItems: "center", width: "100%",
+                  padding: "9px 12px", border: "none", borderRadius: 8,
+                  background: "rgba(49,206,129,0.12)", cursor: "pointer",
+                  fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>+ New Call Review</span>
+              </button>
+            </>
+          )}
+
+          {/* Toggle button */}
           <button
-            onClick={() => onNavigate?.("clients")}
+            onClick={toggle}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             style={{
-              display: "flex", alignItems: "center", width: "100%",
-              padding: "9px 12px", marginBottom: 4, border: "none", borderRadius: 8,
+              marginTop: "auto", width: "100%",
+              padding: collapsed ? "10px 0" : "8px 12px",
+              border: "none", borderRadius: 8,
               background: "transparent", cursor: "pointer",
-              fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
+              display: "flex", alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              fontFamily: FONT, gap: 8,
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            <span style={{ fontSize: 13, fontWeight: 500, color: TEXT2 }}>Clients</span>
-          </button>
-
-          {/* + New Call Review */}
-          <button
-            onClick={onNewReview}
-            style={{
-              display: "flex", alignItems: "center", width: "100%",
-              padding: "9px 12px", border: "none", borderRadius: 8,
-              background: "rgba(49,206,129,0.12)", cursor: "pointer",
-              fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
-            }}
-          >
-            <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>+ New Call Review</span>
+            <span style={{ fontSize: 14, color: FAINT, lineHeight: 1 }}>{collapsed ? "›" : "‹"}</span>
+            {!collapsed && <span style={{ fontSize: 11, color: FAINT }}>Collapse</span>}
           </button>
         </nav>
 
         {/* User footer */}
         <div style={{
-          padding: "16px 20px", borderTop: `1px solid ${BORDER}`,
-          display: "flex", alignItems: "center", gap: 10,
+          padding: collapsed ? "16px 0" : "16px 20px",
+          borderTop: `1px solid ${BORDER}`,
+          display: "flex", alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: 10,
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%", background: "rgba(49,206,129,0.15)",
-            border: `1px solid rgba(49,206,129,0.3)`, flexShrink: 0,
+            border: "1px solid rgba(49,206,129,0.3)", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
           }}>JV</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
-            <div style={{ fontSize: 10, color: TEXT3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>javier@cuota.io</div>
-          </div>
+          {!collapsed && (
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
+              <div style={{ fontSize: 10, color: TEXT3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>javier@cuota.io</div>
+            </div>
+          )}
         </div>
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: 220, flex: 1, padding: "40px 44px", minWidth: 0 }}>
+      <main style={{ marginLeft: W, flex: 1, padding: "40px 44px", minWidth: 0, transition: "margin-left 0.2s ease" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 36 }}>
@@ -156,7 +244,6 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
 
         {/* Client Health Table */}
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: "hidden" }}>
-          {/* Table header */}
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 180px 70px 130px 100px",
             padding: "10px 24px", gap: 16,
@@ -170,7 +257,6 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
             <span>Status</span>
           </div>
 
-          {/* Rows */}
           {CLIENTS.map((c, i) => {
             const col = scoreColor(c.score);
             const st  = statusStyle(c.status);
@@ -187,49 +273,31 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
                 onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
-                {/* Client */}
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: FONT }}>{c.name}</div>
                   <div style={{ fontSize: 11, color: TEXT3, marginTop: 2, fontFamily: FONT }}>{c.stage}</div>
                 </div>
-
-                {/* Score bar + number */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
                     <div style={{ width: `${c.score}%`, height: "100%", background: col, borderRadius: 3 }} />
                   </div>
-                  <span style={{
-                    fontSize: 12, fontWeight: 700, color: col, width: 34, textAlign: "right", flexShrink: 0,
-                    fontFamily: "'IBM Plex Mono', monospace",
-                  }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: col, width: 34, textAlign: "right", flexShrink: 0, fontFamily: "'IBM Plex Mono', monospace" }}>
                     {c.score}%
                   </span>
                 </div>
-
-                {/* Trend */}
                 <div style={{ textAlign: "center" }}>
-                  <span style={{
-                    fontSize: 13, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace",
-                    color: c.delta > 0 ? GREEN : c.delta < 0 ? RED : TEXT3,
-                  }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: c.delta > 0 ? GREEN : c.delta < 0 ? RED : TEXT3 }}>
                     {c.delta > 0 ? `↑ +${c.delta}` : c.delta < 0 ? `↓ ${c.delta}` : "— 0"}
                   </span>
                 </div>
-
-                {/* Gap */}
                 <div>
                   {c.gap !== "—"
                     ? <span style={{ fontSize: 12, fontWeight: 600, color: AMBER, background: "rgba(245,166,35,0.10)", borderRadius: 6, padding: "3px 10px", fontFamily: FONT }}>{c.gap}</span>
                     : <span style={{ fontSize: 12, color: TEXT3, fontFamily: FONT }}>—</span>
                   }
                 </div>
-
-                {/* Status */}
                 <div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, color: st.color, background: st.bg,
-                    borderRadius: 6, padding: "4px 10px", fontFamily: FONT,
-                  }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: st.color, background: st.bg, borderRadius: 6, padding: "4px 10px", fontFamily: FONT }}>
                     {c.status}
                   </span>
                 </div>
