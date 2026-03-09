@@ -2373,9 +2373,27 @@ function ScoreTrendsChart({ repEntries }) {
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
+  const [deletingRep, setDeletingRep] = useState(null);
+
+  const handleDeleteRep = async (repName, repCalls) => {
+    if (!window.confirm(`Delete all ${repCalls.length} call${repCalls.length !== 1 ? "s" : ""} for ${repName} under ${client}? This cannot be undone.`)) return;
+    setDeletingRep(repName);
+    try {
+      const t = await getValidToken();
+      const ids = repCalls.map(c => c.id).filter(Boolean);
+      if (ids.length === 0) return;
+      const table = await supabase.from("call_reviews", t);
+      await table.delete(`id=in.(${ids.join(",")})`);
+      onRefresh && onRefresh();
+    } catch (e) {
+      alert("Delete failed: " + e.message);
+    } finally {
+      setDeletingRep(null);
+    }
+  };
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
   const docCategory = (docType) => ENABLEMENT_DOC_TYPES.find(t => t.id === docType)?.category || "enablement";
 
@@ -2579,20 +2597,21 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                 </div>
               </div>
               {/* Column headers */}
-              <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px", padding: "8px 20px", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, gap: 12, borderBottom: "1px solid var(--border-subtle)" }}>
-                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span>Last Call</span>
+              <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px 28px", padding: "8px 20px", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, gap: 12, borderBottom: "1px solid var(--border-subtle)" }}>
+                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span>Last Call</span><span />
               </div>
               {filteredReps.length === 0 ? (
                 <div style={{ padding: "24px", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>No reps match your search.</div>
               ) : filteredReps.map((e, idx) => {
                 const repColor = CHART_PALETTE[repEntries.findIndex(r => r.repName === e.repName) % CHART_PALETTE.length];
+                const isDeleting = deletingRep === e.repName;
                 return (
                   <div
                     key={e.repName}
                     onClick={() => onBrowseByRep(e.repName)}
-                    style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px", padding: "12px 20px", cursor: "pointer", alignItems: "center", gap: 12, borderBottom: "1px solid var(--border-subtle)", transition: "background 0.1s" }}
-                    onMouseEnter={ev => ev.currentTarget.style.background = "var(--bg-card-hover)"}
-                    onMouseLeave={ev => ev.currentTarget.style.background = "transparent"}
+                    style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px 28px", padding: "12px 20px", cursor: "pointer", alignItems: "center", gap: 12, borderBottom: "1px solid var(--border-subtle)", transition: "background 0.1s" }}
+                    onMouseEnter={ev => { ev.currentTarget.style.background = "var(--bg-card-hover)"; ev.currentTarget.querySelector(".rep-del-btn").style.opacity = "1"; }}
+                    onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.querySelector(".rep-del-btn").style.opacity = "0"; }}
                   >
                     <span style={{ fontSize: idx < 3 ? 14 : 11, fontWeight: 700, color: idx < 3 ? "#f59e0b" : "var(--text-muted)", textAlign: "center" }}>
                       {idx + 1}
@@ -2620,6 +2639,15 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                       <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
                       <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{e.lastCall?.category_scores?.call_type || e.lastCall?.call_type || "Call"}</div>
                     </div>
+                    <button
+                      className="rep-del-btn"
+                      onClick={(ev) => { ev.stopPropagation(); handleDeleteRep(e.repName, e.repCalls); }}
+                      disabled={isDeleting}
+                      style={{ opacity: 0, width: 24, height: 24, border: "none", borderRadius: 6, background: "rgba(239,68,68,0.12)", color: "#ef4444", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontFamily: "inherit", transition: "opacity 0.15s", flexShrink: 0 }}
+                      title={`Remove ${e.repName} from ${client}`}
+                    >
+                      {isDeleting ? "…" : "×"}
+                    </button>
                   </div>
                 );
               })}
@@ -6019,6 +6047,7 @@ export default function CuotaCallReview() {
           gtmAssessments={gtmAssessments}
           profile={profile}
           onGtmUpdate={loadGtmAssessments}
+          onRefresh={loadCalls}
         />}
 
         {/* CLIENTS / SALES READINESS — "clients" is the new nav name, "calls" kept for backward compat */}
