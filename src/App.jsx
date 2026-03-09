@@ -2272,9 +2272,9 @@ function ScoreTrendsChart({ repEntries }) {
   const repNames = [...new Set(repEntries.map(e => e.repName))];
 
   return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
+    <div style={{ background: "var(--bg-card)", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)", overflow: "hidden", marginBottom: 20, marginLeft: -40, marginRight: -40 }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 12px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 40px 12px" }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Score Trend</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
