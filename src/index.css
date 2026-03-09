@@ -40,7 +40,7 @@
   --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12);
   --purple: #a855f7; --purple-dim: rgba(168,85,247,0.12);
 }
-body { background: var(--bg); color: var(--text-1); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { background: var(--bg); color: var(--text-1); font-family: 'Syne', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }

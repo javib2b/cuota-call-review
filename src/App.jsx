@@ -254,7 +254,7 @@ function CircularScore({ score, size = 120, strokeWidth = 8, label }) {
         <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth} strokeDasharray={c} strokeDashoffset={o} strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease-out" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontSize: size * 0.3, fontWeight: 700, color, fontFamily: "'Space Mono', monospace" }}>{score}</span>
+        <span style={{ fontSize: size * 0.3, fontWeight: 700, color, fontFamily: "'IBM Plex Mono', monospace" }}>{score}</span>
         {label && <span style={{ fontSize: 10, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>}
       </div>
     </div>
@@ -400,11 +400,11 @@ function AuthScreen({ onAuth }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne', system-ui, sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
       <div style={{ width: 400, padding: 40 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text-1)", letterSpacing: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text-1)", letterSpacing: 2, fontFamily: "'Syne', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
           <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4, letterSpacing: 1 }}>GTM Audit Engine</div>
         </div>
         <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 28 }}>
@@ -448,7 +448,7 @@ function CategoryBar({ category, scores, onScoreChange }) {
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)", lineHeight: 1.3 }}>{category.name}</span>
         <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
           <button onClick={() => onScoreChange(category.id, Math.max(0, score - 1))} style={{ width: 24, height: 24, border: "1px solid var(--text-3)", borderRadius: 6, background: "var(--surface)", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "var(--text-2)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
-          <span style={{ width: 26, textAlign: "center", fontSize: 13, fontWeight: 700, color, fontFamily: "'Space Mono', monospace" }}>{score}</span>
+          <span style={{ width: 26, textAlign: "center", fontSize: 13, fontWeight: 700, color, fontFamily: "'IBM Plex Mono', monospace" }}>{score}</span>
           <button onClick={() => onScoreChange(category.id, Math.min(10, score + 1))} style={{ width: 24, height: 24, border: "1px solid var(--text-3)", borderRadius: 6, background: "var(--surface)", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "var(--text-2)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
         </div>
       </div>
@@ -808,7 +808,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         </div>
         {sortedAeCalls.length > 1 && (
           <div style={{ textAlign: "right" }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: delta >= 0 ? "#31CE81" : "#ef4444", fontFamily: "'Space Mono', monospace" }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: delta >= 0 ? "#31CE81" : "#ef4444", fontFamily: "'IBM Plex Mono', monospace" }}>
               {delta >= 0 ? "+" : ""}{delta} pts
             </span>
             <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{firstScore} &rarr; {latestScore}</div>
@@ -843,7 +843,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             {strong.map(p => (
               <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
                 <span style={{ fontSize: 12, color: "var(--text-2)" }}>{p.name}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'IBM Plex Mono', monospace" }}>{p.avg}/10</span>
               </div>
             ))}
           </div>
@@ -852,7 +852,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             {weak.map(p => (
               <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
                 <span style={{ fontSize: 12, color: "var(--text-2)" }}>{p.name}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'Space Mono', monospace" }}>{p.avg}/10</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(p.avg), fontFamily: "'IBM Plex Mono', monospace" }}>{p.avg}/10</span>
               </div>
             ))}
           </div>
@@ -1768,7 +1768,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
   }).filter(c => c.hasData);
 
   const sc = (score) => score !== null
-    ? <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(score), fontFamily: "'Space Mono', monospace" }}>{score}%</span>
+    ? <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(score), fontFamily: "'IBM Plex Mono', monospace" }}>{score}%</span>
     : <span style={{ fontSize: 11, color: "var(--text-3)" }}>—</span>;
 
   const hour = new Date().getHours();
@@ -1785,7 +1785,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onCmdK} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 10, color: "var(--text-secondary)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
             <span>Search</span>
-            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'Space Mono', monospace" }}>⌘K</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'IBM Plex Mono', monospace" }}>⌘K</span>
           </button>
           <button onClick={onNewReview} style={{ padding: "8px 16px", background: "#31CE81", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
         </div>
@@ -1795,12 +1795,12 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
         <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Reviews This Month</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{reviewsThisMonth}</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{reviewsThisMonth}</div>
           <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>last 30 days</div>
         </div>
         <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Avg Score</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: avgCallScore !== null ? getScoreColor(avgCallScore) : "var(--text-3)", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: avgCallScore !== null ? getScoreColor(avgCallScore) : "var(--text-3)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
           <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
             {scoreTrend !== null ? (
               <span style={{ color: scoreTrend >= 0 ? "#31CE81" : "#ef4444", fontWeight: 600 }}>
@@ -1811,7 +1811,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
         </div>
         <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Active Clients</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
           <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>in workspace</div>
         </div>
       </div>
@@ -1891,7 +1891,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
               <p style={{ fontSize: 13, color: "var(--text-2)", margin: 0 }}>Full-funnel assessment of your sales organization's go-to-market execution</p>
               {overallGtmScore !== null && (
                 <div style={{ textAlign: "center", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "14px 22px", flexShrink: 0, marginLeft: 20 }}>
-                  <div style={{ fontSize: 32, fontWeight: 800, color: getScoreColor(overallGtmScore), fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{overallGtmScore}%</div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: getScoreColor(overallGtmScore), fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{overallGtmScore}%</div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginTop: 6 }}>Overall GTM Score</div>
                   <AuditStatusBadge score={overallGtmScore} />
                 </div>
@@ -1906,7 +1906,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
                       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{sec.label}</div>
                     </div>
                     {sec.score !== null
-                      ? <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 20, fontWeight: 700, color: getScoreColor(sec.score) }}>{sec.score}%</div>
+                      ? <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 20, fontWeight: 700, color: getScoreColor(sec.score) }}>{sec.score}%</div>
                       : <div style={{ fontSize: 11, color: "var(--text-3)" }}>—</div>}
                   </div>
                   <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0, lineHeight: 1.55 }}>{sec.desc}</p>
@@ -2071,7 +2071,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
                   </div>
                   {doc.overall_score ? (
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(doc.overall_score), fontFamily: "'Space Mono', monospace" }}>{doc.overall_score}%</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(doc.overall_score), fontFamily: "'IBM Plex Mono', monospace" }}>{doc.overall_score}%</div>
                       <div style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase" }}>{getScoreLabel(doc.overall_score)}</div>
                     </div>
                   ) : <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0 }}>Not analyzed</span>}
@@ -2143,7 +2143,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
                     <div key={key}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                         <span style={{ fontSize: 12, color: "var(--text-2)", fontWeight: 500 }}>{label}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor10(val.score), fontFamily: "'Space Mono', monospace" }}>{val.score}/10</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor10(val.score), fontFamily: "'IBM Plex Mono', monospace" }}>{val.score}/10</span>
                       </div>
                       <div style={{ height: 4, background: "var(--border-soft)", borderRadius: 4 }}>
                         <div style={{ height: "100%", width: pct + "%", background: getScoreColor10(val.score), borderRadius: 4 }} />
@@ -2282,7 +2282,7 @@ function ScoreTrendsChart({ repEntries }) {
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Score Trend</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-            <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{overallAvg}%</span>
+            <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{overallAvg}%</span>
             {trendDelta !== null && <span style={{ fontSize: 14, fontWeight: 700, color: trendColor }}>{trendLabel}</span>}
           </div>
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>{allCalls.length} call{allCalls.length !== 1 ? "s" : ""} · {repEntries.length} rep{repEntries.length !== 1 ? "s" : ""}</div>
@@ -2364,7 +2364,7 @@ function ScoreTrendsChart({ repEntries }) {
         {/* Tooltip */}
         {tooltip && (
           <div style={{ position: "absolute", left: Math.min(tooltip.x + 14, 220), top: Math.max(4, tooltip.y - 60), background: "var(--bg-primary)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "10px 14px", fontSize: 12, pointerEvents: "none", zIndex: 20, whiteSpace: "nowrap" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: tooltip.color, fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>{tooltip.score}%</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: tooltip.color, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>{tooltip.score}%</div>
             <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>{tooltip.rep}</div>
             <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{tooltip.type} · {tooltip.date}</div>
           </div>
@@ -2489,7 +2489,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>{docTypeLabel(doc.doc_type)}{doc.created_at ? ` · ${new Date(doc.created_at).toLocaleDateString()}` : ""}</div>
       </div>
       {doc.overall_score
-        ? <div style={{ fontSize: 14, fontWeight: 700, color: getScoreColor(doc.overall_score), fontFamily: "'Space Mono', monospace", flexShrink: 0 }}>{doc.overall_score}%</div>
+        ? <div style={{ fontSize: 14, fontWeight: 700, color: getScoreColor(doc.overall_score), fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>{doc.overall_score}%</div>
         : <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0 }}>Not scored</span>}
     </div>
   );
@@ -2540,7 +2540,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           </div>
           {avgCallScore !== null && (
             <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 52, fontWeight: 900, color: "#fff", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
+              <div style={{ fontSize: 52, fontWeight: 900, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
               <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Avg Score</div>
               <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(99,102,241,0.35)", color: "rgba(255,255,255,0.9)" }}>{getScoreLabel(avgCallScore)}</span>
@@ -2634,7 +2634,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                       <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
                         <div style={{ width: `${e.avg}%`, height: "100%", background: getScoreColor(e.avg), borderRadius: 2 }} />
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: getScoreColor(e.avg), fontFamily: "'Space Mono', monospace", width: 34, flexShrink: 0, textAlign: "right" }}>{e.avg}%</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: getScoreColor(e.avg), fontFamily: "'IBM Plex Mono', monospace", width: 34, flexShrink: 0, textAlign: "right" }}>{e.avg}%</span>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       {e.trend !== null
@@ -2986,7 +2986,7 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
               </div>
               {item.overall_score ? (
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(item.overall_score), fontFamily: "'Space Mono', monospace" }}>{item.overall_score}%</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(item.overall_score), fontFamily: "'IBM Plex Mono', monospace" }}>{item.overall_score}%</div>
                   <AuditStatusBadge score={item.overall_score} />
                 </div>
               ) : <span style={{ fontSize: 11, color: "var(--text-3)" }}>Not analyzed</span>}
@@ -3107,7 +3107,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
                   </div>
                   {snap.overall_score ? (
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(snap.overall_score), fontFamily: "'Space Mono', monospace" }}>{snap.overall_score}%</div>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(snap.overall_score), fontFamily: "'IBM Plex Mono', monospace" }}>{snap.overall_score}%</div>
                       <div style={{ fontSize: 10, color: "var(--text-3)", textTransform: "uppercase" }}>health</div>
                     </div>
                   ) : <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0 }}>Not analyzed</span>}
@@ -3194,7 +3194,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
               {analysis.key_metrics.map((m, i) => (
                 <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "var(--text-1)", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginTop: 4 }}>{m.label}</div>
                   {m.note && <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6, lineHeight: 1.4 }}>{m.note}</div>}
                 </div>
@@ -3261,7 +3261,7 @@ function AdminDashboard({ allCalls }) {
           { label: "Avg Score", value: avgScore + "%", color: getScoreColor(avgScore) },
         ].map((card, i) => (
           <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-            <div style={{ fontSize: 28, fontWeight: 700, color: card.color, fontFamily: "'Space Mono', monospace" }}>{card.value}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: card.color, fontFamily: "'IBM Plex Mono', monospace" }}>{card.value}</div>
             <div style={{ fontSize: 10, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{card.label}</div>
           </div>
         ))}
@@ -3293,7 +3293,7 @@ function AdminDashboard({ allCalls }) {
               <div style={{ flex: 1, height: 8, background: "var(--border-soft)", borderRadius: 4 }}>
                 <div style={{ height: "100%", width: pct + "%", background: getScoreColor10(avg), borderRadius: 4, transition: "width 0.5s" }} />
               </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(avg), fontFamily: "'Space Mono', monospace", width: 50, textAlign: "right" }}>{avg}/10</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: getScoreColor10(avg), fontFamily: "'IBM Plex Mono', monospace", width: 50, textAlign: "right" }}>{avg}/10</span>
             </div>
           );
         })}
@@ -3358,7 +3358,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
                 <div key={i}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{s.category}</span>
-                    <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, fontWeight: 700, color: statusColor }}>{s.score}%</span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 700, color: statusColor }}>{s.score}%</span>
                   </div>
                   <div style={{ height: 4, background: "var(--border-soft)", borderRadius: 4, overflow: "hidden", marginBottom: 4 }}>
                     <div style={{ width: `${s.score}%`, height: "100%", background: statusColor, borderRadius: 4, transition: "width 0.6s ease" }} />
@@ -3375,7 +3375,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
           {analysis.key_metrics.map((m, i) => (
             <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 19, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "var(--text-1)", fontFamily: "'Space Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
+              <div style={{ fontSize: 19, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
               <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginTop: 4 }}>{m.label}</div>
               {m.benchmark && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Benchmark: {m.benchmark}</div>}
             </div>
@@ -3461,7 +3461,7 @@ function AssessmentListView({ title, emoji, accentColor, assessments, onNew, onV
                 </div>
                 {item.overall_score ? (
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(item.overall_score), fontFamily: "'Space Mono', monospace" }}>{item.overall_score}%</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(item.overall_score), fontFamily: "'IBM Plex Mono', monospace" }}>{item.overall_score}%</div>
                     <AuditStatusBadge score={item.overall_score} />
                   </div>
                 ) : <span style={{ fontSize: 11, color: "var(--text-3)" }}>Not analyzed</span>}
@@ -4020,7 +4020,7 @@ function ReportPage({ report, onBack }) {
         @media print {
           .no-print { display: none !important; }
           .print-show-all { display: block !important; }
-          body { background: white !important; font-family: 'DM Sans', system-ui, sans-serif; }
+          body { background: white !important; font-family: 'Syne', system-ui, sans-serif; }
         }
       `}</style>
 
@@ -4087,7 +4087,7 @@ function ReportPage({ report, onBack }) {
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: statusColor, fontFamily: "'Space Mono', monospace" }}>{dim.score}%</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: statusColor, fontFamily: "'IBM Plex Mono', monospace" }}>{dim.score}%</div>
                         <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{isExpanded ? "▲" : "▼"}</div>
                       </div>
                     </div>
@@ -4110,7 +4110,7 @@ function ReportPage({ report, onBack }) {
                               <div key={i} style={{ marginBottom: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
                                   <span style={{ fontSize: 12, color: "var(--text-1)" }}>{ss.category}</span>
-                                  <span style={{ fontSize: 12, fontWeight: 700, color: ssColor, fontFamily: "'Space Mono', monospace" }}>{ss.score}%</span>
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: ssColor, fontFamily: "'IBM Plex Mono', monospace" }}>{ss.score}%</span>
                                 </div>
                                 <div style={{ height: 3, background: "var(--border-soft)", borderRadius: 3 }}>
                                   <div style={{ width: `${ss.score}%`, height: "100%", background: ssColor, borderRadius: 3 }} />
@@ -4148,7 +4148,7 @@ function ReportPage({ report, onBack }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {priorityGaps.map((gap, i) => (
               <div key={i} style={{ display: "flex", gap: 14, padding: "14px 16px", background: sevBg(gap.severity), border: `1px solid ${sevColor(gap.severity)}30`, borderRadius: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: 22, color: sevColor(gap.severity), fontFamily: "'Space Mono', monospace", lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>{gap.rank}</div>
+                <div style={{ fontWeight: 800, fontSize: 22, color: sevColor(gap.severity), fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>{gap.rank}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{gap.title}</span>
@@ -4776,7 +4776,7 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
                     const score = results[`${frame.toLowerCase()}_score`] || 0;
                     return (
                       <div key={frame} style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{Math.round(score)}</div>
+                        <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{Math.round(score)}</div>
                         <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: 1, margin: "5px 0 8px" }}>{frame}</div>
                         <div style={{ height: 4, background: "rgba(0,0,0,0.07)", borderRadius: 2 }}>
                           <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 2, transition: "width 0.4s ease" }} />
@@ -4839,7 +4839,7 @@ const SLIDE_TYPE_LABELS = {
 
 function SlideTitle({ data, primary, accent, prospectCompany, client, companyName }) {
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ width: "55%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box" }}>
         {companyName && <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 22 }}>{companyName}</div>}
         <div style={{ fontSize: 40, fontWeight: 700, color: "#ffffff", lineHeight: 1.15, marginBottom: 16 }}>{data.title || "Sales Deck"}</div>
@@ -4858,7 +4858,7 @@ function SlideTitle({ data, primary, accent, prospectCompany, client, companyNam
 function SlideAgenda({ data, primary, accent }) {
   const items = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "36px 52px", boxSizing: "border-box", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "36px 52px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 6 }}>Agenda</div>
       <div style={{ fontSize: 24, fontWeight: 700, color: primary, marginBottom: 22 }}>{data.title || "Today's Agenda"}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -4876,7 +4876,7 @@ function SlideAgenda({ data, primary, accent }) {
 function SlideProblem({ data, primary, accent }) {
   const items = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ width: "42%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
         <div style={{ fontSize: 34, marginBottom: 14, lineHeight: 1 }}>⚠</div>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>The Problem</div>
@@ -4896,7 +4896,7 @@ function SlideProblem({ data, primary, accent }) {
 function SlideSolution({ data, primary, accent }) {
   const items = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ width: "58%", height: "100%", background: "#ffffff", padding: "30px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
         {items.slice(0, 4).map((item, i) => (
           <div key={i} style={{ padding: "10px 14px", borderLeft: `3px solid ${accent}`, background: "rgba(49,206,129,0.04)", borderRadius: "0 6px 6px 0" }}>
@@ -4915,7 +4915,7 @@ function SlideSolution({ data, primary, accent }) {
 
 function SlideProof({ data, primary, accent }) {
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 60px", boxSizing: "border-box", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 60px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 18 }}>Social Proof</div>
       {data.quote && (
         <div style={{ fontSize: 18, fontStyle: "italic", color: "#ffffff", lineHeight: 1.65, marginBottom: 14, borderLeft: `4px solid ${accent}`, paddingLeft: 22 }}>"{data.quote}"</div>
@@ -4939,13 +4939,13 @@ function SlideProof({ data, primary, accent }) {
 function SlideRoi({ data, primary, accent }) {
   const metrics = data.metrics || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 48px", boxSizing: "border-box", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 48px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Return on Investment</div>
       <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 16 }}>{data.title || "Expected ROI"}</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, height: 270 }}>
         {metrics.slice(0, 4).map((m, i) => (
           <div key={i} style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12 }}>
-            <div style={{ fontSize: 42, fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 6, fontFamily: "'Space Mono', monospace" }}>{typeof m === "string" ? m : m.value}</div>
+            <div style={{ fontSize: 42, fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 6, fontFamily: "'IBM Plex Mono', monospace" }}>{typeof m === "string" ? m : m.value}</div>
             <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", textAlign: "center" }}>{typeof m === "string" ? "" : m.label}</div>
           </div>
         ))}
@@ -4957,7 +4957,7 @@ function SlideRoi({ data, primary, accent }) {
 function SlideTimeline({ data, primary, accent }) {
   const steps = data.steps || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 40px", boxSizing: "border-box", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 40px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Timeline</div>
       <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 28 }}>{data.title || "Implementation Plan"}</div>
       <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
@@ -4977,7 +4977,7 @@ function SlideTimeline({ data, primary, accent }) {
 function SlideCta({ data, primary, accent }) {
   const points = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ width: "50%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 40px", boxSizing: "border-box" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 12 }}>Next Steps</div>
         <div style={{ fontSize: 32, fontWeight: 700, color: "#ffffff", lineHeight: 1.2, marginBottom: 12 }}>{data.title || "Let's build this together"}</div>
@@ -5001,7 +5001,7 @@ function SlideCta({ data, primary, accent }) {
 function SlideFeatures({ data, primary, accent }) {
   const cols = data.columns || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", boxSizing: "border-box", fontFamily: "'DM Sans', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ height: 54, display: "flex", alignItems: "center", background: primary, padding: "0 40px" }}>
         <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{data.title || "Key Differentiators"}</span>
       </div>
@@ -5174,7 +5174,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
   const currentSlide = slides?.[activeSlide];
 
   return (
-    <div style={{ margin: "-32px -40px", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div style={{ margin: "-32px -40px", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Syne', system-ui, sans-serif" }}>
 
       {/* TOPBAR */}
       <div style={{ height: 52, flexShrink: 0, background: "var(--surface-3)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
@@ -5249,7 +5249,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
                   {renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName)}
                 </div>
               </div>
-              <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: "'Space Mono', monospace" }}>
+              <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: "'IBM Plex Mono', monospace" }}>
                 {activeSlide + 1} / {slides.length}
               </div>
             </>
@@ -5416,7 +5416,7 @@ function CmdKPalette({ open, onClose, onNavigate, onNewReview, savedCalls }) {
               {filteredQuick.map(item => row(item, (active) => (
                 <>
                   <span style={{ fontSize: 13, color: active ? "#31CE81" : "var(--text-primary)" }}>+ {item.label}</span>
-                  {item.shortcut && <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'Space Mono', monospace" }}>{item.shortcut}</span>}
+                  {item.shortcut && <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'IBM Plex Mono', monospace" }}>{item.shortcut}</span>}
                 </>
               )))}
             </>
@@ -5977,8 +5977,8 @@ export default function CuotaCallReview() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'Syne', system-ui, sans-serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
@@ -6157,11 +6157,11 @@ export default function CuotaCallReview() {
             <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "12px 18px", marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                  <span style={{ fontSize: 40, fontWeight: 700, lineHeight: 1, color: getScoreColor(overallScore), fontFamily: "'Space Mono', monospace" }}>{overallScore}</span>
+                  <span style={{ fontSize: 40, fontWeight: 700, lineHeight: 1, color: getScoreColor(overallScore), fontFamily: "'IBM Plex Mono', monospace" }}>{overallScore}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(overallScore), background: getScoreColor(overallScore) + "18", padding: "3px 10px", borderRadius: 20, textTransform: "uppercase", letterSpacing: 1 }}>{getScoreLabel(overallScore)}</span>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", fontFamily: "'Space Mono', monospace" }}>{totalRaw} / {activeCategories.length * 10} pts</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", fontFamily: "'IBM Plex Mono', monospace" }}>{totalRaw} / {activeCategories.length * 10} pts</div>
                   <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{activeCategories.length} categories</div>
                 </div>
               </div>
