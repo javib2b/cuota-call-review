@@ -5996,14 +5996,17 @@ export default function CuotaCallReview() {
     />
   );
 
-  if (page === "rep" && selectedClientProfile && selectedRep) {
-    const repCalls = savedCalls.filter(c =>
-      (c.category_scores?.client === selectedClientProfile || (c.prospect_company || "").toLowerCase() === selectedClientProfile.toLowerCase()) &&
-      (c.category_scores?.rep_name === selectedRep || c.rep_name === selectedRep)
-    );
+  if (page === "rep" && selectedRep) {
+    const repCalls = savedCalls.filter(c => {
+      const clientMatch = !selectedClientProfile ||
+        c.category_scores?.client === selectedClientProfile ||
+        (c.prospect_company || "").toLowerCase().includes(selectedClientProfile.toLowerCase());
+      const repMatch = c.category_scores?.rep_name === selectedRep || c.rep_name === selectedRep;
+      return clientMatch && repMatch;
+    });
     return (
       <RepDetailPage
-        client={selectedClientProfile}
+        client={selectedClientProfile || ""}
         repName={selectedRep}
         repCalls={repCalls}
         onBack={() => setPage("client")}
