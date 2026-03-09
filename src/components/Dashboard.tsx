@@ -1,13 +1,14 @@
 const GREEN  = "#31CE81";
 const AMBER  = "#F5A623";
 const RED    = "#FF4D4D";
-const BG     = "#0a0d14";
-const SURFACE = "#0f1117";
-const CARD   = "#1a1f2e";
-const BORDER = "rgba(255,255,255,0.08)";
+const BG     = "#011e38";
+const SURFACE = "#062035";
+const CARD   = "#062035";
+const BORDER = "rgba(255,255,255,0.07)";
 const TEXT   = "#f0f0f0";
 const TEXT2  = "#9ca3af";
 const TEXT3  = "#4b5563";
+const FONT   = "'DM Sans', system-ui, sans-serif";
 
 const scoreColor = (s: number) => s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
 
@@ -37,7 +38,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT, fontFamily: "'Syne', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT, fontFamily: FONT }}>
 
       {/* ── SIDEBAR ── */}
       <aside style={{
@@ -64,7 +65,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
               display: "flex", alignItems: "center", width: "100%",
               padding: "9px 12px", marginBottom: 4, border: "none", borderRadius: 8,
               background: "transparent", cursor: "pointer",
-              fontFamily: "inherit", textAlign: "left", boxSizing: "border-box",
+              fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
             }}
             onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
@@ -79,7 +80,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
               display: "flex", alignItems: "center", width: "100%",
               padding: "9px 12px", border: "none", borderRadius: 8,
               background: "rgba(49,206,129,0.12)", cursor: "pointer",
-              fontFamily: "inherit", textAlign: "left", boxSizing: "border-box",
+              fontFamily: FONT, textAlign: "left", boxSizing: "border-box",
             }}
           >
             <span style={{ fontSize: 13, fontWeight: 700, color: GREEN }}>+ New Call Review</span>
@@ -95,7 +96,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
             width: 32, height: 32, borderRadius: "50%", background: "rgba(49,206,129,0.15)",
             border: `1px solid rgba(49,206,129,0.3)`, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 700, color: GREEN,
+            fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
           }}>JV</div>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
@@ -109,7 +110,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 36 }}>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 600, color: TEXT, lineHeight: 1.2 }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 600, color: TEXT, lineHeight: 1.2, fontFamily: FONT }}>
             Good {tod},{" "}
             <em style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontWeight: 400, color: GREEN }}>
               Javier
@@ -120,7 +121,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
             style={{
               padding: "10px 20px", border: "none", borderRadius: 10,
               background: GREEN, color: "#fff", fontSize: 13, fontWeight: 700,
-              cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+              cursor: "pointer", fontFamily: FONT, flexShrink: 0,
             }}
           >
             + New Review
@@ -139,7 +140,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
               background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
               padding: "22px 22px",
             }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: TEXT3, textTransform: "uppercase", marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: TEXT3, textTransform: "uppercase", marginBottom: 12, fontFamily: FONT }}>
                 {k.label}
               </div>
               <div style={{
@@ -159,7 +160,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
             display: "grid", gridTemplateColumns: "1fr 180px 70px 130px 100px",
             padding: "10px 24px", gap: 16,
             borderBottom: `1px solid ${BORDER}`,
-            fontSize: 10, fontWeight: 700, color: TEXT3, textTransform: "uppercase", letterSpacing: 1.2,
+            fontSize: 10, fontWeight: 700, color: TEXT3, textTransform: "uppercase", letterSpacing: 1.2, fontFamily: FONT,
           }}>
             <span>Client</span>
             <span>Score</span>
@@ -186,8 +187,8 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
               >
                 {/* Client */}
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{c.name}</div>
-                  <div style={{ fontSize: 11, color: TEXT3, marginTop: 2 }}>{c.stage}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: FONT }}>{c.name}</div>
+                  <div style={{ fontSize: 11, color: TEXT3, marginTop: 2, fontFamily: FONT }}>{c.stage}</div>
                 </div>
 
                 {/* Score bar + number */}
@@ -216,8 +217,8 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
                 {/* Gap */}
                 <div>
                   {c.gap !== "—"
-                    ? <span style={{ fontSize: 12, fontWeight: 600, color: AMBER, background: "rgba(245,166,35,0.10)", borderRadius: 6, padding: "3px 10px" }}>{c.gap}</span>
-                    : <span style={{ fontSize: 12, color: TEXT3 }}>—</span>
+                    ? <span style={{ fontSize: 12, fontWeight: 600, color: AMBER, background: "rgba(245,166,35,0.10)", borderRadius: 6, padding: "3px 10px", fontFamily: FONT }}>{c.gap}</span>
+                    : <span style={{ fontSize: 12, color: TEXT3, fontFamily: FONT }}>—</span>
                   }
                 </div>
 
@@ -225,7 +226,7 @@ export default function Dashboard({ onNavigate, onNewReview, userEmail = "" }: P
                 <div>
                   <span style={{
                     fontSize: 11, fontWeight: 700, color: st.color, background: st.bg,
-                    borderRadius: 6, padding: "4px 10px",
+                    borderRadius: 6, padding: "4px 10px", fontFamily: FONT,
                   }}>
                     {c.status}
                   </span>
