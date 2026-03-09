@@ -1675,7 +1675,7 @@ function AuditStatusBadge({ score }) {
   return <span style={{ fontSize: 11, fontWeight: 600, color, background: bg, padding: "2px 8px", borderRadius: 6 }}>{label}</span>;
 }
 
-function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, tofAssessments, hiringAssessments, metricsAssessments, clients, onNavigate, onClientClick }) {
+function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, tofAssessments, hiringAssessments, metricsAssessments, clients, onNavigate, onClientClick, userEmail, onCmdK, onNewReview }) {
   const [showGtmSummary, setShowGtmSummary] = useState(false);
 
   // Stats
@@ -1767,9 +1767,25 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
     ? <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(score), fontFamily: "'Space Mono', monospace" }}>{score}%</span>
     : <span style={{ fontSize: 11, color: "var(--text-3)" }}>—</span>;
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const rawName = userEmail ? userEmail.split("@")[0].split(".")[0] : "";
+  const displayName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : "";
+
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-1)", margin: "0 0 24px" }}>Dashboard</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-1)", margin: 0 }}>
+          {greeting}{displayName ? `, ${displayName}` : ""}
+        </h1>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCmdK} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 10, color: "var(--text-secondary)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+            <span>Search</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'Space Mono', monospace" }}>⌘K</span>
+          </button>
+          <button onClick={onNewReview} style={{ padding: "8px 16px", background: "#31CE81", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Review</button>
+        </div>
+      </div>
 
       {/* Section A: Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
@@ -5278,6 +5294,135 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
   );
 }
 
+function CmdKPalette({ open, onClose, onNavigate, onNewReview, savedCalls }) {
+  const [query, setQuery] = useState("");
+  const [highlighted, setHighlighted] = useState(0);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setHighlighted(0);
+      setTimeout(() => inputRef.current?.focus(), 40);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const recentCalls = [...savedCalls]
+    .sort((a, b) => new Date(b.call_date || b.created_at) - new Date(a.call_date || a.created_at))
+    .slice(0, 5);
+
+  const quickActions = [
+    { label: "New Review", shortcut: "⌘N", action: () => { onNewReview(); onClose(); } },
+    { label: "Create Deck", shortcut: "⌘D", action: () => { onNavigate("deck"); onClose(); } },
+  ];
+  const navItems = [
+    { label: "Home", action: () => { onNavigate("home"); onClose(); } },
+    { label: "Clients", action: () => { onNavigate("clients"); onClose(); } },
+    { label: "Reviews", action: () => { onNavigate("reviews"); onClose(); } },
+    { label: "Decks", action: () => { onNavigate("deck"); onClose(); } },
+  ];
+
+  const q = query.toLowerCase();
+  const filteredQuick = q ? quickActions.filter(i => i.label.toLowerCase().includes(q)) : quickActions;
+  const filteredNav = q ? navItems.filter(i => i.label.toLowerCase().includes(q)) : navItems;
+  const filteredRecent = q
+    ? recentCalls.filter(c => {
+        const text = [c.category_scores?.client, c.category_scores?.rep_name, c.prospect_company].filter(Boolean).join(" ").toLowerCase();
+        return text.includes(q);
+      })
+    : recentCalls;
+
+  const allItems = [
+    ...filteredQuick.map(i => ({ ...i, kind: "quick" })),
+    ...filteredNav.map(i => ({ ...i, kind: "nav" })),
+    ...filteredRecent.map(c => ({
+      label: c.id,
+      kind: "recent",
+      call: c,
+      action: () => onClose(),
+    })),
+  ];
+
+  const handleKey = (e) => {
+    if (e.key === "Escape") { onClose(); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted(h => Math.min(h + 1, allItems.length - 1)); return; }
+    if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted(h => Math.max(h - 1, 0)); return; }
+    if (e.key === "Enter" && allItems[highlighted]) { allItems[highlighted].action(); return; }
+  };
+
+  const formatDate = (call) => {
+    const d = call.call_date || call.created_at;
+    return d ? new Date(d + (call.call_date ? "T00:00:00" : "")).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+  };
+
+  let idx = 0;
+  const row = (item, content) => {
+    const i = idx++;
+    const active = highlighted === i;
+    return (
+      <div key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", cursor: "pointer", background: active ? "rgba(49,206,129,0.10)" : "transparent", transition: "background 0.1s" }} onMouseEnter={() => setHighlighted(i)}>
+        {content(active)}
+      </div>
+    );
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9999, backdropFilter: "blur(4px)", background: "rgba(0,0,0,0.6)", display: "flex", justifyContent: "center", alignItems: "flex-start", paddingTop: "20vh" }}>
+      <div onClick={e => e.stopPropagation()} onKeyDown={handleKey} style={{ width: 560, background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 16, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+          <input ref={inputRef} value={query} onChange={e => { setQuery(e.target.value); setHighlighted(0); }} placeholder="Search or jump to…" style={{ width: "100%", background: "transparent", border: "none", outline: "none", fontSize: 15, color: "var(--text-primary)", fontFamily: "inherit", padding: 0 }} />
+        </div>
+        <div style={{ maxHeight: 420, overflowY: "auto" }}>
+          {filteredQuick.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", padding: "10px 16px 4px" }}>Quick Actions</div>
+              {filteredQuick.map(item => row(item, (active) => (
+                <>
+                  <span style={{ fontSize: 13, color: active ? "#31CE81" : "var(--text-primary)" }}>+ {item.label}</span>
+                  {item.shortcut && <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "'Space Mono', monospace" }}>{item.shortcut}</span>}
+                </>
+              )))}
+            </>
+          )}
+          {filteredNav.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", padding: "10px 16px 4px" }}>Navigate</div>
+              {filteredNav.map(item => row(item, (active) => (
+                <span style={{ fontSize: 13, color: active ? "#31CE81" : "var(--text-primary)" }}>{item.label}</span>
+              )))}
+            </>
+          )}
+          {filteredRecent.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", padding: "10px 16px 4px" }}>Recent</div>
+              {filteredRecent.map(call => row({ action: () => onClose() }, (active) => {
+                const client = call.category_scores?.client || call.prospect_company || "—";
+                const rep = call.category_scores?.rep_name || call.rep_name || "";
+                const type = call.category_scores?.call_type || call.call_type || "";
+                const date = formatDate(call);
+                return (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: active ? "#31CE81" : "var(--text-primary)" }}>{client}</span>
+                    {rep && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>· {rep}</span>}
+                    {type && <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>· {type}</span>}
+                    {date && <span style={{ fontSize: 12, color: "var(--text-muted)" }}>· {date}</span>}
+                  </div>
+                );
+              }))}
+            </>
+          )}
+          {allItems.length === 0 && (
+            <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--text-muted)", fontSize: 13 }}>No results for "{query}"</div>
+          )}
+          <div style={{ height: 8 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -5305,6 +5450,7 @@ export default function CuotaCallReview() {
   const [clientPageTab, setClientPageTab] = useState("calls");
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
   const [sidebarSections, setSidebarSections] = useState({ clients: false, assessments: false, admin: false });
+  const [cmdKOpen, setCmdKOpen] = useState(false);
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -5582,6 +5728,20 @@ export default function CuotaCallReview() {
     return () => clearInterval(interval);
   }, [session?.refresh_token, refreshSessionToken]);
 
+  // Global keyboard shortcuts: ⌘K → command palette, ⌘N → new review
+  useEffect(() => {
+    if (!session) return;
+    const handler = (e) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (meta && e.key === "k") { e.preventDefault(); setCmdKOpen(o => !o); return; }
+      if (meta && e.key === "n") { e.preventDefault(); setCmdKOpen(false); startNewReview(); return; }
+      if (e.key === "Escape") { setCmdKOpen(false); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
   const handleAuth = async (data) => {
     const accessToken = data.access_token || data.session?.access_token;
     const refreshToken = data.refresh_token || data.session?.refresh_token;
@@ -5788,26 +5948,19 @@ export default function CuotaCallReview() {
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
 
+      {/* COMMAND PALETTE */}
+      <CmdKPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={(p) => { setPage(p); if (p === "clients") { setFolderClient(null); setFolderAE(null); } }} onNewReview={startNewReview} savedCalls={savedCalls} />
+
       {/* SIDEBAR */}
-      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "var(--surface-3)", borderRight: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", zIndex: 100 }}>
+      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "var(--bg-primary)", borderRight: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", zIndex: 100 }}>
         <div style={{ padding: "20px 16px 16px" }}>
           <img src="/cuota_logo_official_White.png" alt="Cuota" onClick={() => setPage("home")} style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }} />
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 10px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", padding: "8px 6px 4px" }}>Core</div>
+        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px 0" }}>
           {[
-            { label: "Clients", active: page === "calls" || page === "client", onClick: () => { setPage("calls"); setFolderClient(null); setFolderAE(null); } },
-            { label: "Assessments", active: ["gtm","tof","crm","hiring","metrics"].includes(page), onClick: () => setPage("gtm") },
-          ].map(item => (
-            <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: item.active ? "#31CE81" : "rgba(255,255,255,0.55)" }}>{item.label}</span>
-              {item.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
-            </button>
-          ))}
-          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", padding: "12px 6px 4px" }}>AI Tools</div>
-          {[
-            { label: "Client Intel", active: page === "clientIntel", onClick: () => setPage("clientIntel") },
-            { label: "Cuota Agent", active: page === "cuotaAgent", onClick: () => setPage("cuotaAgent") },
+            { label: "Home", active: page === "home", onClick: () => setPage("home") },
+            { label: "Clients", active: page === "clients" || page === "calls" || page === "client", onClick: () => { setPage("clients"); setFolderClient(null); setFolderAE(null); } },
+            { label: "Reviews", active: page === "reviews" || page === "review", onClick: () => setPage("reviews") },
             { label: "Decks", active: page === "deck", onClick: () => setPage("deck") },
           ].map(item => (
             <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
@@ -5815,20 +5968,9 @@ export default function CuotaCallReview() {
               {item.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
             </button>
           ))}
-          {(profile?.role === "manager" || profile?.role === "admin") && (() => {
-            const adminActive = ["integrations","docsync","admin"].includes(page);
-            return (
-              <>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", padding: "12px 6px 4px" }}>Settings</div>
-                <button onClick={() => setPage(profile?.role === "admin" ? "integrations" : "admin")} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: adminActive ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: adminActive ? "#31CE81" : "rgba(255,255,255,0.55)" }}>Admin</span>
-                  {adminActive && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
-                </button>
-              </>
-            );
-          })()}
-        </div>
+        </nav>
         <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", marginBottom: 10, color: page === "settings" ? "#31CE81" : "rgba(255,255,255,0.5)", fontSize: 15, fontFamily: "inherit" }}>⚙</button>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.user?.email}</div>
           <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
         </div>
@@ -5848,7 +5990,7 @@ export default function CuotaCallReview() {
 
       <div style={{ marginLeft: 220, flex: 1, padding: "32px 40px" }}>
         {/* HOME PAGE — Dashboard */}
-        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { if (p === "review") { startNewReview(); } else { setPage(p); if (p === "calls") { setFolderClient(null); setFolderAE(null); } } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} />}
+        {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { if (p === "review") { startNewReview(); } else { setPage(p); if (p === "calls" || p === "clients") { setFolderClient(null); setFolderAE(null); } } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} userEmail={session?.user?.email} onCmdK={() => setCmdKOpen(true)} onNewReview={startNewReview} />}
 
         {/* INTAKE PAGE — New Assessment */}
         {page === "intake" && <IntakePage clients={clients} getValidToken={getValidToken} profile={profile} onBack={() => setPage("home")} onReportGenerated={(report) => { setCurrentReport(report); setPage("report"); loadGtmReports(); }} />}
@@ -5878,8 +6020,11 @@ export default function CuotaCallReview() {
           onProfileUpdate={loadClientProfiles}
         />}
 
-        {/* SALES READINESS */}
-        {page === "calls" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} clientProfiles={clientProfiles} />}
+        {/* CLIENTS / SALES READINESS — "clients" is the new nav name, "calls" kept for backward compat */}
+        {(page === "calls" || page === "clients") && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} clientProfiles={clientProfiles} />}
+
+        {/* REVIEWS — placeholder (Phase 3 will build split-view detail) */}
+        {page === "reviews" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} clientProfiles={clientProfiles} />}
 
         {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
@@ -5905,6 +6050,19 @@ export default function CuotaCallReview() {
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
         {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
+
+        {/* SETTINGS PAGE */}
+        {page === "settings" && (
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-1)", margin: "0 0 24px" }}>Settings</h1>
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 6 }}>Account</div>
+              <div style={{ fontSize: 13, color: "var(--text-1)" }}>{session?.user?.email}</div>
+              <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>Role: {profile?.role || "—"}</div>
+            </div>
+            {profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
+          </div>
+        )}
 
         {/* REVIEW PAGE */}
         {page === "review" && (

@@ -1,10 +1,40 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #011e38; --surface: #022a4a; --surface-2: #03345c; --surface-3: #011829;
-  --border: #0c3d63; --border-soft: #072d4e;
-  --text-1: #e8f3fb; --text-2: #6da0c2; --text-3: #2e5c80;
-  --accent: #31CE81; --accent-dim: rgba(49,206,129,0.12); --accent-glow: rgba(49,206,129,0.06);
+  /* v2 design tokens */
+  --bg-app:        #0a0d14;
+  --bg-primary:    #0f1117;
+  --bg-card:       #1a1f2e;
+  --bg-card-hover: #1e2435;
+  --bg-input:      #151923;
+
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.10);
+  --border-focus:   rgba(49,206,129,0.5);
+
+  --text-primary:   #f0f0f0;
+  --text-secondary: #9ca3af;
+  --text-muted:     #6b7280;
+
+  --brand:    #31CE81;
+  --info:     #3b82f6;
+  --warning:  #f59e0b;
+  --critical: #ef4444;
+  --ai:       #8b5cf6;
+
+  /* Aliases — keeps all existing inline styles working */
+  --bg: var(--bg-app);
+  --surface: var(--bg-card);
+  --surface-2: #1e2435;
+  --surface-3: var(--bg-primary);
+  --border: rgba(255,255,255,0.10);
+  --border-soft: rgba(255,255,255,0.06);
+  --text-1: var(--text-primary);
+  --text-2: var(--text-secondary);
+  --text-3: var(--text-muted);
+  --accent: var(--brand);
+  --accent-dim: rgba(49,206,129,0.12);
+  --accent-glow: rgba(49,206,129,0.06);
   --red: #f04438; --red-dim: rgba(240,68,56,0.12);
   --amber: #f59e0b; --amber-dim: rgba(245,158,11,0.12);
   --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12);
