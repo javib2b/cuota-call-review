@@ -2,14 +2,14 @@
 
 :root {
   /* v2 design tokens */
-  --bg-app:        #0a0d14;
-  --bg-primary:    #0f1117;
-  --bg-card:       #1a1f2e;
-  --bg-card-hover: #1e2435;
-  --bg-input:      #151923;
+  --bg-app:        #011e38;
+  --bg-primary:    #062035;
+  --bg-card:       #062035;
+  --bg-card-hover: #0a2a45;
+  --bg-input:      #051a2e;
 
-  --border-subtle:  rgba(255,255,255,0.06);
-  --border-default: rgba(255,255,255,0.10);
+  --border-subtle:  rgba(255,255,255,0.05);
+  --border-default: rgba(255,255,255,0.07);
   --border-focus:   rgba(49,206,129,0.5);
 
   --text-primary:   #f0f0f0;
@@ -25,10 +25,10 @@
   /* Aliases — keeps all existing inline styles working */
   --bg: var(--bg-app);
   --surface: var(--bg-card);
-  --surface-2: #1e2435;
+  --surface-2: #0a2a45;
   --surface-3: var(--bg-primary);
-  --border: rgba(255,255,255,0.10);
-  --border-soft: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.07);
+  --border-soft: rgba(255,255,255,0.05);
   --text-1: var(--text-primary);
   --text-2: var(--text-secondary);
   --text-3: var(--text-muted);
@@ -40,7 +40,7 @@
   --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12);
   --purple: #a855f7; --purple-dim: rgba(168,85,247,0.12);
 }
-body { background: var(--bg); color: var(--text-1); font-family: 'Syne', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { background: var(--bg); color: var(--text-1); font-family: 'DM Sans', 'Syne', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
