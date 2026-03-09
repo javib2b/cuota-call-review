@@ -5994,6 +5994,10 @@ export default function CuotaCallReview() {
               {item.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
             </button>
           ))}
+          <button onClick={startNewReview} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: "#31CE81", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginTop: 4, boxSizing: "border-box", gap: 6 }}>
+            <span style={{ fontSize: 15, fontWeight: 400, color: "#fff", lineHeight: 1 }}>+</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>New Review</span>
+          </button>
         </nav>
         <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", marginBottom: 10, color: page === "settings" ? "#31CE81" : "rgba(255,255,255,0.5)", fontSize: 15, fontFamily: "inherit" }}>⚙</button>
@@ -6002,17 +6006,6 @@ export default function CuotaCallReview() {
         </div>
       </div>
 
-      {/* Floating Action Button */}
-      {page !== "review" && page !== "deck" && (
-        <button onClick={startNewReview} style={{
-          position: "fixed", bottom: 28, right: 28, zIndex: 200,
-          background: "#31CE81",
-          border: "none", borderRadius: 28, padding: "12px 20px",
-          color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
-          boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
-          display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit"
-        }}>+ New Review</button>
-      )}
 
       <div style={{ marginLeft: 220, flex: 1, padding: "32px 40px" }}>
         {/* HOME PAGE — Dashboard */}
