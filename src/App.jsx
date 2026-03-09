@@ -2640,10 +2640,10 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ id: "calls", label: "📞 Call Reviews", count: clientCalls.length }, { id: "docs", label: "📄 Doc Intakes", count: clientDocs.length }, { id: "gtm", label: "GTM Profile" }].map(tab => (
-          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #6366F1" : "1.5px solid rgba(0,0,0,0.09)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(99,102,241,0.06)" : "#fff", color: activeTab === tab.id ? "#6366F1" : "var(--text-2)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }].map(tab => (
+          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border-soft)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
-            {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(99,102,241,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#6366F1" : "var(--text-2)" }}>{tab.count}</span>}
+            {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(49,206,129,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)" }}>{tab.count}</span>}
           </button>
         ))}
       </div>
@@ -2728,22 +2728,17 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         )
       )}
 
-      {/* DOCS TAB */}
-      {activeTab === "docs" && (
-        <div>
-          <Section title="Enablement Documents" icon="📄" items={enablementList} emptyText="No enablement documents uploaded yet." action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}>
-            {enablementList.map(docRow)}
-          </Section>
-          <Section title="Marketing Materials" icon="📣" items={marketingList} emptyText="No marketing materials uploaded yet." action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}>
-            {marketingList.map(docRow)}
-          </Section>
-          <Section title="Training Documents" icon="🎓" items={trainingList} emptyText="No training documents uploaded yet." action={<button onClick={() => onNavigate("enablement")} style={{ fontSize: 12, fontWeight: 600, color: "#8b5cf6", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "inherit" }}>+ Upload →</button>}>
-            {trainingList.map(docRow)}
-          </Section>
+      {/* DECK TAB */}
+      {activeTab === "deck" && (
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "40px 32px", textAlign: "center" }}>
+          <div style={{ fontSize: 40, marginBottom: 16 }}>🗂</div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", marginBottom: 8 }}>Create a deck for {client}</h3>
+          <p style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>Build a customized presentation deck for {client} using AI-generated slides and your call data.</p>
+          <button onClick={() => onNavigate("deck")} style={{ padding: "12px 28px", background: "#31CE81", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Open Deck Builder</button>
         </div>
       )}
 
-      {/* GTM TAB */}
+      {/* GTM TAB (hidden from tabs but kept for data access) */}
       {activeTab === "gtm" && (
         <GTMProfileTab client={client} getValidToken={getValidToken} onProfileUpdate={onProfileUpdate} />
       )}
@@ -5958,9 +5953,7 @@ export default function CuotaCallReview() {
         </div>
         <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px 0" }}>
           {[
-            { label: "Home", active: page === "home", onClick: () => setPage("home") },
-            { label: "Clients", active: page === "clients" || page === "calls" || page === "client", onClick: () => { setPage("clients"); setFolderClient(null); setFolderAE(null); } },
-            { label: "Reviews", active: page === "reviews" || page === "review", onClick: () => setPage("reviews") },
+            { label: "Clients", active: page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review", onClick: () => { setPage("clients"); setFolderClient(null); setFolderAE(null); } },
             { label: "Decks", active: page === "deck", onClick: () => setPage("deck") },
           ].map(item => (
             <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
