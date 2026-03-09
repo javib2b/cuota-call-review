@@ -2373,7 +2373,7 @@ function ScoreTrendsChart({ repEntries }) {
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
@@ -2547,7 +2547,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }, { id: "gtm", label: "GTM Profile" }].map(tab => (
+        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }, { id: "gtm", label: "GTM Profile" }, { id: "audit", label: "GTM Audit" }].map(tab => (
           <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border-soft)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(49,206,129,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)" }}>{tab.count}</span>}
@@ -2641,6 +2641,11 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {/* GTM PROFILE TAB */}
       {activeTab === "gtm" && (
         <GTMProfileTab client={client} getValidToken={getValidToken} onProfileUpdate={onProfileUpdate} />
+      )}
+
+      {/* GTM AUDIT TAB */}
+      {activeTab === "audit" && (
+        <GtmAuditTab client={client} assessments={gtmAssessments} getValidToken={getValidToken} profile={profile} onUpdate={onGtmUpdate} />
       )}
     </div>
   );
@@ -2869,6 +2874,107 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// ==================== GTM AUDIT TAB ====================
+function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) {
+  const clientAssessments = assessments.filter(a => a.client === client);
+  const [mode, setMode] = useState("list");
+  const [selected, setSelected] = useState(null);
+  const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState({ icp: "", personas: "", valueProposition: "", channels: "", competitive: "", notes: "" });
+  const [analyzing, setAnalyzing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState("");
+
+  const startNew = () => { setSelected(null); setAssessmentDate(new Date().toISOString().split("T")[0]); setData({ icp: "", personas: "", valueProposition: "", channels: "", competitive: "", notes: "" }); setAnalysis(null); setError(""); setMode("new"); };
+  const viewItem = (item) => { setSelected(item); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
+
+  const ta = (key, label, placeholder, rows = 3) => (
+    <div key={key} style={{ marginBottom: 16 }}>
+      <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", display: "block", marginBottom: 6 }}>{label}</label>
+      <textarea value={data[key] || ""} onChange={e => setData(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} rows={rows} style={{ width: "100%", padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
+    </div>
+  );
+
+  const analyze = async () => {
+    setAnalyzing(true); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/analyze-audit", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ type: "gtm_strategy", client, data }) });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
+      setAnalysis(await r.json());
+    } catch (e) { setError("Analysis failed: " + e.message); }
+    finally { setAnalyzing(false); }
+  };
+
+  const save = async () => {
+    setSaving(true); setError("");
+    try {
+      const t = await getValidToken();
+      const row = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client, assessment_date: assessmentDate, input_data: data, overall_score: analysis?.overall_score || null, ai_analysis: analysis || null };
+      const table = await supabase.from("gtm_assessments", t);
+      if (selected?.id) { await table.update(row, `id=eq.${selected.id}`); } else { await table.insert(row); }
+      await onUpdate(); setMode("list");
+    } catch (e) { setError(e.message?.includes("exist") ? "The gtm_assessments table doesn't exist yet. Create it in Supabase." : "Save failed: " + e.message); }
+    finally { setSaving(false); }
+  };
+
+  if (mode === "list") return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 4px" }}>GTM Audit</h3>
+          <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0 }}>AI-powered GTM strategy assessment for {client}</p>
+        </div>
+        <button onClick={startNew} style={{ padding: "9px 18px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Assessment</button>
+      </div>
+      {clientAssessments.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16 }}>
+          <div style={{ fontSize: 40, marginBottom: 14 }}>🎯</div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 8px" }}>No assessments yet</h3>
+          <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 20px" }}>Run a GTM audit to get AI-scored insights on ICP, positioning, channels, and more.</p>
+          <button onClick={startNew} style={{ padding: "10px 24px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Run First Assessment</button>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {clientAssessments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(item => (
+            <div key={item.id} onClick={() => viewItem(item)} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}
+              onMouseEnter={ev => ev.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"}
+              onMouseLeave={ev => ev.currentTarget.style.borderColor = "var(--border-soft)"}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>🎯</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>GTM Strategy Assessment</div>
+                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{item.assessment_date && new Date(item.assessment_date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+              </div>
+              {item.overall_score ? (
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: getScoreColor(item.overall_score), fontFamily: "'Space Mono', monospace" }}>{item.overall_score}%</div>
+                  <AuditStatusBadge score={item.overall_score} />
+                </div>
+              ) : <span style={{ fontSize: 11, color: "var(--text-3)" }}>Not analyzed</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <AssessmentFormShell title="GTM Audit" emoji="🎯" accentColor="#6366f1" gradient="linear-gradient(135deg, #6366f1, #4f46e5)" breadcrumb={selected ? selected.assessment_date : "New Assessment"} client={client} setClient={() => {}} clients={[client]} assessmentDate={assessmentDate} setAssessmentDate={setAssessmentDate} analyzing={analyzing} saving={saving} analysis={analysis} error={error} onAnalyze={analyze} onSave={save} onBack={() => setMode("list")} analyzeLabel="Assess GTM Strategy">
+        {ta("icp", "Ideal Customer Profile", "Describe your ICP: company size, industry, revenue range, tech stack, pain points they share...", 3)}
+        {ta("personas", "Buyer Personas", "List your target personas: their roles, seniority, KPIs, what they care about, how they evaluate vendors...", 3)}
+        {ta("valueProposition", "Value Proposition", "What is your core value proposition? How do you articulate the outcome you deliver vs. the problem you solve?", 3)}
+        {ta("channels", "Customer Acquisition Channels", "What channels are you using? (Outbound, Inbound, Referrals, Partnerships, Events) How is each performing?", 3)}
+        {ta("competitive", "Competitive Positioning", "Who are your main competitors? How do you position against them? What are your key differentiators?", 3)}
+        {ta("notes", "Additional Context", "Any other context: recent pivots, market shifts, experiments underway...", 2)}
+      </AssessmentFormShell>
+      <AuditAnalysisDisplay analysis={analysis} accentColor="#6366f1" />
+    </>
   );
 }
 
@@ -5910,6 +6016,9 @@ export default function CuotaCallReview() {
           getValidToken={getValidToken}
           clientProfiles={clientProfiles}
           onProfileUpdate={loadClientProfiles}
+          gtmAssessments={gtmAssessments}
+          profile={profile}
+          onGtmUpdate={loadGtmAssessments}
         />}
 
         {/* CLIENTS / SALES READINESS — "clients" is the new nav name, "calls" kept for backward compat */}
