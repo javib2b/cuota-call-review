@@ -2206,264 +2206,171 @@ const REP_COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B
 const CHART_PALETTE = ["#6366F1", "#10B981", "#F59E0B", "#F43F5E", "#0EA5E9"];
 
 function ScoreTrendsChart({ repEntries }) {
-  const [filter, setFilter] = useState("top5");
-  const [showTeamAvg, setShowTeamAvg] = useState(true);
-  const [hoveredRep, setHoveredRep] = useState(null);
-  const [isolatedRep, setIsolatedRep] = useState(null);
   const [tooltip, setTooltip] = useState(null);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
 
-  // Build per-rep data: deduplicate by calendar date (highest score per day)
-  const allRepData = repEntries.map((entry) => {
-    const byDay = new Map();
-    entry.repCalls
-      .filter(c => c.call_date || c.created_at)
-      .forEach(c => {
-        const dateStr = (c.call_date || c.created_at || "").slice(0, 10);
-        const score = c.overall_score || 0;
-        if (!byDay.has(dateStr) || score > byDay.get(dateStr).score) {
-          byDay.set(dateStr, {
-            date: new Date(dateStr + "T12:00:00"),
-            score,
-            callType: c.category_scores?.call_type || c.call_type || "Call",
-          });
-        }
-      });
-    const pts = Array.from(byDay.values()).sort((a, b) => a.date - b.date);
-    const avgScore = pts.length > 0 ? Math.round(pts.reduce((s, p) => s + p.score, 0) / pts.length) : 0;
-    return { repName: entry.repName, pts, avgScore };
-  }).filter(e => e.pts.length > 0);
+  // Flatten all calls from all reps, sorted by date
+  const allCalls = repEntries.flatMap(e =>
+    e.repCalls
+      .filter(c => (c.call_date || c.created_at) && c.overall_score)
+      .map(c => ({
+        date: new Date(((c.call_date || c.created_at || "").slice(0, 10)) + "T12:00:00"),
+        score: c.overall_score,
+        repName: e.repName,
+        callType: c.category_scores?.call_type || c.call_type || "Call",
+      }))
+  ).sort((a, b) => a.date - b.date);
 
-  if (allRepData.length === 0) return null;
+  if (allCalls.length === 0) return null;
 
-  // Filter subset and assign palette colors
-  const sorted = [...allRepData].sort((a, b) => b.avgScore - a.avgScore);
-  const subset = filter === "top5" ? sorted.slice(0, 5)
-    : filter === "bottom5" ? sorted.slice(-5).reverse()
-    : allRepData;
-  const repData = subset.map((e, i) => ({ ...e, color: CHART_PALETTE[i % CHART_PALETTE.length] }));
+  const overallAvg = Math.round(allCalls.reduce((s, c) => s + c.score, 0) / allCalls.length);
 
-  // Date-based X axis (fixes same-date stacking)
-  const allTs = repData.flatMap(e => e.pts.map(p => p.date.getTime()));
+  // Trend: compare first half avg to second half avg
+  const mid = Math.ceil(allCalls.length / 2);
+  const firstAvg = Math.round(allCalls.slice(0, mid).reduce((s, c) => s + c.score, 0) / mid);
+  const secondAvg = Math.round(allCalls.slice(mid).reduce((s, c) => s + c.score, 0) / Math.max(1, allCalls.length - mid));
+  const trendDelta = allCalls.length >= 2 ? secondAvg - firstAvg : null;
+  const isPositive = (trendDelta ?? 0) > 3;
+  const isNegative = (trendDelta ?? 0) < -3;
+  const trendColor = isPositive ? "#31CE81" : isNegative ? "#ef4444" : "#9ca3af";
+  const trendLabel = isPositive ? `↑ +${trendDelta} pts` : isNegative ? `↓ ${trendDelta} pts` : "→ Flat";
+
+  // Chart layout
+  const PAD_L = 36, PAD_R = 16, PAD_T = 16, PAD_B = 32;
+  const W = 700, H = 200;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const Y_MIN = 20, Y_MAX = 100;
+
+  const allTs = allCalls.map(c => c.date.getTime());
   const minT = Math.min(...allTs);
   const maxT = Math.max(...allTs);
   const dateSpan = maxT - minT || 86400000;
 
-  const PAD_L = 36, PAD_R = 70, PAD_T = 14, PAD_B = 34;
-  const W = 760, H = 260;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
-
-  const Y_MIN = 25, Y_MAX = 100;
   const toX = (date) => PAD_L + ((date.getTime() - minT) / dateSpan) * chartW;
-  const toY = (score) => PAD_T + chartH - ((score - Y_MIN) / (Y_MAX - Y_MIN)) * chartH;
+  const toY = (score) => PAD_T + chartH - ((Math.min(Y_MAX, Math.max(Y_MIN, score)) - Y_MIN) / (Y_MAX - Y_MIN)) * chartH;
 
-  // Team average per unique day
-  const dayMap = new Map();
-  repData.forEach(e => e.pts.forEach(p => {
-    const k = p.date.toISOString().slice(0, 10);
-    if (!dayMap.has(k)) dayMap.set(k, { date: p.date, scores: [] });
-    dayMap.get(k).scores.push(p.score);
-  }));
-  const teamAvgPts = Array.from(dayMap.values())
-    .sort((a, b) => a.date - b.date)
-    .map(({ date, scores }) => ({ date, score: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) }));
+  // Area fill path
+  const linePts = allCalls.map(c => `${toX(c.date)},${toY(c.score)}`);
+  const linePath = `M ${linePts.join(" L ")}`;
+  const areaPath = `M ${toX(allCalls[0].date)},${toY(allCalls[0].score)} L ${linePts.slice(1).join(" L ")} L ${toX(allCalls[allCalls.length - 1].date)},${PAD_T + chartH} L ${toX(allCalls[0].date)},${PAD_T + chartH} Z`;
 
-  // X-axis labels (up to 7)
-  const allDateStrs = Array.from(new Set(repData.flatMap(e => e.pts.map(p => p.date.toISOString().slice(0, 10))))).sort();
-  const allUniqueDates = allDateStrs.map(d => new Date(d + "T12:00:00"));
-  const step = Math.max(1, Math.floor(allUniqueDates.length / 7));
-  const xLabels = allUniqueDates.filter((_, i) => i % step === 0 || i === allUniqueDates.length - 1);
+  // Linear regression trend line
+  const xs = allCalls.map(c => (c.date.getTime() - minT) / Math.max(1, dateSpan));
+  const ys = allCalls.map(c => c.score);
+  const n = allCalls.length;
+  const sumX = xs.reduce((s, x) => s + x, 0), sumY = ys.reduce((s, y) => s + y, 0);
+  const sumXY = xs.reduce((s, x, i) => s + x * ys[i], 0), sumXX = xs.reduce((s, x) => s + x * x, 0);
+  const slope = n > 1 ? (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX) : 0;
+  const intercept = (sumY - slope * sumX) / n;
 
-  // Interaction helpers
-  const activeRep = isolatedRep || hoveredRep;
-  const getOpacity = (rep) => activeRep ? (rep === activeRep ? 1 : 0.12) : 1;
-  const getWidth = (rep) => rep === activeRep ? 3 : 2;
+  // X-axis labels (up to 6)
+  const step = Math.max(1, Math.floor(allCalls.length / 5));
+  const xLabels = allCalls.filter((_, i) => i === 0 || i === allCalls.length - 1 || i % step === 0);
 
-  // Inline legend box dimensions
-  const LW = 118, LH = repData.length * 17 + 10;
-  const LX = PAD_L + chartW - LW - 4, LY = PAD_T + 2;
+  // Rep color map for dots
+  const repNames = [...new Set(repEntries.map(e => e.repName))];
 
   return (
-    <div style={{ background: "var(--surface)", borderTop: "1px solid var(--border-soft)", borderBottom: "1px solid var(--border-soft)", overflow: "hidden", marginBottom: 16, marginLeft: -40, marginRight: -40 }}>
-      {/* Header + toolbar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "18px 40px 0" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5 }}>Score Trends</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ display: "flex", background: "rgba(0,0,0,0.05)", borderRadius: 7, padding: 2 }}>
-            {[["all", "All"], ["top5", "Top 5"], ["bottom5", "Bot 5"]].map(([v, l]) => (
-              <button key={v} onClick={() => { setFilter(v); setIsolatedRep(null); }}
-                style={{ fontSize: 11, fontWeight: filter === v ? 700 : 500, padding: "3px 9px",
-                  background: filter === v ? "#fff" : "transparent", border: "none", borderRadius: 5,
-                  cursor: "pointer", fontFamily: "inherit",
-                  color: filter === v ? "#1A2B3C" : "var(--text-2)",
-                  boxShadow: filter === v ? "0 1px 3px var(--text-3)" : "none",
-                  transition: "all 0.15s" }}>
-                {l}
-              </button>
-            ))}
+    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 12px" }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Score Trend</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'Space Mono', monospace", lineHeight: 1 }}>{overallAvg}%</span>
+            {trendDelta !== null && <span style={{ fontSize: 14, fontWeight: 700, color: trendColor }}>{trendLabel}</span>}
           </div>
-          <button onClick={() => setShowTeamAvg(v => !v)}
-            style={{ fontSize: 11, fontWeight: showTeamAvg ? 600 : 400, padding: "3px 10px",
-              background: showTeamAvg ? "rgba(148,163,184,0.12)" : "transparent",
-              border: `1px solid ${showTeamAvg ? "#94a3b8" : "var(--text-3)"}`,
-              borderRadius: 20, cursor: "pointer", fontFamily: "inherit",
-              color: showTeamAvg ? "#64748b" : "var(--text-3)", transition: "all 0.15s" }}>
-            — Team Avg
-          </button>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>{allCalls.length} call{allCalls.length !== 1 ? "s" : ""} · {repEntries.length} rep{repEntries.length !== 1 ? "s" : ""}</div>
+        </div>
+        {/* Mini rep legend */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 260, justifyContent: "flex-end" }}>
+          {repNames.slice(0, 6).map((name, i) => (
+            <div key={name} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: CHART_PALETTE[i % CHART_PALETTE.length], flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{name.split(" ")[0]}</span>
+            </div>
+          ))}
+          {repNames.length > 6 && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>+{repNames.length - 6} more</span>}
         </div>
       </div>
 
-      <div style={{ position: "relative" }} onMouseLeave={() => { setHoveredRep(null); setTooltip(null); }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 260, display: "block" }}>
+      {/* Chart */}
+      <div style={{ position: "relative" }} onMouseLeave={() => { setHoveredIdx(null); setTooltip(null); }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 190, display: "block" }}>
           <defs>
-            <style>{`@keyframes lineDrawIn{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}`}</style>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={trendColor} stopOpacity={0.22} />
+              <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
+            </linearGradient>
           </defs>
 
-          {/* Score zone bands */}
-          <rect x={PAD_L} y={toY(40)} width={chartW} height={toY(25) - toY(40)} fill="rgba(239,68,68,0.045)" />
-          <rect x={PAD_L} y={toY(60)} width={chartW} height={toY(40) - toY(60)} fill="rgba(245,158,11,0.05)" />
-          <rect x={PAD_L} y={toY(100)} width={chartW} height={toY(60) - toY(100)} fill="rgba(16,185,129,0.04)" />
-
-          {/* Zone labels (right margin) */}
-          <text x={PAD_L + chartW + 6} y={toY(32) + 4} fontSize={9} fill="rgba(239,68,68,0.6)" fontWeight="600">Critical</text>
-          <text x={PAD_L + chartW + 6} y={toY(50) + 4} fontSize={9} fill="rgba(245,158,11,0.7)" fontWeight="600">At Risk</text>
-          <text x={PAD_L + chartW + 6} y={toY(80) + 4} fontSize={9} fill="rgba(16,185,129,0.7)" fontWeight="600">Good</text>
-
-          {/* Grid lines at 50, 75 only */}
-          {[50, 75].map(s => (
-            <line key={s} x1={PAD_L} x2={PAD_L + chartW} y1={toY(s)} y2={toY(s)}
-              stroke="#e2e8f0" strokeWidth={1} strokeDasharray="4 3" />
+          {/* Grid lines */}
+          {[40, 60, 80].map(s => (
+            <g key={s}>
+              <line x1={PAD_L} x2={PAD_L + chartW} y1={toY(s)} y2={toY(s)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+              <text x={PAD_L - 6} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.18)">{s}</text>
+            </g>
           ))}
 
-          {/* Y-axis labels */}
-          {[25, 50, 75, 100].map(s => (
-            <text key={s} x={PAD_L - 6} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="var(--text-3)">{s}</text>
-          ))}
+          {/* Area fill */}
+          {allCalls.length > 1 && <path d={areaPath} fill="url(#areaGrad)" />}
 
-          {/* Team average dashed line */}
-          {showTeamAvg && teamAvgPts.length >= 2 && (() => {
-            const d = `M ${teamAvgPts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ")}`;
-            const last = teamAvgPts[teamAvgPts.length - 1];
-            return (
-              <g opacity={activeRep ? 0.25 : 0.75}>
-                <path d={d} fill="none" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="5 3" strokeLinecap="round" />
-                <text x={toX(last.date) + 5} y={toY(last.score) + 4} fontSize={9} fill="#94a3b8" fontWeight="600">Avg</text>
-              </g>
-            );
-          })()}
+          {/* Regression trend line */}
+          {allCalls.length > 1 && (
+            <line
+              x1={toX(allCalls[0].date)} y1={toY(intercept)}
+              x2={toX(allCalls[allCalls.length - 1].date)} y2={toY(slope + intercept)}
+              stroke={trendColor} strokeWidth={1.5} strokeDasharray="5 3" opacity={0.5}
+            />
+          )}
 
-          {/* Invisible wide paths for line hover hit area */}
-          {repData.map(e => {
-            if (e.pts.length < 2) return null;
-            return (
-              <path key={`hit-${e.repName}`}
-                d={`M ${e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ")}`}
-                fill="none" stroke="transparent" strokeWidth={14}
-                style={{ cursor: "pointer" }}
-                onMouseEnter={() => setHoveredRep(e.repName)} />
-            );
-          })}
+          {/* Main score line */}
+          {allCalls.length > 1 && (
+            <path d={linePath} fill="none" stroke={trendColor} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+          )}
 
-          {/* Rep lines with draw-in animation */}
-          {repData.map((e, repIdx) => {
-            if (e.pts.length < 2) return null;
+          {/* Call dots — colored by rep */}
+          {allCalls.map((c, i) => {
+            const repIdx = repNames.indexOf(c.repName);
+            const dotColor = CHART_PALETTE[repIdx % CHART_PALETTE.length];
+            const cx = toX(c.date), cy = toY(c.score);
+            const active = hoveredIdx === i;
             return (
-              <path key={`line-${e.repName}`}
-                d={`M ${e.pts.map(p => `${toX(p.date)},${toY(p.score)}`).join(" L ")}`}
-                fill="none" stroke={e.color} strokeLinecap="round" strokeLinejoin="round"
-                pathLength="1" strokeDasharray="1"
-                style={{
-                  strokeWidth: getWidth(e.repName),
-                  opacity: getOpacity(e.repName),
-                  animation: `lineDrawIn 800ms ease-out ${repIdx * 80}ms both`,
-                  transition: "opacity 0.2s ease, stroke-width 0.15s ease",
-                }} />
-            );
-          })}
-
-          {/* Dots */}
-          {repData.map(e => e.pts.map((p, ptIdx) => {
-            const cx = toX(p.date);
-            const cy = toY(p.score);
-            const active = tooltip?.rep === e.repName && tooltip?.ptIndex === ptIdx;
-            const delta = ptIdx > 0 ? p.score - e.pts[ptIdx - 1].score : null;
-            return (
-              <circle key={`dot-${e.repName}-${ptIdx}`}
-                cx={cx} cy={cy} r={active ? 5 : 3}
-                fill={e.color} stroke="#fff" strokeWidth={active ? 2 : 1.5}
-                style={{ cursor: "pointer", opacity: getOpacity(e.repName), transition: "opacity 0.2s ease" }}
+              <circle key={i} cx={cx} cy={cy} r={active ? 6 : 4}
+                fill={dotColor} stroke="var(--bg-card)" strokeWidth={2}
+                style={{ cursor: "pointer", transition: "r 0.1s" }}
                 onMouseEnter={(ev) => {
+                  setHoveredIdx(i);
                   const rect = ev.currentTarget.closest("svg").getBoundingClientRect();
-                  setHoveredRep(e.repName);
-                  setTooltip({
-                    x: cx * (rect.width / W),
-                    y: cy * (rect.height / H),
-                    rep: e.repName, score: p.score, color: e.color,
-                    callType: p.callType, delta, ptIndex: ptIdx,
-                    date: p.date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
-                  });
+                  setTooltip({ x: cx * (rect.width / W), y: cy * (rect.height / H), score: c.score, rep: c.repName, type: c.callType, date: c.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }), color: dotColor });
                 }}
               />
             );
-          }))}
+          })}
 
-          {/* Inline interactive legend (top-right of chart area) */}
-          <g>
-            <rect x={LX} y={LY} width={LW} height={LH} rx={7}
-              fill="rgba(255,255,255,0.93)" stroke="rgba(0,0,0,0.07)" strokeWidth={1} />
-            {repData.map((e, idx) => {
-              const iy = LY + 9 + idx * 17;
-              const isIso = isolatedRep === e.repName;
-              return (
-                <g key={`leg-${e.repName}`}
-                  onClick={() => setIsolatedRep(p => p === e.repName ? null : e.repName)}
-                  style={{ cursor: "pointer" }}
-                  opacity={isolatedRep && !isIso ? 0.3 : 1}>
-                  <circle cx={LX + 10} cy={iy} r={4} fill={e.color} />
-                  <text x={LX + 18} y={iy + 3.5} fontSize={10} fill="#374151"
-                    fontWeight={isIso ? "700" : "400"}
-                    style={{ userSelect: "none" }}>
-                    {e.repName.length > 13 ? e.repName.slice(0, 12) + "…" : e.repName}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-
-          {/* X-axis date labels */}
-          {xLabels.map((date, i) => (
-            <text key={i} x={toX(date)} y={H - 6} textAnchor="middle" fontSize={9} fill="var(--text-3)">
-              {date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          {/* X-axis labels */}
+          {xLabels.map((c, i) => (
+            <text key={i} x={toX(c.date)} y={H - 6} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.25)">
+              {c.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </text>
           ))}
         </svg>
 
         {/* Tooltip */}
         {tooltip && (
-          <div style={{
-            position: "absolute",
-            left: Math.min(tooltip.x + 14, 270), top: Math.max(4, tooltip.y - 72),
-            background: "var(--surface)", border: "1px solid rgba(0,0,0,0.09)",
-            borderRadius: 10, padding: "9px 13px", fontSize: 11,
-            pointerEvents: "none", zIndex: 20, whiteSpace: "nowrap",
-            boxShadow: "0 4px 20px var(--text-3)",
-          }}>
-            <div style={{ fontWeight: 700, color: "#1A2B3C", marginBottom: 5 }}>{tooltip.rep}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
-              <span style={{ background: tooltip.color, color: "#fff", fontWeight: 700, fontSize: 12, padding: "2px 8px", borderRadius: 5 }}>{tooltip.score}%</span>
-              {tooltip.delta !== null && (
-                <span style={{ fontSize: 11, fontWeight: 600, color: tooltip.delta > 0 ? "#10B981" : tooltip.delta < 0 ? "#EF4444" : "#94a3b8" }}>
-                  {tooltip.delta > 0 ? "▲" : tooltip.delta < 0 ? "▼" : "→"} {Math.abs(tooltip.delta)}
-                </span>
-              )}
-            </div>
-            <div style={{ color: "var(--text-2)", fontSize: 10 }}>{tooltip.callType} · {tooltip.date}</div>
+          <div style={{ position: "absolute", left: Math.min(tooltip.x + 14, 220), top: Math.max(4, tooltip.y - 60), background: "var(--bg-primary)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "10px 14px", fontSize: 12, pointerEvents: "none", zIndex: 20, whiteSpace: "nowrap" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: tooltip.color, fontFamily: "'Space Mono', monospace", marginBottom: 4 }}>{tooltip.score}%</div>
+            <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>{tooltip.rep}</div>
+            <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{tooltip.type} · {tooltip.date}</div>
           </div>
         )}
       </div>
     </div>
   );
 }
+
+// DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate }) {
@@ -2659,66 +2566,59 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           <div>
             <ScoreTrendsChart repEntries={repEntries} />
             {/* Rep Leaderboard */}
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
-              <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--border-soft)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5 }}>Rep Leaderboard</div>
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1.5 }}>Rep Leaderboard</div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <input type="text" placeholder="Search reps…" value={repSearch} onChange={e => setRepSearch(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--text-3)", borderRadius: 8, outline: "none", width: 130, fontFamily: "inherit", color: "var(--text-1)" }} />
-                  <select value={repSort} onChange={e => setRepSort(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--text-3)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: "var(--text-1)", background: "var(--surface)" }}>
-                    <option value="score">Avg Score</option>
-                    <option value="calls">Most Calls</option>
-                    <option value="trend">Trend</option>
+                  <input type="text" placeholder="Search…" value={repSearch} onChange={e => setRepSearch(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--border-default)", borderRadius: 8, outline: "none", width: 110, fontFamily: "inherit", color: "var(--text-primary)", background: "var(--bg-input)" }} />
+                  <select value={repSort} onChange={e => setRepSort(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--border-default)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: "var(--text-primary)", background: "var(--bg-input)" }}>
+                    <option value="score">By Score</option>
+                    <option value="calls">By Calls</option>
+                    <option value="trend">By Trend</option>
                   </select>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 90px 106px 84px", padding: "8px 18px 6px", borderBottom: "1px solid rgba(0,0,0,0.04)", fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1, gap: 8 }}>
-                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span style={{ textAlign: "center" }}>Segment</span><span>Top Weakness</span><span>Last Call</span>
+              {/* Column headers */}
+              <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px", padding: "8px 20px", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, gap: 12, borderBottom: "1px solid var(--border-subtle)" }}>
+                <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span>Last Call</span>
               </div>
               {filteredReps.length === 0 ? (
-                <div style={{ padding: "20px", textAlign: "center", fontSize: 13, color: "var(--text-3)" }}>No reps match your search.</div>
+                <div style={{ padding: "24px", textAlign: "center", fontSize: 13, color: "var(--text-muted)" }}>No reps match your search.</div>
               ) : filteredReps.map((e, idx) => {
-                const repColor = REP_COLORS[repEntries.findIndex(r => r.repName === e.repName) % REP_COLORS.length];
+                const repColor = CHART_PALETTE[repEntries.findIndex(r => r.repName === e.repName) % CHART_PALETTE.length];
                 return (
                   <div
                     key={e.repName}
                     onClick={() => onBrowseByRep(e.repName)}
-                    style={{ display: "grid", gridTemplateColumns: "40px 1fr 52px 150px 58px 90px 106px 84px", padding: "11px 18px", cursor: "pointer", alignItems: "center", gap: 8, background: idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)", borderLeft: "3px solid transparent", transition: "background 0.1s ease, border-color 0.1s ease" }}
-                    onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(99,102,241,0.04)"; ev.currentTarget.style.borderLeftColor = "#6366F1"; }}
-                    onMouseLeave={ev => { ev.currentTarget.style.background = idx % 2 === 0 ? "#fff" : "rgba(0,0,0,0.013)"; ev.currentTarget.style.borderLeftColor = "transparent"; }}
+                    style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px", padding: "12px 20px", cursor: "pointer", alignItems: "center", gap: 12, borderBottom: "1px solid var(--border-subtle)", transition: "background 0.1s" }}
+                    onMouseEnter={ev => ev.currentTarget.style.background = "var(--bg-card-hover)"}
+                    onMouseLeave={ev => ev.currentTarget.style.background = "transparent"}
                   >
-                    <span style={{ fontSize: 13, textAlign: "center", display: "block" }}>
-                      {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)" }}>{idx + 1}</span>}
+                    <span style={{ fontSize: idx < 3 ? 14 : 11, fontWeight: 700, color: idx < 3 ? "#f59e0b" : "var(--text-muted)", textAlign: "center" }}>
+                      {idx + 1}
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, background: repColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff" }}>{e.repName.charAt(0).toUpperCase()}</div>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: repColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{e.repName.charAt(0).toUpperCase()}</div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
-                        {e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", background: "rgba(99,102,241,0.1)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>}
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
+                        {e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--ai)", background: "rgba(139,92,246,0.12)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>}
                       </div>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-2)", textAlign: "center" }}>{e.repCalls.length}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", textAlign: "center" }}>{e.repCalls.length}</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.05)", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ width: `${e.avg}%`, height: "100%", background: getScoreColor(e.avg), borderRadius: 3 }} />
+                      <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ width: `${e.avg}%`, height: "100%", background: getScoreColor(e.avg), borderRadius: 2 }} />
                       </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: getScoreColor(e.avg), fontFamily: "'Space Mono', monospace", width: 36, flexShrink: 0, textAlign: "right" }}>{e.avg}%</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: getScoreColor(e.avg), fontFamily: "'Space Mono', monospace", width: 34, flexShrink: 0, textAlign: "right" }}>{e.avg}%</span>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       {e.trend !== null
-                        ? <span style={{ fontSize: 12, fontWeight: 700, color: e.trend > 5 ? "#10B981" : e.trend < -5 ? "#EF4444" : "var(--text-3)" }}>{e.trend > 5 ? `↑${e.trend}` : e.trend < -5 ? `↓${Math.abs(e.trend)}` : "→"}</span>
-                        : <span style={{ color: "var(--text-3)", fontSize: 12 }}>—</span>}
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      {(() => { const seg = getRepSegment(e.repCalls); const sc = getSegmentColor(seg); return seg ? <span style={{ fontSize: 10, fontWeight: 700, color: sc.color, background: sc.bg, padding: "2px 7px", borderRadius: 6 }}>{seg}</span> : <span style={{ fontSize: 10, color: "var(--text-3)" }}>—</span>; })()}
+                        ? <span style={{ fontSize: 12, fontWeight: 700, color: e.trend > 5 ? "#31CE81" : e.trend < -5 ? "#ef4444" : "var(--text-muted)" }}>{e.trend > 5 ? `↑${e.trend}` : e.trend < -5 ? `↓${Math.abs(e.trend)}` : "→"}</span>
+                        : <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>}
                     </div>
                     <div>
-                      {e.topWeakness
-                        ? <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 6, background: "rgba(234,179,8,0.1)", color: "#92400E", fontWeight: 600, display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.topWeakness}</span>
-                        : <span style={{ color: "var(--text-3)", fontSize: 11 }}>—</span>}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-2)" }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
-                      <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1 }}>{e.lastCall?.category_scores?.call_type || e.lastCall?.call_type || "Call"}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{e.lastCall?.category_scores?.call_type || e.lastCall?.call_type || "Call"}</div>
                     </div>
                   </div>
                 );
