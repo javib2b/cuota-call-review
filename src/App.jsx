@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Dashboard from "./components/Dashboard.tsx";
+import ClientsPage from "./components/ClientsPage.tsx";
 
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
@@ -6059,11 +6060,20 @@ export default function CuotaCallReview() {
           onRefresh={loadCalls}
         />}
 
-        {/* CLIENTS / SALES READINESS — "clients" is the new nav name, "calls" kept for backward compat */}
-        {(page === "calls" || page === "clients") && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} clientProfiles={clientProfiles} />}
-
-        {/* REVIEWS — placeholder (Phase 3 will build split-view detail) */}
-        {page === "reviews" && <SavedCallsList calls={savedCalls} onSelect={loadCallIntoReview} onNewCall={startNewReview} folderClient={folderClient} setFolderClient={setFolderClient} folderAE={folderAE} setFolderAE={setFolderAE} error={callsError} onRetry={loadCalls} clients={clients} onAddClient={addClient} onDeleteClient={deleteClient} pastClients={pastClients} onArchiveClient={archiveClient} onRestoreClient={restoreClient} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} archivedClients={archivedClients} onArchiveFromPast={archiveFromPast} onRestoreFromArchived={restoreFromArchived} clientProfiles={clientProfiles} />}
+        {/* CLIENTS */}
+        {(page === "calls" || page === "clients" || page === "reviews") && (
+          <ClientsPage
+            clients={clients}
+            pastClients={pastClients}
+            savedCalls={savedCalls}
+            onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }}
+            onNewReview={startNewReview}
+            onNavigate={(p) => { setPage(p); if (p === "home") { /* nothing extra */ } }}
+            onAddClient={addClient}
+            onArchiveClient={archiveClient}
+            onRestoreClient={restoreClient}
+          />
+        )}
 
         {/* SALES ENABLEMENT */}
         {page === "enablement" && <EnablementPage docs={enablementDocs} getValidToken={getValidToken} profile={profile} clients={clients} onDocsUpdate={loadDocs} />}
