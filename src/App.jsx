@@ -2547,7 +2547,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }].map(tab => (
+        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }, { id: "gtm", label: "GTM Profile" }].map(tab => (
           <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border-soft)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(49,206,129,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)" }}>{tab.count}</span>}
@@ -2638,7 +2638,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         </div>
       )}
 
-      {/* GTM TAB (hidden from tabs but kept for data access) */}
+      {/* GTM PROFILE TAB */}
       {activeTab === "gtm" && (
         <GTMProfileTab client={client} getValidToken={getValidToken} onProfileUpdate={onProfileUpdate} />
       )}
@@ -5853,8 +5853,7 @@ export default function CuotaCallReview() {
         </div>
         <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px 0" }}>
           {[
-            { label: "Clients", active: page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review", onClick: () => { setPage("clients"); setFolderClient(null); setFolderAE(null); } },
-            { label: "Decks", active: page === "deck", onClick: () => setPage("deck") },
+            { label: "Clients", active: page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review" || page === "deck", onClick: () => { setPage("clients"); setFolderClient(null); setFolderAE(null); } },
           ].map(item => (
             <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: item.active ? "#31CE81" : "rgba(255,255,255,0.55)" }}>{item.label}</span>
