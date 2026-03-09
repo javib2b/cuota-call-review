@@ -2235,10 +2235,10 @@ function ScoreTrendsChart({ repEntries }) {
   const trendColor = isPositive ? "#31CE81" : isNegative ? "#ef4444" : "#9ca3af";
   const trendLabel = isPositive ? `↑ +${trendDelta} pts` : isNegative ? `↓ ${trendDelta} pts` : "→ Flat";
 
-  // Chart layout
-  const PAD_L = 36, PAD_R = 16, PAD_T = 16, PAD_B = 32;
-  const W = 700, H = 200;
-  const chartW = W - PAD_L - PAD_R;
+  // Chart layout — PAD_L/R = 0 so chart fills full card width
+  const PAD_L = 0, PAD_R = 0, PAD_T = 12, PAD_B = 28;
+  const W = 700, H = 190;
+  const chartW = W;
   const chartH = H - PAD_T - PAD_B;
   const Y_MIN = 20, Y_MAX = 100;
 
@@ -2247,7 +2247,7 @@ function ScoreTrendsChart({ repEntries }) {
   const maxT = Math.max(...allTs);
   const dateSpan = maxT - minT || 86400000;
 
-  const toX = (date) => PAD_L + ((date.getTime() - minT) / dateSpan) * chartW;
+  const toX = (date) => ((date.getTime() - minT) / dateSpan) * W;
   const toY = (score) => PAD_T + chartH - ((Math.min(Y_MAX, Math.max(Y_MIN, score)) - Y_MIN) / (Y_MAX - Y_MIN)) * chartH;
 
   // Area fill path
@@ -2272,9 +2272,9 @@ function ScoreTrendsChart({ repEntries }) {
   const repNames = [...new Set(repEntries.map(e => e.repName))];
 
   return (
-    <div style={{ background: "var(--bg-card)", borderTop: "1px solid var(--border-subtle)", borderBottom: "1px solid var(--border-subtle)", overflow: "hidden", marginBottom: 20, marginLeft: -40, marginRight: -40 }}>
+    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 40px 12px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 12px" }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Score Trend</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
@@ -2305,11 +2305,11 @@ function ScoreTrendsChart({ repEntries }) {
             </linearGradient>
           </defs>
 
-          {/* Grid lines */}
+          {/* Grid lines — full width, labels overlaid inside */}
           {[40, 60, 80].map(s => (
             <g key={s}>
-              <line x1={PAD_L} x2={PAD_L + chartW} y1={toY(s)} y2={toY(s)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-              <text x={PAD_L - 6} y={toY(s) + 3.5} textAnchor="end" fontSize={9} fill="rgba(255,255,255,0.18)">{s}</text>
+              <line x1={0} x2={W} y1={toY(s)} y2={toY(s)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+              <text x={10} y={toY(s) - 4} textAnchor="start" fontSize={9} fill="rgba(255,255,255,0.25)">{s}</text>
             </g>
           ))}
 
