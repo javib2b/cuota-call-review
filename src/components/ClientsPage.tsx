@@ -218,7 +218,10 @@ export default function ClientsPage({
                   display: "flex", justifyContent: "center", fontFamily: FONT,
                 }}
               >
-                <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, letterSpacing: 0.5 }}>CL</span>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
               </button>
               {/* New Review icon */}
               <button
@@ -378,7 +381,16 @@ export default function ClientsPage({
                       background: logoBg(client), border: `1px solid ${BORDER2}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, fontWeight: 700, color: TEXT, letterSpacing: 0.5,
-                    }}>{logoInitials(client)}</div>
+                      position: "relative", overflow: "hidden",
+                    }}>
+                      {logoInitials(client)}
+                      <img
+                        src={`/logos/${client.toLowerCase()}.png`}
+                        alt=""
+                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 4 }}
+                      />
+                    </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
                       {subtitle && <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{subtitle}</div>}
@@ -478,7 +490,16 @@ export default function ClientsPage({
                         background: logoBg(client), border: `1px solid ${BORDER2}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 10, fontWeight: 700, color: TEXT,
-                      }}>{logoInitials(client)}</div>
+                        position: "relative", overflow: "hidden",
+                      }}>
+                        {logoInitials(client)}
+                        <img
+                          src={`/logos/${client.toLowerCase()}.png`}
+                          alt=""
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 3 }}
+                        />
+                      </div>
                       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{client}</span>
                         <span style={{ fontSize: 12, color: MUTED }}>

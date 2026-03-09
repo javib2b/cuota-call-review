@@ -5490,6 +5490,16 @@ export default function CuotaCallReview() {
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
   const [sidebarSections, setSidebarSections] = useState({ clients: false, assessments: false, admin: false });
   const [cmdKOpen, setCmdKOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
+  });
+  function toggleSidebar() {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem("sidebar_collapsed", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  }
 
   const addClient = useCallback((name) => {
     setClients(prev => {
@@ -6035,33 +6045,87 @@ export default function CuotaCallReview() {
       <CmdKPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={(p) => { setPage(p); if (p === "clients") { setFolderClient(null); setFolderAE(null); } }} onNewReview={startNewReview} savedCalls={savedCalls} />
 
       {/* SIDEBAR */}
-      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: "var(--bg-primary)", borderRight: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", zIndex: 100 }}>
-        <div style={{ padding: "20px 16px 16px" }}>
-          <img src="/cuota_logo_official_White.png" alt="Cuota" onClick={() => setPage("home")} style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }} />
-        </div>
-        <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px 0" }}>
-          {[
-            { label: "Clients", active: page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review" || page === "deck", onClick: () => { setPage("clients"); setFolderClient(null); setFolderAE(null); } },
-          ].map(item => (
-            <button key={item.label} onClick={item.onClick} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: item.active ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginBottom: 2, textAlign: "left", boxSizing: "border-box" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: item.active ? "#31CE81" : "rgba(255,255,255,0.55)" }}>{item.label}</span>
-              {item.active && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
-            </button>
-          ))}
-          <button onClick={startNewReview} style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: "#31CE81", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginTop: 4, boxSizing: "border-box", gap: 6 }}>
-            <span style={{ fontSize: 15, fontWeight: 400, color: "#fff", lineHeight: 1 }}>+</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>New Review</span>
-          </button>
-        </nav>
-        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", marginBottom: 10, color: page === "settings" ? "#31CE81" : "rgba(255,255,255,0.5)", fontSize: 15, fontFamily: "inherit" }}>⚙</button>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.user?.email}</div>
-          <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
-        </div>
-      </div>
+      {(() => {
+        const W = sidebarCollapsed ? 64 : 220;
+        const isClientsActive = page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review" || page === "deck";
+        const iconClients = (color) => (
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        );
+        return (
+          <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: W, background: "var(--bg-primary)", borderRight: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", zIndex: 100, transition: "width 0.2s ease", overflow: "hidden" }}>
+            {/* Logo */}
+            <div style={{ padding: sidebarCollapsed ? "20px 0" : "20px 16px 16px", display: "flex", justifyContent: sidebarCollapsed ? "center" : "flex-start" }}>
+              {sidebarCollapsed ? (
+                <div onClick={() => setPage("home")} style={{ width: 34, height: 34, borderRadius: 8, cursor: "pointer", background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#31CE81" }}>C</div>
+              ) : (
+                <img src="/cuota_logo_official_White.png" alt="Cuota" onClick={() => setPage("home")} style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }} />
+              )}
+            </div>
+            {/* Nav */}
+            <nav style={{ flex: 1, padding: sidebarCollapsed ? "4px 8px" : "8px 10px 0", display: "flex", flexDirection: "column", gap: 4 }}>
+              {sidebarCollapsed ? (
+                <>
+                  <button onClick={() => { setPage("clients"); setFolderClient(null); setFolderAE(null); }} title="Clients"
+                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: isClientsActive ? "rgba(49,206,129,0.14)" : "transparent", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: "inherit" }}
+                    onMouseEnter={e => { if (!isClientsActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = isClientsActive ? "rgba(49,206,129,0.14)" : "transparent"; }}
+                  >
+                    {iconClients(isClientsActive ? "#31CE81" : "rgba(255,255,255,0.5)")}
+                  </button>
+                  <button onClick={startNewReview} title="New Review"
+                    style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "rgba(49,206,129,0.12)", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: "inherit" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "#31CE81", lineHeight: 1 }}>+</span>
+                  </button>
+                  <button onClick={toggleSidebar} title="Expand sidebar"
+                    style={{ marginTop: "auto", width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: "inherit" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <span style={{ fontSize: 14, color: "rgba(245,243,240,0.25)", lineHeight: 1 }}>›</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setPage("clients"); setFolderClient(null); setFolderAE(null); }}
+                    style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: isClientsActive ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}
+                    onMouseEnter={e => { if (!isClientsActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = isClientsActive ? "rgba(49,206,129,0.14)" : "transparent"; }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: isClientsActive ? "#31CE81" : "rgba(255,255,255,0.55)" }}>Clients</span>
+                    {isClientsActive && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
+                  </button>
+                  <button onClick={startNewReview}
+                    style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: "#31CE81", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", marginTop: 4, boxSizing: "border-box", gap: 6 }}>
+                    <span style={{ fontSize: 15, fontWeight: 400, color: "#fff", lineHeight: 1 }}>+</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>New Review</span>
+                  </button>
+                  <button onClick={toggleSidebar} title="Collapse sidebar"
+                    style={{ marginTop: "auto", width: "100%", padding: "8px 10px", border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit", gap: 8 }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <span style={{ fontSize: 14, color: "rgba(245,243,240,0.25)", lineHeight: 1 }}>‹</span>
+                    <span style={{ fontSize: 11, color: "rgba(245,243,240,0.25)" }}>Collapse</span>
+                  </button>
+                </>
+              )}
+            </nav>
+            {/* Footer */}
+            <div style={{ padding: sidebarCollapsed ? "12px 8px" : "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", alignItems: sidebarCollapsed ? "center" : "flex-start", gap: 8 }}>
+              <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", color: page === "settings" ? "#31CE81" : "rgba(255,255,255,0.5)", fontSize: 15, fontFamily: "inherit", flexShrink: 0 }}>⚙</button>
+              {!sidebarCollapsed && (
+                <>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{session.user?.email}</div>
+                  <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
 
-      <div style={{ marginLeft: 220, flex: 1, padding: "32px 40px" }}>
+      <div style={{ marginLeft: sidebarCollapsed ? 64 : 220, flex: 1, padding: "32px 40px", transition: "margin-left 0.2s ease" }}>
         {/* HOME PAGE — Dashboard */}
         {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { if (p === "review") { startNewReview(); } else { setPage(p); if (p === "calls" || p === "clients") { setFolderClient(null); setFolderAE(null); } } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} userEmail={session?.user?.email} onCmdK={() => setCmdKOpen(true)} onNewReview={startNewReview} />}
 

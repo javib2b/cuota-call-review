@@ -226,7 +226,10 @@ function Sidebar({
             <button onClick={() => onNavigate("clients")} title="Clients" style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "rgba(49,206,129,0.10)", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: FONT }}
               onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
               onMouseLeave={e => (e.currentTarget.style.background = "rgba(49,206,129,0.10)")}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, letterSpacing: 0.5 }}>CL</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
             </button>
             <button onClick={onNewReview} title="New Call Review" style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "rgba(49,206,129,0.12)", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: FONT }}>
               <span style={{ fontSize: 16, fontWeight: 700, color: GREEN, lineHeight: 1 }}>+</span>
