@@ -402,7 +402,7 @@ function AuthScreen({ onAuth }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne', system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
       <div style={{ width: 400, padding: 40 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
@@ -2515,38 +2515,38 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
   return (
     <div>
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
-        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Clients</span>
-        <span style={{ color: "var(--text-2)" }}>/</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 500 }}>Clients</span>
+        <span style={{ color: "var(--text-3)" }}>/</span>
         <span style={{ color: "var(--text-1)", fontWeight: 600 }}>{client}</span>
       </div>
 
-      {/* Dark hero header */}
-      <div style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, opacity: 0.04, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "20px 20px", pointerEvents: "none" }} />
+      {/* Hero header */}
+      <div style={{ background: "linear-gradient(135deg, #062035 0%, #0a2a45 100%)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.025, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
-          <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, background: "rgba(255,255,255,0.08)", border: "2px solid rgba(99,102,241,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "#fff", boxShadow: "0 0 30px rgba(99,102,241,0.3)", overflow: "hidden" }}>
-            <ClientLogo client={client} website={clientProfiles[client]?.website} size={44} letterStyle={{ fontSize: 26, fontWeight: 800, color: "#fff" }} />
+          <div style={{ width: 64, height: 64, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            <ClientLogo client={client} website={clientProfiles[client]?.website} size={44} letterStyle={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'DM Sans', system-ui, sans-serif" }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ fontSize: 26, fontWeight: 800, color: "#fff", margin: "0 0 10px", letterSpacing: -0.5 }}>{client}</h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: "0 0 10px", letterSpacing: "-0.3px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{client}</h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {[
-                { label: `${clientCalls.length} Reviews`, icon: "📞" },
-                { label: `${repEntries.length} Reps`, icon: "👤" },
-                { label: `${clientDocs.length} Docs`, icon: "📄" }
+                { label: `${clientCalls.length} Reviews` },
+                { label: `${repEntries.length} Reps` },
+                { label: `${clientDocs.length} Docs` }
               ].map(p => (
-                <span key={p.label} style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 20, padding: "4px 12px", fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>{p.icon} {p.label}</span>
+                <span key={p.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 500, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{p.label}</span>
               ))}
             </div>
           </div>
           {avgCallScore !== null && (
             <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 52, fontWeight: 900, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
-              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Avg Score</div>
+              <div style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,255,255,0.35)", marginTop: 4, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Avg Score</div>
               <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(99,102,241,0.35)", color: "rgba(255,255,255,0.9)" }}>{getScoreLabel(avgCallScore)}</span>
-                {trendArrow !== null && <span style={{ fontSize: 14, color: trendArrow > 5 ? "#34D399" : trendArrow < -5 ? "#F87171" : "rgba(255,255,255,0.45)" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
+                <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "rgba(49,206,129,0.15)", color: "#31CE81", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{getScoreLabel(avgCallScore)}</span>
+                {trendArrow !== null && <span style={{ fontSize: 14, color: trendArrow > 5 ? "#31CE81" : trendArrow < -5 ? "#FF4D4D" : "rgba(255,255,255,0.35)" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
               </div>
             </div>
           )}
@@ -2557,15 +2557,15 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {clientCalls.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
           {[
-            { label: "Total Reviews", value: String(clientCalls.length), accent: "#6366F1" },
+            { label: "Total Reviews", value: String(clientCalls.length), accent: "#31CE81" },
             { label: "Team Avg Score", value: avgCallScore !== null ? `${avgCallScore}%` : "—", accent: getScoreColor(avgCallScore || 0) },
-            { label: "Most Improved", value: mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—", accent: "#10B981", sub: mostImproved?.improvement > 0 ? `+${mostImproved.improvement} pts` : null },
-            { label: "Need Attention", value: repsNeedingAttention > 0 ? String(repsNeedingAttention) : "None", accent: repsNeedingAttention > 0 ? "#EF4444" : "#10B981" }
+            { label: "Most Improved", value: mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—", accent: "#31CE81", sub: mostImproved?.improvement > 0 ? `+${mostImproved.improvement} pts` : null },
+            { label: "Need Attention", value: repsNeedingAttention > 0 ? String(repsNeedingAttention) : "None", accent: repsNeedingAttention > 0 ? "#FF4D4D" : "#31CE81" }
           ].map(card => (
-            <div key={card.label} style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${card.accent}` }}>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, color: "var(--text-3)", marginBottom: 6 }}>{card.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text-1)" }}>{card.value}</div>
-              {card.sub && <div style={{ fontSize: 10, color: card.accent, fontWeight: 600, marginTop: 2 }}>{card.sub}</div>}
+            <div key={card.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${card.accent}` }}>
+              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{card.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "var(--text-1)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{card.value}</div>
+              {card.sub && <div style={{ fontSize: 11, color: card.accent, fontWeight: 600, marginTop: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{card.sub}</div>}
             </div>
           ))}
         </div>
@@ -2574,7 +2574,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
         {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }, { id: "gtm", label: "GTM Profile" }, { id: "audit", label: "GTM Audit" }].map(tab => (
-          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border-soft)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(49,206,129,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)" }}>{tab.count}</span>}
           </button>
@@ -6002,7 +6002,7 @@ export default function CuotaCallReview() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'Syne', system-ui, sans-serif" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
