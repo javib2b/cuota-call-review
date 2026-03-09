@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import Dashboard from "./components/Dashboard.jsx";
 
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
@@ -5968,6 +5969,14 @@ export default function CuotaCallReview() {
 
   if (loading && !session) return <div style={{ minHeight: "100vh", background: "var(--bg)" }} />;
   if (!session) return <AuthScreen onAuth={handleAuth} />;
+
+  if (page === "home") return (
+    <Dashboard
+      userEmail={session.user?.email}
+      onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
+      onNewReview={startNewReview}
+    />
+  );
 
   const tabs = [
     { id: "transcript", label: "Transcript" },
