@@ -49,7 +49,11 @@ const supabase = {
       },
       async delete(filters) {
         const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filters}`, { method: "DELETE", headers: supabase.headers(token) });
-        return r.ok;
+        if (!r.ok) {
+          const body = await r.json().catch(() => ({}));
+          throw new Error(body.message || body.error || `Delete from ${table} failed (${r.status})`);
+        }
+        return true;
       },
     };
   },
@@ -2384,9 +2388,11 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     try {
       const t = await getValidToken();
       const ids = repCalls.map(c => c.id).filter(Boolean);
-      if (ids.length === 0) return;
+      if (ids.length === 0) { alert("No call IDs found for this rep."); return; }
       const table = await supabase.from("call_reviews", t);
-      await table.delete(`id=in.(${ids.join(",")})`);
+      for (const id of ids) {
+        await table.delete(`id=eq.${id}`);
+      }
       onRefresh && onRefresh();
     } catch (e) {
       alert("Delete failed: " + e.message);
