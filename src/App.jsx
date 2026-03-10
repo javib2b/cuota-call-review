@@ -2310,7 +2310,7 @@ function ScoreTrendsChart({ repEntries }) {
 
       {/* Chart */}
       <div style={{ position: "relative" }} onMouseLeave={() => { setHoveredIdx(null); setTooltip(null); }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 190, display: "block" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 190, display: "block" }}>
           <defs>
             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={trendColor} stopOpacity={0.22} />
