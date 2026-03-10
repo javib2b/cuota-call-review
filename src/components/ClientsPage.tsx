@@ -163,7 +163,7 @@ interface ClientMeta { calls: number; score: number | null; reps: number; }
 function computeMeta(client: string, savedCalls: any[]): ClientMeta {
   const calls = savedCalls.filter(
     c => c.category_scores?.client === client ||
-         (c.prospect_company || "").toLowerCase() === client.toLowerCase()
+         (c.prospect_company || "").toLowerCase().includes(client.toLowerCase())
   );
   const scores = calls
     .map(c => c.overall_score)

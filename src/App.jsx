@@ -6373,6 +6373,9 @@ export default function CuotaCallReview() {
       profile={profile}
       clients={clients}
       savedCalls={savedCalls}
+      isLoading={loading}
+      callsError={callsError}
+      onRetryLoad={loadCalls}
       onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
       onNewReview={startNewReview}
       onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}

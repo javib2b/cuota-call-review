@@ -57,6 +57,9 @@ interface Props {
   profile?: { full_name?: string; role?: string } | null;
   clients?: string[];
   savedCalls?: any[];
+  isLoading?: boolean;
+  callsError?: string;
+  onRetryLoad?: () => void;
 }
 
 function callMatchesClient(call: any, client: string): boolean {
@@ -113,7 +116,7 @@ function computeClientRow(client: string, calls: any[]) {
   return { client, calls: clientCalls.length, score, delta, gap, status };
 }
 
-export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "", profile, clients = [], savedCalls = [] }: Props) {
+export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "", profile, clients = [], savedCalls = [], isLoading = false, callsError, onRetryLoad }: Props) {
   const hour = new Date().getHours();
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
   const [collapsed, setCollapsed] = useState(getSavedCollapsed);
@@ -321,10 +324,10 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
         {/* KPI Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 32 }}>
           {([
-            { label: "Active Clients",     value: String(clients.length),                         color: TEXT  },
-            { label: "Avg Score",          value: avgScore !== null ? `${avgScore}%` : "—",       color: avgScore !== null ? scoreColor(avgScore) : TEXT3 },
-            { label: "Reviews This Month", value: String(reviewsThisMonth),                        color: GREEN },
-            { label: "Critical AEs",       value: String(criticalAEs),                             color: criticalAEs > 0 ? RED : GREEN },
+            { label: "Active Clients",     value: String(clients.length),                              color: TEXT  },
+            { label: "Avg Score",          value: isLoading ? "…" : avgScore !== null ? `${avgScore}%` : "—",  color: avgScore !== null ? scoreColor(avgScore) : TEXT3 },
+            { label: "Reviews This Month", value: isLoading ? "…" : String(reviewsThisMonth),           color: GREEN },
+            { label: "Critical AEs",       value: isLoading ? "…" : String(criticalAEs),                color: criticalAEs > 0 ? RED : GREEN },
           ] as { label: string; value: string; color: string }[]).map(k => (
             <div key={k.label} style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)",
@@ -358,7 +361,24 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
             <span>Status</span>
           </div>
 
-          {clientRows.length === 0 ? (
+          {callsError ? (
+            <div style={{ padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <span style={{ fontSize: 13, color: RED }}>{callsError}</span>
+              {onRetryLoad && <button onClick={onRetryLoad} style={{ padding: "6px 14px", border: `1px solid ${RED}`, borderRadius: 8, background: "rgba(255,77,77,0.1)", color: RED, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}>Retry</button>}
+            </div>
+          ) : isLoading ? (
+            <div style={{ padding: "32px 24px" }}>
+              {[...Array(clients.length || 5)].map((_, i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 180px 70px 130px 100px", padding: "14px 0", gap: 16, borderBottom: i < (clients.length || 5) - 1 ? `1px solid ${BORDER}` : "none" }}>
+                  <div style={{ height: 14, borderRadius: 6, background: "rgba(255,255,255,0.06)", width: `${60 + (i % 3) * 15}%` }} />
+                  <div style={{ height: 14, borderRadius: 6, background: "rgba(255,255,255,0.04)", width: "80%" }} />
+                  <div style={{ height: 14, borderRadius: 6, background: "rgba(255,255,255,0.04)", width: "50%" }} />
+                  <div style={{ height: 14, borderRadius: 6, background: "rgba(255,255,255,0.04)", width: "60%" }} />
+                  <div style={{ height: 14, borderRadius: 6, background: "rgba(255,255,255,0.04)", width: "70%" }} />
+                </div>
+              ))}
+            </div>
+          ) : clientRows.length === 0 ? (
             <div style={{ padding: "32px 24px", textAlign: "center", color: TEXT3, fontSize: 13 }}>
               No clients yet. <button onClick={() => onNavigate?.("clients")} style={{ color: GREEN, background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600 }}>Manage clients →</button>
             </div>
