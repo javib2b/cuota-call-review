@@ -2457,6 +2457,7 @@ function ScoreTrendsChart({ repEntries }) {
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
+  const [repRoleFilter, setRepRoleFilter] = useState("");
   const [deletingRep, setDeletingRep] = useState(null);
 
   const handleDeleteRep = async (repName, repCalls) => {
@@ -2550,8 +2551,11 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     return `${Math.floor(days / 365)}y ago`;
   };
 
+  const repRoleOptions = [...new Set(repEntries.map(e => repMeta[e.repName]?.role).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
   const filteredReps = [...repEntries]
     .filter(e => !repSearch || e.repName.toLowerCase().includes(repSearch.toLowerCase()))
+    .filter(e => !repRoleFilter || (repMeta[e.repName]?.role || "").toLowerCase() === repRoleFilter.toLowerCase())
     .sort((a, b) => {
       if (repSort === "calls") return b.repCalls.length - a.repCalls.length;
       if (repSort === "trend") return (b.trend || 0) - (a.trend || 0);
@@ -2677,6 +2681,12 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                     <option value="calls">By Calls</option>
                     <option value="trend">By Trend</option>
                   </select>
+                  {repRoleOptions.length > 0 && (
+                    <select value={repRoleFilter} onChange={e => setRepRoleFilter(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--border-default)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: repRoleFilter ? "var(--text-primary)" : "var(--text-muted)", background: "var(--bg-input)" }}>
+                      <option value="">All Roles</option>
+                      {repRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  )}
                 </div>
               </div>
               {/* Column headers */}
