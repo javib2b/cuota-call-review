@@ -68,7 +68,7 @@ function callMatchesClient(call: any, client: string): boolean {
 
 function computeClientRow(client: string, calls: any[]) {
   const clientCalls = calls.filter(c => callMatchesClient(c, client));
-  if (clientCalls.length === 0) return null;
+  if (clientCalls.length === 0) return { client, calls: 0, score: null, delta: null, gap: "—", status: null };
 
   const allScores = clientCalls.map(c => c.overall_score || 0).filter(Boolean);
   const score = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
@@ -144,10 +144,8 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
     return avg < 50;
   }).length;
 
-  // Client table rows (only clients with calls)
-  const clientRows = clients
-    .map(c => computeClientRow(c, savedCalls))
-    .filter(Boolean) as NonNullable<ReturnType<typeof computeClientRow>>[];
+  // Client table rows — all clients always shown; empty ones show "—"
+  const clientRows = clients.map(c => computeClientRow(c, savedCalls));
 
   // Display name from profile or email
   const displayName = profile?.full_name
@@ -362,11 +360,12 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
 
           {clientRows.length === 0 ? (
             <div style={{ padding: "32px 24px", textAlign: "center", color: TEXT3, fontSize: 13 }}>
-              No call reviews yet. <button onClick={onNewReview} style={{ color: GREEN, background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600 }}>Add one →</button>
+              No clients yet. <button onClick={() => onNavigate?.("clients")} style={{ color: GREEN, background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600 }}>Manage clients →</button>
             </div>
           ) : clientRows.map((c, i) => {
             const col = c.score !== null ? scoreColor(c.score) : TEXT3;
             const st  = c.status ? statusStyle(c.status) : { color: TEXT3, bg: "transparent" };
+            const hasData = c.calls > 0;
             return (
               <div
                 key={c.client}
@@ -376,13 +375,16 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
                   padding: "15px 24px", gap: 16, alignItems: "center",
                   borderBottom: i < clientRows.length - 1 ? `1px solid ${BORDER}` : "none",
                   cursor: "pointer", transition: "background 0.1s",
+                  opacity: hasData ? 1 : 0.45,
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: FONT }}>{c.client}</div>
-                  <div style={{ fontSize: 11, color: TEXT3, marginTop: 2, fontFamily: FONT }}>{c.calls} review{c.calls !== 1 ? "s" : ""}</div>
+                  <div style={{ fontSize: 11, color: TEXT3, marginTop: 2, fontFamily: FONT }}>
+                    {hasData ? `${c.calls} review${c.calls !== 1 ? "s" : ""}` : "No reviews yet"}
+                  </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
