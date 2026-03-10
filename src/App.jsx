@@ -2702,27 +2702,32 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  useEffect(() => { loadProfile(); }, [client]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadProfile = async () => {
-    setLoading(true);
+  useEffect(() => {
+    // Reset immediately so we never show stale data from a previous client
+    setDraft({ website: "", stage: "", icp_description: "", sell_to: "", competitors: [], partners: [] });
+    setProfile(null);
     setSaveError("");
-    try {
-      const t = await getValidToken();
-      const r = await fetch(`/api/gtm-profile?client=${encodeURIComponent(client)}`, {
-        headers: { Authorization: `Bearer ${t}` },
-      });
-      if (r.ok) {
-        const data = await r.json();
-        const p = data.profile || { website: "", stage: "", icp_description: "", sell_to: "", competitors: [], partners: [] };
-        setProfile(data.profile || null);
-        setDraft({ website: p.website || "", stage: p.stage || "", icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
+    setLoading(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const t = await getValidToken();
+        const r = await fetch(`/api/gtm-profile?client=${encodeURIComponent(client)}`, {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        if (r.ok && !cancelled) {
+          const data = await r.json();
+          const p = data.profile || { website: "", stage: "", icp_description: "", sell_to: "", competitors: [], partners: [] };
+          setProfile(data.profile || null);
+          setDraft({ website: p.website || "", stage: p.stage || "", icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
+        }
+      } catch (e) {
+        if (!cancelled) console.warn("GTM load error:", e);
       }
-    } catch (e) {
-      console.warn("GTM load error:", e);
-    }
-    setLoading(false);
-  };
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [client]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGenerate = async () => {
     setGenerating(true);
