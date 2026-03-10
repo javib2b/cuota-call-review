@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 // ─── Design tokens ────────────────────────────────────────────────
 const BG      = "var(--bg-app)";
@@ -46,9 +46,58 @@ const CLIENT_SUBTITLE: Record<string, string> = {
   "Paymend": "New client",
 };
 
+// ─── Clearbit domain map ──────────────────────────────────────────
+const CLEARBIT_DOMAIN: Record<string, string> = {
+  "11x":       "11x.ai",
+  "Arc":       "arc.dev",
+  "Diio":      "diio.io",
+  "Factor":    "factor.com",
+  "Paymend":   "paymend.com",
+  "Nauta":     "nauta.vc",
+  "Planimatik":"planimatik.com",
+  "Rapido":    "rapido.com.br",
+  "Xepelin":   "xepelin.com",
+};
+
 function logoInitials(name: string) { return name.slice(0, 2).toUpperCase(); }
 function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
 function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED; }
+
+// ─── ClientLogo with cascading fallback ───────────────────────────
+// 1. local /logos/{name}.png  2. Clearbit  3. initials
+function ClientLogo({ name, size, borderRadius }: { name: string; size: number; borderRadius: number }) {
+  const domain = CLEARBIT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
+  const [src, setSrc] = useState(`/logos/${name.toLowerCase()}.png`);
+  const [failed, setFailed] = useState(false);
+
+  const handleError = useCallback(() => {
+    if (src.startsWith("/logos/")) {
+      setSrc(`https://logo.clearbit.com/${domain}`);
+    } else {
+      setFailed(true);
+    }
+  }, [src, domain]);
+
+  return (
+    <div style={{
+      width: size, height: size, borderRadius, flexShrink: 0,
+      background: logoBg(name), border: `1px solid ${BORDER2}`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: Math.round(size * 0.33), fontWeight: 700, color: TEXT,
+      position: "relative", overflow: "hidden",
+    }}>
+      {logoInitials(name)}
+      {!failed && (
+        <img
+          src={src}
+          alt=""
+          onError={handleError}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: Math.round(size * 0.12) }}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Score ring ───────────────────────────────────────────────────
 const CIRC = 69.1;
@@ -376,21 +425,7 @@ export default function ClientsPage({
                 >
                   {/* Logo + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 8, flexShrink: 0,
-                      background: logoBg(client), border: `1px solid ${BORDER2}`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 11, fontWeight: 700, color: TEXT, letterSpacing: 0.5,
-                      position: "relative", overflow: "hidden",
-                    }}>
-                      {logoInitials(client)}
-                      <img
-                        src={`/logos/${client.toLowerCase()}.png`}
-                        alt=""
-                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 4 }}
-                      />
-                    </div>
+                    <ClientLogo name={client} size={34} borderRadius={8} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
                       {subtitle && <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{subtitle}</div>}
@@ -485,21 +520,7 @@ export default function ClientsPage({
                         transition: "opacity 0.15s",
                       }}
                     >
-                      <div style={{
-                        width: 30, height: 30, borderRadius: 7, flexShrink: 0,
-                        background: logoBg(client), border: `1px solid ${BORDER2}`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 10, fontWeight: 700, color: TEXT,
-                        position: "relative", overflow: "hidden",
-                      }}>
-                        {logoInitials(client)}
-                        <img
-                          src={`/logos/${client.toLowerCase()}.png`}
-                          alt=""
-                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 3 }}
-                        />
-                      </div>
+                      <ClientLogo name={client} size={30} borderRadius={7} />
                       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{client}</span>
                         <span style={{ fontSize: 12, color: MUTED }}>
