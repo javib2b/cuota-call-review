@@ -1756,6 +1756,10 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
     { id: "metrics", label: "Metrics & Benchmarks", icon: "📈", color: "#f59e0b", accent: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)", score: metricsScore, count: metricsAssessments.length, countLabel: "assessments", desc: "Quota attainment, pipeline coverage, win rate, SDR/AE benchmarks" },
   ];
 
+  const clientsWithReviews = new Set(
+    savedCalls.map(c => c.category_scores?.client).filter(Boolean)
+  ).size;
+
   const clientHealth = clients.map(client => {
     const clientCalls = savedCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()));
     const cs = clientCalls.length > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / clientCalls.length) : null;
@@ -1819,9 +1823,9 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
           </div>
         </div>
         <div className="glass-card" style={{ borderRadius: 14, padding: "18px 20px" }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Active Clients</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
-          <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6 }}>in workspace</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Clients Reviewed</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{clientsWithReviews}</div>
+          <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6 }}>of {clients.length} in workspace</div>
         </div>
       </div>
 
