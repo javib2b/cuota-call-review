@@ -6199,15 +6199,6 @@ export default function CuotaCallReview() {
   if (loading && !session) return <div style={{ minHeight: "100vh", background: "var(--bg)" }} />;
   if (!session) return <AuthScreen onAuth={handleAuth} />;
 
-  if (page === "home") return (
-    <Dashboard
-      userEmail={session.user?.email}
-      onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
-      onNewReview={startNewReview}
-      onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}
-    />
-  );
-
   if (page === "clients" || page === "calls" || page === "reviews") return (
     <ClientsPage
       clients={clients}
