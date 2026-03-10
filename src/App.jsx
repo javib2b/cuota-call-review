@@ -1756,9 +1756,12 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
     { id: "metrics", label: "Metrics & Benchmarks", icon: "📈", color: "#f59e0b", accent: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)", score: metricsScore, count: metricsAssessments.length, countLabel: "assessments", desc: "Quota attainment, pipeline coverage, win rate, SDR/AE benchmarks" },
   ];
 
-  const clientsWithReviews = new Set(
-    savedCalls.map(c => c.category_scores?.client).filter(Boolean)
-  ).size;
+  const clientsWithReviews = clients.filter(client =>
+    savedCalls.some(c =>
+      c.category_scores?.client === client ||
+      (c.prospect_company || "").toLowerCase().includes(client.toLowerCase())
+    )
+  ).length;
 
   const clientHealth = clients.map(client => {
     const clientCalls = savedCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()));
@@ -5832,10 +5835,9 @@ export default function CuotaCallReview() {
     if (!validToken) return;
     try {
       const table = await supabase.from("call_reviews", validToken);
-      const data = await table.select("*");
+      const data = await table.selectWhere("*", "limit=10000&order=created_at.desc");
       if (Array.isArray(data)) {
-        const sorted = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        const enriched = sorted.map(c => ({ ...c, rep_name: c.category_scores?.rep_name || c.prospect_company }));
+        const enriched = data.map(c => ({ ...c, rep_name: c.category_scores?.rep_name || c.prospect_company }));
         setCallsError("");
         setSavedCalls(enriched);
       }
@@ -6217,6 +6219,8 @@ export default function CuotaCallReview() {
       onAddClient={addClient}
       onArchiveClient={archiveClient}
       onRestoreClient={restoreClient}
+      callsError={callsError}
+      onRetryLoadCalls={loadCalls}
     />
   );
 

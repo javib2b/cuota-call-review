@@ -186,6 +186,8 @@ interface Props {
   onAddClient: (name: string) => void;
   onArchiveClient: (name: string) => void;
   onRestoreClient: (name: string) => void;
+  callsError?: string;
+  onRetryLoadCalls?: () => void;
 }
 
 const COL = "1fr 48px 56px 120px 48px 82px";
@@ -195,6 +197,7 @@ export default function ClientsPage({
   clients, pastClients, savedCalls,
   onClientClick, onNewReview, onNavigate,
   onAddClient, onArchiveClient, onRestoreClient,
+  callsError, onRetryLoadCalls,
 }: Props) {
   const [collapsed, setCollapsed]     = useState(getSavedCollapsed);
   const [hoveredRow, setHoveredRow]   = useState<string | null>(null);
@@ -362,6 +365,24 @@ export default function ClientsPage({
         minWidth: 0, transition: "margin-left 0.2s ease",
       }}>
         <div style={{ maxWidth: 820, margin: "0 auto" }}>
+
+          {/* Load error banner */}
+          {callsError && (
+            <div style={{
+              marginBottom: 20, padding: "12px 16px",
+              background: "rgba(255,77,77,0.12)", border: "1px solid rgba(255,77,77,0.35)",
+              borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+            }}>
+              <span style={{ fontSize: 13, color: "#ff6b6b" }}>{callsError}</span>
+              {onRetryLoadCalls && (
+                <button onClick={onRetryLoadCalls} style={{
+                  flexShrink: 0, padding: "5px 12px", fontSize: 12, fontWeight: 600,
+                  background: "rgba(255,77,77,0.2)", border: "1px solid rgba(255,77,77,0.5)",
+                  borderRadius: 6, color: "#ff6b6b", cursor: "pointer", fontFamily: FONT,
+                }}>Retry</button>
+              )}
+            </div>
+          )}
 
           {/* Page header */}
           <div style={{ marginBottom: 28 }}>
