@@ -285,11 +285,13 @@ interface Props {
   onViewCall: (call: any) => void;
   onNavigate: (page: string) => void;
   onNewReview: () => void;
+  photoUrl?: string;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────
-export default function RepDetailPage({ client, repName, repCalls, quotaTarget, quotaClosed, onBack, onViewCall, onNavigate, onNewReview }: Props) {
+export default function RepDetailPage({ client, repName, repCalls, quotaTarget, quotaClosed, onBack, onViewCall, onNavigate, onNewReview, photoUrl }: Props) {
   const [collapsed] = useState(getSavedCollapsed);
+  const [imgError, setImgError] = useState(false);
   const W = collapsed ? MINI : FULL;
 
   const sorted = [...repCalls].sort(
@@ -335,14 +337,17 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
             display: "flex", alignItems: "center", gap: 20,
           }}>
             {/* Avatar */}
-            <div style={{
-              width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
-              background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 18, fontWeight: 700, color: GREEN,
-            }}>
-              {initials}
-            </div>
+            {photoUrl && !imgError
+              ? <img src={photoUrl} alt={repName} style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", flexShrink: 0, display: "block" }} onError={() => setImgError(true)} />
+              : <div style={{
+                  width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
+                  background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18, fontWeight: 700, color: GREEN,
+                }}>
+                  {initials}
+                </div>
+            }
 
             {/* Name + meta */}
             <div style={{ flex: 1, minWidth: 0 }}>

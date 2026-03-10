@@ -2218,6 +2218,32 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
 const REP_COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#84CC16"];
 const CHART_PALETTE = ["#6366F1", "#10B981", "#F59E0B", "#F43F5E", "#0EA5E9"];
 
+function RepAvatar({ name, photoUrl, size = 32, fontSize = 13, color = "#31CE81" }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const initials = (name || "?").split(" ").map(p => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+  if (photoUrl && !imgFailed) {
+    return (
+      <img
+        src={photoUrl}
+        alt={name}
+        key={photoUrl}
+        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0, display: "block" }}
+        onError={() => setImgFailed(true)}
+      />
+    );
+  }
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", flexShrink: 0,
+      background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize, fontWeight: 700, color,
+    }}>
+      {initials}
+    </div>
+  );
+}
+
 function ScoreTrendsChart({ repEntries }) {
   const [tooltip, setTooltip] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -2395,7 +2421,7 @@ function ScoreTrendsChart({ repEntries }) {
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {} }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const [deletingRep, setDeletingRep] = useState(null);
@@ -2641,7 +2667,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                       {idx + 1}
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: repColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff" }}>{e.repName.charAt(0).toUpperCase()}</div>
+                      <RepAvatar name={e.repName} photoUrl={repPhotos?.[e.repName]} size={28} fontSize={11} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
                         {e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--ai)", background: "rgba(139,92,246,0.12)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>}
@@ -5503,6 +5529,7 @@ export default function CuotaCallReview() {
   const [savedCalls, setSavedCalls] = useState([]);
   const [enablementDocs, setEnablementDocs] = useState([]);
   const [clientProfiles, setClientProfiles] = useState({}); // { clientName: { website, icp_description, ... } }
+  const [repPhotos, setRepPhotos] = useState({}); // { "Full Name": "https://gravatar.com/..." }
   const [crmSnapshots, setCrmSnapshots] = useState([]);
   const [gtmAssessments, setGtmAssessments] = useState([]);
   const [tofAssessments, setTofAssessments] = useState([]);
@@ -5750,6 +5777,20 @@ export default function CuotaCallReview() {
     }
   }, [getValidToken]);
 
+  const loadOrgProfiles = useCallback(async () => {
+    const t = await getValidToken(); if (!t) return;
+    try {
+      const r = await fetch("/api/org-profiles", { headers: { Authorization: `Bearer ${t}` } });
+      if (!r.ok) return;
+      const { profiles } = await r.json();
+      const map = {};
+      (profiles || []).forEach(p => { if (p.photo_url) map[p.full_name] = p.photo_url; });
+      setRepPhotos(map);
+    } catch (e) {
+      console.warn("Could not load rep photos:", e.message);
+    }
+  }, [getValidToken]);
+
   // Validate stored session on mount
   const hasValidated = useRef(false);
   useEffect(() => {
@@ -5801,9 +5842,9 @@ export default function CuotaCallReview() {
   // Load all data whenever token changes
   useEffect(() => {
     if (token) {
-      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments(), loadGtmReports(), loadClientProfiles()]).finally(() => setLoading(false));
+      Promise.all([loadCalls(), loadDocs(), loadCrmSnapshots(), loadGtmAssessments(), loadTofAssessments(), loadHiringAssessments(), loadMetricsAssessments(), loadGtmReports(), loadClientProfiles(), loadOrgProfiles()]).finally(() => setLoading(false));
     } else { setLoading(false); }
-  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments, loadGtmReports, loadClientProfiles]);
+  }, [token, loadCalls, loadDocs, loadCrmSnapshots, loadGtmAssessments, loadTofAssessments, loadHiringAssessments, loadMetricsAssessments, loadGtmReports, loadClientProfiles, loadOrgProfiles]);
 
   // Auto-refresh token every 50 minutes to prevent expiration during use
   useEffect(() => {
@@ -5849,8 +5890,13 @@ export default function CuotaCallReview() {
       const table = await supabase.from("profiles", accessToken);
       const profiles = await table.selectWhere("*", "id=eq." + user.id);
       if (Array.isArray(profiles) && profiles.length > 0) {
-        setProfile(profiles[0]);
-        localStorage.setItem("cuota_profile", JSON.stringify(profiles[0]));
+        const existingProfile = profiles[0];
+        setProfile(existingProfile);
+        localStorage.setItem("cuota_profile", JSON.stringify(existingProfile));
+        // Patch email if missing (for Gravatar)
+        if (!existingProfile.email && user.email) {
+          try { await table.update({ email: user.email }, "id=eq." + user.id); } catch (e) { console.warn("Profile email patch failed:", e.message); }
+        }
       } else {
         // No profile exists — check for invitation to determine org
         let orgId = "00000000-0000-0000-0000-000000000001";
@@ -5865,8 +5911,8 @@ export default function CuotaCallReview() {
             try { await invTable.update({ accepted: true }, "id=eq." + invites[0].id); } catch (e) { console.error("Invitation accept failed:", e.message); }
           }
         } catch (e) { console.error("Invitation lookup failed:", e.message); }
-        // Create the profile in Supabase
-        const newProfile = { id: user.id, org_id: orgId, role, full_name: user.user_metadata?.full_name || user.email };
+        // Create the profile in Supabase (include email for Gravatar)
+        const newProfile = { id: user.id, org_id: orgId, role, full_name: user.user_metadata?.full_name || user.email, email: user.email || null };
         try {
           const created = await table.insert(newProfile);
           const profileData = Array.isArray(created) && created[0] ? created[0] : newProfile;
@@ -6061,6 +6107,7 @@ export default function CuotaCallReview() {
         onViewCall={loadCallIntoReview}
         onNavigate={setPage}
         onNewReview={startNewReview}
+        photoUrl={repPhotos[selectedRep]}
       />
     );
   }
@@ -6197,6 +6244,7 @@ export default function CuotaCallReview() {
           profile={profile}
           onGtmUpdate={loadGtmAssessments}
           onRefresh={loadCalls}
+          repPhotos={repPhotos}
         />}
 
         {/* CLIENTS — handled by early return above */}
@@ -6231,9 +6279,14 @@ export default function CuotaCallReview() {
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-1)", margin: "0 0 24px" }}>Settings</h1>
             <div className="glass-card" style={{ borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 6 }}>Account</div>
-              <div style={{ fontSize: 13, color: "var(--text-1)" }}>{session?.user?.email}</div>
-              <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>Role: {profile?.role || "—"}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 10 }}>Account</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <RepAvatar name={profile?.full_name || session?.user?.email || "?"} photoUrl={repPhotos[profile?.full_name]} size={40} fontSize={15} />
+                <div>
+                  <div style={{ fontSize: 13, color: "var(--text-1)" }}>{session?.user?.email}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>Role: {profile?.role || "—"}</div>
+                </div>
+              </div>
             </div>
             {profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
           </div>
