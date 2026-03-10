@@ -194,7 +194,7 @@ function getSegmentColor(seg) {
   if (seg === "Enterprise") return { color: "#7c3aed", bg: "rgba(124,58,237,0.09)" };
   if (seg === "Mid-Market") return { color: "#0369a1", bg: "rgba(3,105,161,0.09)" };
   if (seg === "SMB") return { color: "#15803d", bg: "rgba(21,128,61,0.09)" };
-  return { color: "var(--text-2)", bg: "rgba(0,0,0,0.05)" };
+  return { color: "var(--text-2)", bg: "rgba(255,255,255,0.07)" };
 }
 
 function isNewFormat(call) {
@@ -460,7 +460,7 @@ function CategoryBar({ category, scores, onScoreChange }) {
           <button onClick={() => onScoreChange(category.id, Math.min(10, score + 1))} style={{ width: 24, height: 24, border: "1px solid var(--text-3)", borderRadius: 6, background: "var(--surface)", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "var(--text-2)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
         </div>
       </div>
-      <div style={{ height: 4, background: "rgba(0,0,0,0.07)", borderRadius: 4 }}>
+      <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 4 }}>
         <div style={{ height: "100%", width: pct + "%", background: color, borderRadius: 4, transition: "width 0.4s ease" }} />
       </div>
     </div>
@@ -515,7 +515,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             {isPast ? (
               onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }} title="Move back to active clients">Restore</button>
             ) : (
-              onArchiveClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) onArchiveClient(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "var(--text-3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }} title="Archive client">Archive</button>
+              onArchiveClient && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? Their call history will still be viewable.`)) onArchiveClient(client); }} style={{ background: "rgba(255,255,255,0.07)", border: "none", color: "var(--text-3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }} title="Archive client">Archive</button>
             )}
           </div>
           <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
@@ -596,7 +596,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
         </div>
         {pastClients && pastClients.length > 0 && (
           <div style={{ marginTop: 32 }}>
-            <div style={{ height: 1, background: "rgba(0,0,0,0.05)", marginBottom: 16 }} />
+            <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 16 }} />
             <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>Past Clients</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
               {pastClients.map(client => {
@@ -605,10 +605,10 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 const callCount = clientCalls.length;
                 const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
                 return (
-                  <div key={client} style={{ position: "relative", background: "rgba(0,0,0,0.01)", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
+                  <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
                     <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
                       {onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
-                      {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "var(--text-3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
+                      {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(255,255,255,0.07)", border: "none", color: "var(--text-3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
                     </div>
                     <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
@@ -636,7 +636,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           <div style={{ marginTop: 24 }}>
             <button onClick={() => setShowArchived(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: "4px 0", marginBottom: showArchived ? 12 : 0, fontFamily: "inherit" }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1 }}>Archived Clients</span>
-              <span style={{ fontSize: 11, padding: "1px 7px", borderRadius: 10, background: "rgba(0,0,0,0.05)", color: "var(--text-3)", fontWeight: 600 }}>{archivedClients.length}</span>
+              <span style={{ fontSize: 11, padding: "1px 7px", borderRadius: 10, background: "rgba(255,255,255,0.08)", color: "var(--text-2)", fontWeight: 600 }}>{archivedClients.length}</span>
               <span style={{ fontSize: 11, color: "var(--text-3)", marginLeft: 2 }}>{showArchived ? "▲" : "▼"}</span>
             </button>
             {showArchived && (
@@ -646,7 +646,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                   const clientCalls = Object.values(aes).flat();
                   const callCount = clientCalls.length;
                   return (
-                    <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.45, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
+                    <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.45, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
                       <div style={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}>
                         {onRestoreFromArchived && <button onClick={(e) => { e.stopPropagation(); onRestoreFromArchived(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
                       </div>
@@ -699,9 +699,9 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           </div>
           {/* Call rows */}
           {open && (
-            <div style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               {ae.calls.map(call => (
-                <div key={call.id} onClick={() => onSelect(call)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 16px 11px 20px", borderBottom: "1px solid rgba(0,0,0,0.04)", cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(0,0,0,0.02)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <div key={call.id} onClick={() => onSelect(call)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 16px 11px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <CircularScore score={call.overall_score || 0} size={38} strokeWidth={3} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
@@ -1232,7 +1232,7 @@ function GongSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
                 const newCount = aeCalls.filter(c => c.status === "new" || c.status === "failed").length;
                 const doneCount = aeCalls.filter(c => c.status === "completed").length;
                 return (
-                  <div key={ae} style={{ marginBottom: 8, border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, overflow: "hidden" }}>
+                  <div key={ae} style={{ marginBottom: 8, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 10, overflow: "hidden" }}>
                     <button onClick={() => setOpenAEs(p => ({ ...p, [ae]: !isOpen }))} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 14px", background: "var(--surface-2)", border: "none", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}>
                       <span style={{ fontSize: 12, color: "var(--text-3)" }}>{isOpen ? "▾" : "▸"}</span>
                       <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{ae}</span>
@@ -1801,15 +1801,15 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
 
       {/* Section A: Stats Row */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 28 }}>
-        <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Reviews This Month</div>
+        <div className="glass-card" style={{ borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Reviews This Month</div>
           <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{reviewsThisMonth}</div>
-          <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>last 30 days</div>
+          <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6 }}>last 30 days</div>
         </div>
-        <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Avg Score</div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: avgCallScore !== null ? getScoreColor(avgCallScore) : "var(--text-3)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
-          <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>
+        <div className="glass-card" style={{ borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Avg Score</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: avgCallScore !== null ? getScoreColor(avgCallScore) : "var(--text-2)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
+          <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6 }}>
             {scoreTrend !== null ? (
               <span style={{ color: scoreTrend >= 0 ? "#31CE81" : "#ef4444", fontWeight: 600 }}>
                 {scoreTrend >= 0 ? "↑" : "↓"} {Math.abs(scoreTrend)} vs last month
@@ -1817,17 +1817,17 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
             ) : "all time"}
           </div>
         </div>
-        <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 8 }}>Active Clients</div>
+        <div className="glass-card" style={{ borderRadius: 14, padding: "18px 20px" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Active Clients</div>
           <div style={{ fontSize: 32, fontWeight: 800, color: "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{clients.length}</div>
-          <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 6 }}>in workspace</div>
+          <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6 }}>in workspace</div>
         </div>
       </div>
 
       {/* Section B: Recent Call Reviews */}
-      <div style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
+      <div className="glass-card" style={{ borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>Recent Call Reviews</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2 }}>Recent Call Reviews</div>
           <button onClick={() => onNavigate("calls")} style={{ fontSize: 11, color: "#31CE81", background: "none", border: "none", cursor: "pointer", fontWeight: 600, fontFamily: "inherit" }}>View all →</button>
         </div>
         {recentCalls.length === 0 ? (
@@ -1839,7 +1839,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
               const client = call.category_scores?.client || "—";
               const dateStr = call.call_date ? new Date(call.call_date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
               return (
-                <div key={call.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: "1px solid rgba(0,0,0,0.04)" }}>
+                <div key={call.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                   <div style={{ width: 36, height: 36, flexShrink: 0 }}>
                     <CircularScore score={call.overall_score || 0} size={36} strokeWidth={3} />
                   </div>
@@ -1883,8 +1883,8 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
       {/* Section D: Quick Actions */}
       <div style={{ display: "flex", gap: 10, marginBottom: 32 }}>
         <button onClick={() => onNavigate("review")} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Call Review</button>
-        <button onClick={() => onNavigate("gtm")} style={{ padding: "10px 20px", border: "1px solid var(--text-3)", borderRadius: 10, background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Run Assessment</button>
-        <button onClick={() => onNavigate("enablement")} style={{ padding: "10px 20px", border: "1px solid var(--text-3)", borderRadius: 10, background: "transparent", color: "#4B5563", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Upload Doc</button>
+        <button onClick={() => onNavigate("gtm")} style={{ padding: "10px 20px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Run Assessment</button>
+        <button onClick={() => onNavigate("enablement")} style={{ padding: "10px 20px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, background: "rgba(255,255,255,0.05)", color: "var(--text-2)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Upload Doc</button>
       </div>
 
       {/* GTM Audit Summary (collapsible) */}
@@ -1898,7 +1898,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
               <p style={{ fontSize: 13, color: "var(--text-2)", margin: 0 }}>Full-funnel assessment of your sales organization's go-to-market execution</p>
               {overallGtmScore !== null && (
-                <div style={{ textAlign: "center", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "14px 22px", flexShrink: 0, marginLeft: 20 }}>
+                <div className="glass-card" style={{ textAlign: "center", borderRadius: 14, padding: "14px 22px", flexShrink: 0, marginLeft: 20 }}>
                   <div style={{ fontSize: 32, fontWeight: 800, color: getScoreColor(overallGtmScore), fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{overallGtmScore}%</div>
                   <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginTop: 6 }}>Overall GTM Score</div>
                   <AuditStatusBadge score={overallGtmScore} />
@@ -1907,7 +1907,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
               {sections.map(sec => (
-                <div key={sec.id} onClick={() => onNavigate(sec.id)} style={{ background: "var(--surface)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 14, padding: "18px 20px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div key={sec.id} onClick={() => onNavigate(sec.id)} className="glass-card" style={{ borderRadius: 14, padding: "18px 20px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 34, height: 34, borderRadius: 9, background: sec.accent, border: `1px solid ${sec.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{sec.icon}</div>
@@ -1934,7 +1934,7 @@ function HomePage({ savedCalls, enablementDocs, crmSnapshots, gtmAssessments, to
                     {["GTM","TOF","S.Ready","S.Enable","RevOps","Hiring","Metrics","Overall"].map(h => <span key={h} style={{ textAlign: "center" }}>{h}</span>)}
                   </div>
                   {clientHealth.map((ch, i) => (
-                    <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(0,0,0,0.05)" : "none", alignItems: "center" }}>
+                    <div key={ch.client} style={{ display: "grid", gridTemplateColumns: "1fr repeat(8, 68px)", gap: 0, padding: "12px 18px", borderBottom: i < clientHealth.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none", alignItems: "center" }}>
                       <span onClick={() => onClientClick && onClientClick(ch.client)} style={{ fontSize: 13, fontWeight: 600, color: onClientClick ? "#6366F1" : "var(--text-1)", cursor: onClientClick ? "pointer" : "default" }}>{ch.client}</span>
                       {[ch.gs, ch.ts, ch.cs, ch.ds, ch.rs, ch.hs, ch.ms, ch.overall].map((s, j) => (
                         <div key={j} style={{ textAlign: "center" }}>{sc(s)}</div>
@@ -2057,7 +2057,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
           <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Upload Doc</button>
         </div>
         {docs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16 }}>
+          <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16 }}>
             <div style={{ fontSize: 40, marginBottom: 14 }}>📄</div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 8px" }}>No documents yet</h3>
             <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 20px" }}>Upload a pitch deck, battle card, or email template to get an AI quality audit.</p>
@@ -2123,7 +2123,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
           <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)" }}>Document Content</label>
-          <button onClick={analyzeDoc} disabled={analyzing || !docContent.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: 8, cursor: analyzing || !docContent.trim() ? "default" : "pointer", background: analyzing || !docContent.trim() ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #3b82f6, #2563eb)", color: analyzing || !docContent.trim() ? "var(--text-3)" : "#fff", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
+          <button onClick={analyzeDoc} disabled={analyzing || !docContent.trim()} style={{ padding: "8px 18px", border: "none", borderRadius: 8, cursor: analyzing || !docContent.trim() ? "default" : "pointer", background: analyzing || !docContent.trim() ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #3b82f6, #2563eb)", color: analyzing || !docContent.trim() ? "var(--text-3)" : "#fff", fontSize: 12, fontWeight: 700, fontFamily: "inherit" }}>
             {analyzing ? "Analyzing..." : "Analyze with AI ✦"}
           </button>
         </div>
@@ -2508,7 +2508,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 16 }}>{icon}</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{title}</span>
-          {items.length > 0 && <span style={{ fontSize: 11, color: "var(--text-2)", background: "rgba(0,0,0,0.05)", borderRadius: 10, padding: "2px 8px" }}>{items.length}</span>}
+          {items.length > 0 && <span style={{ fontSize: 11, color: "var(--text-2)", background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: "2px 8px" }}>{items.length}</span>}
         </div>
         {action}
       </div>
@@ -2791,8 +2791,8 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
   };
 
   const inputStyle = { width: "100%", fontSize: 13, padding: "9px 12px", border: "1px solid var(--text-3)", borderRadius: 8, fontFamily: "inherit", color: "var(--text-1)", outline: "none", boxSizing: "border-box", background: "var(--surface)" };
-  const labelStyle = { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginBottom: 8, display: "block" };
-  const sectionStyle = { background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 };
+  const labelStyle = { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#7a8ba0", marginBottom: 8, display: "block" };
+  const sectionStyle = { borderRadius: 14, padding: "20px 24px", marginBottom: 16, background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)" };
 
   if (loading) {
     return <div style={{ padding: 40, textAlign: "center", fontSize: 13, color: "var(--text-2)" }}>Loading GTM profile…</div>;
@@ -2989,7 +2989,7 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
         <button onClick={startNew} style={{ padding: "9px 18px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Assessment</button>
       </div>
       {clientAssessments.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16 }}>
+        <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16 }}>
           <div style={{ fontSize: 40, marginBottom: 14 }}>🎯</div>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 8px" }}>No assessments yet</h3>
           <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 20px" }}>Run a GTM audit to get AI-scored insights on ICP, positioning, channels, and more.</p>
@@ -3108,7 +3108,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
           <button onClick={startNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ Add Snapshot</button>
         </div>
         {snapshots.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16 }}>
+          <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16 }}>
             <div style={{ fontSize: 40, marginBottom: 14 }}>📊</div>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 8px" }}>No pipeline data yet</h3>
             <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 20px" }}>Add a CRM snapshot to get AI analysis of your pipeline health, coverage, and forecast quality.</p>
@@ -3198,7 +3198,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
           <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", display: "block", marginBottom: 6 }}>Additional Context</label>
           <textarea value={crmData.notes || ""} onChange={e => setCrmData(p => ({ ...p, notes: e.target.value }))} placeholder="Key at-risk deals, market conditions, team changes, etc." rows={3} style={{ width: "100%", padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", resize: "vertical" }} />
         </div>
-        <button onClick={analyzeData} disabled={analyzing || !selectedClient} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !selectedClient ? "default" : "pointer", background: analyzing || !selectedClient ? "rgba(0,0,0,0.05)" : "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: analyzing || !selectedClient ? "var(--text-3)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+        <button onClick={analyzeData} disabled={analyzing || !selectedClient} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !selectedClient ? "default" : "pointer", background: analyzing || !selectedClient ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #8b5cf6, #7c3aed)", color: analyzing || !selectedClient ? "var(--text-3)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
           {analyzing ? "Analyzing..." : "Analyze Pipeline ✦"}
         </button>
         {analyzing && <p style={{ fontSize: 12, color: "var(--text-2)", marginTop: 8 }}>Analyzing pipeline health... (10-20s)</p>}
@@ -3206,7 +3206,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
       {error && <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>{error}</div>}
       {analysis && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 20, display: "flex", alignItems: "flex-start", gap: 20 }}>
+          <div className="glass-card" style={{ borderRadius: 16, padding: 20, display: "flex", alignItems: "flex-start", gap: 20 }}>
             <CircularScore score={analysis.health_score || 0} size={90} strokeWidth={6} label="health" />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#8b5cf6", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Pipeline Health Assessment</div>
@@ -3216,17 +3216,17 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
           {analysis.key_metrics?.length > 0 && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
               {analysis.key_metrics.map((m, i) => (
-                <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+                <div key={i} className="glass-card" style={{ borderRadius: 12, padding: 16, textAlign: "center" }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginTop: 4 }}>{m.label}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#7a8ba0", marginTop: 4 }}>{m.label}</div>
                   {m.note && <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 6, lineHeight: 1.4 }}>{m.note}</div>}
                 </div>
               ))}
             </div>
           )}
           {analysis.insights?.length > 0 && (
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 20 }}>
-              <h4 style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Key Insights</h4>
+            <div className="glass-card" style={{ borderRadius: 14, padding: 20 }}>
+              <h4 style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1.2 }}>Key Insights</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {analysis.insights.map((insight, i) => (
                   <div key={i} style={{ display: "flex", gap: 10, padding: "10px 14px", background: "rgba(139,92,246,0.04)", border: "1px solid rgba(139,92,246,0.12)", borderRadius: 8 }}>
@@ -3242,7 +3242,7 @@ function CrmPage({ snapshots, getValidToken, profile, clients, onSnapshotsUpdate
               <h4 style={{ fontSize: 12, fontWeight: 700, color: "#eab308", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Recommendations</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {analysis.recommendations.map((rec, i) => (
-                  <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "12px 16px" }}>
+                  <div key={i} className="glass-card" style={{ borderRadius: 10, padding: "12px 16px" }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", marginBottom: 4 }}>{rec.title}</div>
                     <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0, lineHeight: 1.6 }}>{rec.description}</p>
                   </div>
@@ -3283,14 +3283,14 @@ function AdminDashboard({ allCalls }) {
           { label: "Total Calls", value: totalCalls, color: "var(--text-1)" },
           { label: "Avg Score", value: avgScore + "%", color: getScoreColor(avgScore) },
         ].map((card, i) => (
-          <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+          <div key={i} className="glass-card" style={{ borderRadius: 12, padding: 16, textAlign: "center" }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: card.color, fontFamily: "'IBM Plex Mono', monospace" }}>{card.value}</div>
-            <div style={{ fontSize: 10, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{card.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", textTransform: "uppercase", letterSpacing: 1.2, marginTop: 4 }}>{card.label}</div>
           </div>
         ))}
       </div>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Rep Leaderboard</h3>
+      <div className="glass-card" style={{ borderRadius: 12, padding: 20, marginBottom: 20 }}>
+        <h3 style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1.2 }}>Rep Leaderboard</h3>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 8, fontSize: 10, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1, padding: "0 0 8px", borderBottom: "1px solid var(--border-soft)" }}>
           <span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span style={{ textAlign: "center" }}>Avg Score</span>
         </div>
@@ -3305,8 +3305,8 @@ function AdminDashboard({ allCalls }) {
           );
         })}
       </div>
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1 }}>Category Averages (All Reps)</h3>
+      <div className="glass-card" style={{ borderRadius: 12, padding: 20 }}>
+        <h3 style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1.2 }}>Category Averages (All Reps)</h3>
         {CATEGORIES.map(cat => {
           const avg = catAverages[cat.id];
           const pct = Math.round((avg / 10) * 100);
@@ -3363,7 +3363,7 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Score + summary */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 20, display: "flex", alignItems: "flex-start", gap: 20 }}>
+      <div className="glass-card" style={{ borderRadius: 16, padding: 20, display: "flex", alignItems: "flex-start", gap: 20 }}>
         <CircularScore score={analysis.overall_score || 0} size={88} strokeWidth={6} label="score" />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: accentColor, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>Assessment Summary</div>
@@ -3372,8 +3372,8 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
       </div>
       {/* Sub-scores */}
       {analysis.sub_scores?.length > 0 && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 20 }}>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Dimension Scores</h4>
+        <div className="glass-card" style={{ borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1.2 }}>Dimension Scores</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {analysis.sub_scores.map((s, i) => {
               const statusColor = s.score < 40 ? "#ef4444" : s.score < 50 ? "#f97316" : s.score < 65 ? "#eab308" : s.score < 80 ? "#22c55e" : "#31CE81";
@@ -3397,18 +3397,18 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
       {analysis.key_metrics?.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
           {analysis.key_metrics.map((m, i) => (
-            <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, textAlign: "center" }}>
+            <div key={i} className="glass-card" style={{ borderRadius: 12, padding: 16, textAlign: "center" }}>
               <div style={{ fontSize: 19, fontWeight: 700, color: m.status === "good" ? "#31CE81" : m.status === "warning" ? "#eab308" : m.status === "bad" ? "#ef4444" : "var(--text-1)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.2 }}>{m.value}</div>
-              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", marginTop: 4 }}>{m.label}</div>
-              {m.benchmark && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4 }}>Benchmark: {m.benchmark}</div>}
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#7a8ba0", marginTop: 4 }}>{m.label}</div>
+              {m.benchmark && <div style={{ fontSize: 10, color: "var(--text-2)", marginTop: 4 }}>Benchmark: {m.benchmark}</div>}
             </div>
           ))}
         </div>
       )}
       {/* Strengths */}
       {analysis.strengths?.length > 0 && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 20 }}>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Strengths</h4>
+        <div className="glass-card" style={{ borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1.2 }}>Strengths</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {analysis.strengths.map((s, i) => (
               <div key={i} style={{ display: "flex", gap: 10 }}>
@@ -3421,8 +3421,8 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
       )}
       {/* Gaps */}
       {analysis.gaps?.length > 0 && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 20 }}>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Critical Gaps</h4>
+        <div className="glass-card" style={{ borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1.2 }}>Critical Gaps</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {analysis.gaps.map((g, i) => (
               <div key={i} style={{ padding: "12px 14px", background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 10 }}>
@@ -3436,8 +3436,8 @@ function AuditAnalysisDisplay({ analysis, accentColor = "#6366f1" }) {
       )}
       {/* Recommendations */}
       {analysis.recommendations?.length > 0 && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 20 }}>
-          <h4 style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Recommendations</h4>
+        <div className="glass-card" style={{ borderRadius: 14, padding: 20 }}>
+          <h4 style={{ fontSize: 11, fontWeight: 700, color: "#7a8ba0", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1.2 }}>Recommendations</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {analysis.recommendations.map((r, i) => (
               <div key={i} style={{ display: "flex", gap: 10 }}>
@@ -3465,7 +3465,7 @@ function AssessmentListView({ title, emoji, accentColor, assessments, onNew, onV
         <button onClick={onNew} style={{ padding: "10px 20px", border: "none", borderRadius: 10, background: gradient, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>+ New Assessment</button>
       </div>
       {assessments.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16 }}>
+        <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16 }}>
           <div style={{ fontSize: 40, marginBottom: 14 }}>{emoji}</div>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 8px" }}>No assessments yet</h3>
           <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 20px" }}>Run an assessment to get AI-scored insights for this area of your GTM.</p>
@@ -3521,7 +3521,7 @@ function AssessmentFormShell({ title, emoji, accentColor, gradient, breadcrumb, 
         </div>
         {children}
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 16 }}>
-          <button onClick={onAnalyze} disabled={analyzing || !client} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !client ? "default" : "pointer", background: analyzing || !client ? "rgba(0,0,0,0.05)" : gradient, color: analyzing || !client ? "var(--text-3)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+          <button onClick={onAnalyze} disabled={analyzing || !client} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing || !client ? "default" : "pointer", background: analyzing || !client ? "rgba(255,255,255,0.08)" : gradient, color: analyzing || !client ? "var(--text-3)" : "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
             {analyzing ? "Analyzing..." : analyzeLabel + " ✦"}
           </button>
           {analysis && <button onClick={onSave} disabled={saving} style={{ padding: "10px 20px", border: "1px solid var(--text-3)", borderRadius: 10, background: "var(--surface)", color: "var(--text-1)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save Assessment"}</button>}
@@ -3693,7 +3693,7 @@ function SalesHiringPage({ assessments, getValidToken, profile, clients, onUpdat
   const viewItem = (item) => { setSelected(item); setClient(item.client); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
 
   const toggle = (key, label) => (
-    <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: data[key] ? "rgba(34,197,94,0.06)" : "rgba(0,0,0,0.02)", border: `1px solid ${data[key] ? "rgba(34,197,94,0.2)" : "var(--border-soft)"}`, borderRadius: 8, cursor: "pointer" }} onClick={() => setData(p => ({ ...p, [key]: !p[key] }))}>
+    <div key={key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: data[key] ? "rgba(34,197,94,0.06)" : "rgba(255,255,255,0.04)", border: `1px solid ${data[key] ? "rgba(34,197,94,0.2)" : "var(--border-soft)"}`, borderRadius: 8, cursor: "pointer" }} onClick={() => setData(p => ({ ...p, [key]: !p[key] }))}>
       <div style={{ width: 18, height: 18, borderRadius: 4, background: data[key] ? "#22c55e" : "#fff", border: `2px solid ${data[key] ? "#22c55e" : "var(--text-3)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, color: "#fff" }}>{data[key] ? "✓" : ""}</div>
       <span style={{ fontSize: 13, color: "var(--text-1)", fontWeight: 500 }}>{label}</span>
     </div>
@@ -3961,7 +3961,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
           onDragOver={e => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false); }}
           onClick={() => !extracting && fileInputRef.current?.click()}
-          style={{ border: `2px dashed ${dragOver ? "#31CE81" : "var(--text-3)"}`, borderRadius: 12, padding: "28px 20px", textAlign: "center", cursor: extracting ? "wait" : "pointer", background: dragOver ? "rgba(49,206,129,0.04)" : "rgba(0,0,0,0.01)", transition: "all 0.2s", marginBottom: docs.length > 0 ? 14 : 0 }}
+          style={{ border: `2px dashed ${dragOver ? "#31CE81" : "var(--text-3)"}`, borderRadius: 12, padding: "28px 20px", textAlign: "center", cursor: extracting ? "wait" : "pointer", background: dragOver ? "rgba(49,206,129,0.04)" : "rgba(255,255,255,0.02)", transition: "all 0.2s", marginBottom: docs.length > 0 ? 14 : 0 }}
         >
           <div style={{ fontSize: 28, marginBottom: 8 }}>📂</div>
           <p style={{ fontSize: 13, fontWeight: 600, color: dragOver ? "#31CE81" : "var(--text-2)", margin: "0 0 4px" }}>Drag & drop documents here</p>
@@ -3995,7 +3995,7 @@ function IntakePage({ clients, getValidToken, profile, onReportGenerated, onBack
         <button
           onClick={generate}
           disabled={!canGenerate}
-          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "#31CE81" : "rgba(0,0,0,0.07)", color: canGenerate ? "#fff" : "var(--text-3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
+          style={{ padding: "12px 28px", border: "none", borderRadius: 10, background: canGenerate ? "#31CE81" : "rgba(255,255,255,0.08)", color: canGenerate ? "#fff" : "var(--text-3)", fontSize: 14, fontWeight: 700, cursor: canGenerate ? "pointer" : "default", fontFamily: "inherit" }}
         >
           {generating ? "Analyzing documents..." : "Generate GTM Assessment ✦"}
         </button>
@@ -4117,9 +4117,9 @@ function ReportPage({ report, onBack }) {
                     {dim.summary && <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0, lineHeight: 1.55 }}>{dim.summary}</p>}
                   </div>
                   {isExpanded && (
-                    <div style={{ padding: "0 18px 18px", borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+                    <div style={{ padding: "0 18px 18px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                       {dim.evidence && (
-                        <div style={{ padding: "10px 12px", background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, margin: "14px 0" }}>
+                        <div style={{ padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, margin: "14px 0" }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>Evidence from Documents</div>
                           <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0, lineHeight: 1.5, fontStyle: "italic" }}>{dim.evidence}</p>
                         </div>
@@ -4176,7 +4176,7 @@ function ReportPage({ report, onBack }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{gap.title}</span>
                     <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: sevBg(gap.severity), color: sevColor(gap.severity), fontWeight: 700, border: `1px solid ${sevColor(gap.severity)}30`, textTransform: "uppercase", letterSpacing: 0.5 }}>{gap.severity}</span>
-                    {gap.dimension && dimConfig[gap.dimension] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "rgba(0,0,0,0.04)", color: "var(--text-2)", fontWeight: 600 }}>{dimConfig[gap.dimension].label}</span>}
+                    {gap.dimension && dimConfig[gap.dimension] && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 20, background: "rgba(255,255,255,0.08)", color: "var(--text-2)", fontWeight: 600 }}>{dimConfig[gap.dimension].label}</span>}
                   </div>
                   {gap.business_impact && <p style={{ fontSize: 13, color: "var(--text-2)", margin: "0 0 6px", lineHeight: 1.55 }}>{gap.business_impact}</p>}
                   {gap.root_cause && <p style={{ fontSize: 12, color: "var(--text-2)", margin: "0 0 8px", lineHeight: 1.5 }}>Root cause: {gap.root_cause}</p>}
@@ -4199,7 +4199,7 @@ function ReportPage({ report, onBack }) {
           <h2 style={{ fontSize: 13, fontWeight: 800, color: "var(--text-2)", margin: "0 0 16px", textTransform: "uppercase", letterSpacing: 1.5 }}>Scope of Work</h2>
 
           {/* Wave Tabs */}
-          <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(0,0,0,0.03)", borderRadius: 10, padding: 4 }}>
+          <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: 4 }}>
             {waves.map(w => (
               <button key={w.key} onClick={() => setActiveWave(w.key)} style={{ flex: 1, padding: "8px 12px", border: "none", borderRadius: 8, cursor: "pointer", background: activeWave === w.key ? "#fff" : "transparent", color: activeWave === w.key ? "var(--text-1)" : "var(--text-2)", fontFamily: "inherit", boxShadow: activeWave === w.key ? "0 1px 4px var(--border-soft)" : "none", transition: "all 0.15s" }}>
                 <div style={{ fontSize: 12, fontWeight: activeWave === w.key ? 700 : 500 }}>{w.icon} {w.label}</div>
@@ -4221,7 +4221,7 @@ function ReportPage({ report, onBack }) {
                   const effortColor = init.effort === "High" ? "#f97316" : init.effort === "Medium" ? "#eab308" : "#22c55e";
                   const impactColor = init.impact === "High" ? "#6366f1" : init.impact === "Medium" ? "#0ea5e9" : "#64748b";
                   return (
-                    <div key={i} style={{ padding: "16px 18px", background: "var(--surface-2)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 12 }}>
+                    <div key={i} style={{ padding: "16px 18px", background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12 }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{init.title}</div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -4460,7 +4460,7 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
               {state.sources.length === 0 && <p style={{ fontSize: 12, color: "var(--text-3)", margin: "0 0 12px" }}>No sources added yet. Click "+ Add Source" to connect a {identifierLabel.toLowerCase()}.</p>}
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
                 {state.sources.map((src, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(0,0,0,0.02)", border: "1px solid var(--border-soft)", borderRadius: 8, padding: "9px 12px" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-soft)", borderRadius: 8, padding: "9px 12px" }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{src.name}</div>
                       <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 1 }}>
@@ -4473,7 +4473,7 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
               </div>
 
               {addingTo === provider ? (
-                <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "14px 16px" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                     <div>
                       <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-3)", display: "block", marginBottom: 5 }}>{identifierLabel} URL or ID</label>
@@ -4569,7 +4569,7 @@ function DocSyncPage({ getValidToken, clients, onDocsUpdate }) {
       />
 
       {/* Setup notes */}
-      <div style={{ background: "rgba(0,0,0,0.02)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "14px 16px", fontSize: 12, color: "var(--text-2)", lineHeight: 1.7 }}>
+      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border-soft)", borderRadius: 10, padding: "14px 16px", fontSize: 12, color: "var(--text-2)", lineHeight: 1.7 }}>
         <strong style={{ color: "var(--text-2)" }}>Setup notes</strong><br />
         <strong>Notion:</strong> Go to notion.so/my-integrations → New integration → copy the token → share each page with the integration (Share → Connections → your integration name).<br />
         <strong>Google Drive:</strong> Set <code style={{ background: "var(--border-soft)", padding: "1px 5px", borderRadius: 4 }}>GOOGLE_CLIENT_ID</code>, <code style={{ background: "var(--border-soft)", padding: "1px 5px", borderRadius: 4 }}>GOOGLE_CLIENT_SECRET</code>, and <code style={{ background: "var(--border-soft)", padding: "1px 5px", borderRadius: 4 }}>GDRIVE_REDIRECT_URI=https://your-app.vercel.app/api/gdrive/sync</code> in Vercel project settings. Create OAuth credentials at console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application), add the redirect URI above.<br />
@@ -4659,7 +4659,7 @@ function ClientIntelPage({ getValidToken, clients }) {
         {/* MAIN AREA */}
         <div>
           {!results && !loading && (
-            <div style={{ border: "1px dashed var(--text-3)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(0,0,0,0.01)" }}>
+            <div style={{ border: "1px dashed var(--text-3)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(255,255,255,0.02)" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
               <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-1)", marginBottom: 6 }}>Enter a company to research</div>
               <div style={{ fontSize: 13, color: "var(--text-3)" }}>AI generates company overview, pain points, competitive landscape, and deal prep</div>
@@ -4763,7 +4763,7 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
             <div style={cardStyle}>
               <div style={sectionLabelStyle}>Recent Calls</div>
               {savedCalls.slice(0, 5).map((call, i) => (
-                <button key={i} onClick={() => { setTranscript(call.transcript || ""); setResults(null); }} style={{ display: "block", width: "100%", padding: "8px 10px", marginBottom: 6, border: "1px solid rgba(0,0,0,0.07)", borderRadius: 8, background: "var(--surface)", cursor: "pointer", fontSize: 12, color: "var(--text-1)", textAlign: "left", fontFamily: "inherit" }}>
+                <button key={i} onClick={() => { setTranscript(call.transcript || ""); setResults(null); }} style={{ display: "block", width: "100%", padding: "8px 10px", marginBottom: 6, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, background: "var(--surface)", cursor: "pointer", fontSize: 12, color: "var(--text-1)", textAlign: "left", fontFamily: "inherit" }}>
                   {call.prospect_company || call.client} \u2014 {call.rep_name}
                 </button>
               ))}
@@ -4774,7 +4774,7 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
         {/* MAIN AREA */}
         <div>
           {!results && !loading && (
-            <div style={{ border: "1px dashed var(--text-3)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(0,0,0,0.01)" }}>
+            <div style={{ border: "1px dashed var(--text-3)", borderRadius: 16, padding: "64px 40px", textAlign: "center", background: "rgba(255,255,255,0.02)" }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🤖</div>
               <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-1)", marginBottom: 6 }}>Paste a transcript to begin</div>
               <div style={{ fontSize: 13, color: "var(--text-3)" }}>Agent scores the call on C.U.O.T.A. and surfaces coaching insights</div>
@@ -4801,7 +4801,7 @@ function CuotaAgentPage({ getValidToken, savedCalls }) {
                       <div key={frame} style={{ textAlign: "center" }}>
                         <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{Math.round(score)}</div>
                         <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: 1, margin: "5px 0 8px" }}>{frame}</div>
-                        <div style={{ height: 4, background: "rgba(0,0,0,0.07)", borderRadius: 2 }}>
+                        <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}>
                           <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 2, transition: "width 0.4s ease" }} />
                         </div>
                       </div>
@@ -6296,7 +6296,7 @@ export default function CuotaCallReview() {
                   <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 2 }}>{activeCategories.length} categories</div>
                 </div>
               </div>
-              <div style={{ height: 5, background: "rgba(0,0,0,0.07)", borderRadius: 5 }}>
+              <div style={{ height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 5 }}>
                 <div style={{ height: "100%", width: overallScore + "%", background: getScoreColor(overallScore), borderRadius: 5, transition: "width 0.6s ease" }} />
               </div>
             </div>
@@ -6313,7 +6313,7 @@ export default function CuotaCallReview() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: 0 }}>Call Transcript</h3>
-                  <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(0,0,0,0.05)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
+                  <button onClick={analyzeTranscript} disabled={analyzing || !transcript.trim()} style={{ padding: "10px 24px", border: "none", borderRadius: 10, cursor: analyzing ? "wait" : "pointer", background: analyzing ? "rgba(255,255,255,0.08)" : "#31CE81", color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "inherit", opacity: !transcript.trim() ? 0.4 : 1 }}>
                     {analyzing ? "Analyzing..." : "Analyze with AI \u2726"}
                   </button>
                 </div>
