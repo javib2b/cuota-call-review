@@ -241,7 +241,7 @@ function groupCallsByClientAndAE(calls, clientList) {
       const matched = clientList.find(c => company.includes(c.toLowerCase()));
       bucket = matched || null;
     }
-    if (!bucket) return; // skip calls that don't match any client
+    if (!bucket) bucket = "Other"; // unmatched calls go to "Other" so they're never lost
     const ae = call.rep_name || call.category_scores?.rep_name || "Unknown";
     if (!groups[bucket]) groups[bucket] = {};
     if (!groups[bucket][ae]) groups[bucket][ae] = [];
@@ -632,6 +632,32 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             </div>
           </div>
         )}
+
+        {(() => {
+          const otherCalls = Object.values(grouped["Other"] || {}).flat();
+          if (otherCalls.length === 0) return null;
+          return (
+            <div style={{ marginTop: 24 }}>
+              <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 16 }} />
+              <div style={{ fontSize: 9, fontWeight: 700, color: "var(--text-3)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 14 }}>Unassigned</div>
+              <div style={{ background: "var(--surface)", border: "1px solid rgba(255,200,50,0.25)", borderRadius: 16, padding: "14px 18px" }}>
+                <div style={{ fontSize: 12, color: "var(--text-2)", marginBottom: 10 }}>
+                  {otherCalls.length} call{otherCalls.length !== 1 ? "s" : ""} not matched to any active client — check their <strong>category_scores.client</strong> value or re-save them with the correct client selected.
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {otherCalls.map(call => (
+                    <div key={call.id} onClick={() => setFolderClient("Other")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8, background: "var(--surface-2)", cursor: "pointer" }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)", flex: 1 }}>{call.category_scores?.rep_name || call.rep_name || "Unknown Rep"}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>{call.prospect_company || "—"}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-3)", minWidth: 60, textAlign: "right" }}>{call.call_date || call.created_at?.slice(0,10) || "—"}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(call.overall_score || 0), minWidth: 28, textAlign: "right" }}>{call.overall_score ?? "—"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {archivedClients && archivedClients.length > 0 && (
           <div style={{ marginTop: 24 }}>

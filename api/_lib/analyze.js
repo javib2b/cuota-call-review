@@ -129,6 +129,9 @@ export function buildCallData(aiResult, computed, transcript, orgId, repId, clie
     category_scores: {
       ...computed.scores,
       client: client || aiResult.metadata?.prospect_company || "Other",
+      rep_name: aiResult.metadata?.rep_name || aiResult.metadata?.sales_rep || "",
+      prospect_name: aiResult.metadata?.prospect_name || "",
+      rep_type: "AE",
     },
     overall_score: computed.overallScore,
     momentum_score: null,
