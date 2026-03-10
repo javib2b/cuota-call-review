@@ -519,8 +519,8 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
             )}
           </div>
           <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-              <ClientLogo client={client} website={clientProfiles[client]?.website} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "var(--text-3)" : "#6366F1" }} />
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
+              <ClientLogo client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "var(--text-3)" : "#6366F1" }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "var(--text-2)" : "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -611,8 +611,8 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                       {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(0,0,0,0.04)", border: "none", color: "var(--text-3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
                     </div>
                     <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                        <ClientLogo client={client} website={clientProfiles[client]?.website} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
+                      <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
+                        <ClientLogo client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -651,8 +651,8 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                         {onRestoreFromArchived && <button onClick={(e) => { e.stopPropagation(); onRestoreFromArchived(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
                       </div>
                       <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                          <ClientLogo client={client} website={clientProfiles[client]?.website} size={32} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
+                        <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
+                          <ClientLogo client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -2531,8 +2531,8 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%), rgba(6,32,53,0.90)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.11)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, opacity: 0.025, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
-          <div style={{ width: 64, height: 64, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            <ClientLogo client={client} website={clientProfiles[client]?.website} size={44} letterStyle={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'DM Sans', system-ui, sans-serif" }} />
+          <div style={{ width: 64, height: 64, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)", overflow: "hidden" }}>
+            <ClientLogo client={client} website={clientProfiles[client]?.website} size={64} letterStyle={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: "0 0 10px", letterSpacing: "-0.3px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{client}</h2>

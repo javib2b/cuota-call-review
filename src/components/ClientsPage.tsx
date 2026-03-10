@@ -92,7 +92,7 @@ function ClientLogo({ name, size, borderRadius }: { name: string; size: number; 
           src={src}
           alt=""
           onError={handleError}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: Math.round(size * 0.12) }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
         />
       )}
     </div>

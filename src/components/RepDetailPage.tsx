@@ -24,11 +24,16 @@ function saveCollapsed(v: boolean) {
   try { localStorage.setItem("sidebar_collapsed", v ? "1" : "0"); } catch {}
 }
 
+// Overall score (0–100)
 function scoreColor(s: number) {
   return s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
 }
 function scoreBg(s: number) {
   return s >= 70 ? "rgba(49,206,129,0.12)" : s >= 40 ? "rgba(245,166,35,0.12)" : "rgba(255,77,77,0.12)";
+}
+// Category score (0–10)
+function catColor(s: number) {
+  return s >= 7 ? GREEN : s >= 4 ? AMBER : RED;
 }
 
 function fmtDate(d: string) {
@@ -180,13 +185,13 @@ function CategoryBreakdown({ calls }: { calls: any[] }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {sorted.map(cat => (
-          <div key={cat.id} style={{ display: "grid", gridTemplateColumns: "100px 1fr 36px", alignItems: "center", gap: 12 }}>
+          <div key={cat.id} style={{ display: "grid", gridTemplateColumns: "100px 1fr 46px", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 12, color: MUTED, textAlign: "right" }}>{cat.name}</span>
             <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ width: `${cat.avg}%`, height: "100%", background: scoreColor(cat.avg), borderRadius: 3 }} />
+              <div style={{ width: `${(cat.avg / 10) * 100}%`, height: "100%", background: catColor(cat.avg), borderRadius: 3 }} />
             </div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: scoreColor(cat.avg), fontFamily: MONO, textAlign: "right" }}>
-              {cat.avg}
+            <span style={{ fontSize: 12, fontWeight: 700, color: catColor(cat.avg), fontFamily: MONO, textAlign: "right" }}>
+              {cat.avg}/10
             </span>
           </div>
         ))}
