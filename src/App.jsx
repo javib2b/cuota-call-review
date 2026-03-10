@@ -5168,13 +5168,11 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
     setExtractedFields(null);
     setExtracting(true);
     try {
-      const validToken = await getValidToken();
-      let body;
-      const isPdf = file.name.toLowerCase().endsWith(".pdf");
-      const isPptx = file.name.toLowerCase().endsWith(".pptx") || file.name.toLowerCase().endsWith(".ppt");
+      const ext = file.name.split(".").pop().toLowerCase();
+      let text = "";
 
-      if (isPptx) {
-        // Extract text from PPTX using JSZip
+      if (ext === "pptx" || ext === "ppt") {
+        // Extract text from PPTX using JSZip (client-side, no server round-trip)
         const { default: JSZip } = await import("jszip");
         const zip = await JSZip.loadAsync(file);
         const slideKeys = Object.keys(zip.files)
@@ -5184,34 +5182,31 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
             const nb = parseInt(b.match(/\d+/)?.[0] || "0");
             return na - nb;
           });
-        let text = "";
         for (const key of slideKeys.slice(0, 30)) {
           const xml = await zip.files[key].async("text");
           const matches = xml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) || [];
           const slideText = matches.map(m => m.replace(/<[^>]+>/g, "")).filter(t => t.trim()).join(" ");
           if (slideText.trim()) text += slideText + "\n";
         }
-        if (!text.trim()) throw new Error("Could not extract text from this PPTX file.");
-        body = JSON.stringify({ text, apiKey: apiKey || undefined });
-      } else if (isPdf) {
-        // Send PDF as base64 to the server (Claude handles document parsing)
-        const base64 = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = ev => resolve(ev.target.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-        body = JSON.stringify({ pdfBase64: base64, apiKey: apiKey || undefined });
+        if (!text.trim()) throw new Error("Could not extract text from this PPTX file. Make sure it contains slide text.");
+      } else if (ext === "pdf") {
+        // Use pdfjs-dist to extract text client-side (avoids body size limits)
+        text = await extractTextFromFile(file);
+        if (!text.trim()) throw new Error("Could not extract text from this PDF. Try a PPTX version instead.");
       } else {
         throw new Error("Please upload a .pdf or .pptx file.");
       }
 
+      const validToken = await getValidToken();
       const res = await fetch("/api/extract-brand", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
-        body,
+        body: JSON.stringify({ text, apiKey: apiKey || undefined }),
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Extraction failed"); }
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.error || `Server error (${res.status})`);
+      }
       const { brand } = await res.json();
 
       // Auto-fill brand fields with what was extracted
@@ -5224,13 +5219,12 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
         setRefText(combined);
         filled.push("Brand voice & messaging");
       }
-      setExtractedFields(filled);
+      setExtractedFields(filled.length ? filled : ["Tone & messaging"]);
     } catch (e) {
       setExtractError(e.message);
       setTemplateFileName(null);
     } finally {
       setExtracting(false);
-      // Reset the input so the same file can be re-uploaded if needed
       if (templateInputRef.current) templateInputRef.current.value = "";
     }
   };

@@ -10,7 +10,8 @@
     "api/diio/sync.js": { "maxDuration": 60 },
     "api/diio/cron.js": { "maxDuration": 60 },
     "api/gtm-profile.js": { "maxDuration": 60 },
-    "api/generate-deck.js": { "maxDuration": 60 }
+    "api/generate-deck.js": { "maxDuration": 60 },
+    "api/extract-brand.js": { "maxDuration": 60 }
   },
   "crons": [
     { "path": "/api/diio/cron", "schedule": "0 0 * * *" }
