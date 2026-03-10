@@ -5986,7 +5986,8 @@ export default function CuotaCallReview() {
 
   // Load saved calls — excludes transcript & ai_analysis (large columns) to avoid statement timeout.
   // Those are fetched on-demand when a call is opened for review.
-  const CALLS_LIST_COLS = "id,org_id,created_at,call_date,overall_score,call_type,prospect_company,prospect_name,rep_name,category_scores,coaching_notes,deal_stage,deal_value";
+  // prospect_name lives inside category_scores JSONB, not as a top-level column
+  const CALLS_LIST_COLS = "id,org_id,created_at,call_date,overall_score,call_type,prospect_company,rep_name,category_scores,coaching_notes,deal_stage,deal_value";
   const loadCalls = useCallback(async () => {
     const validToken = await getValidToken();
     if (!validToken) return;
