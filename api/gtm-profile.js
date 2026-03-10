@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     // ── POST ─────────────────────────────────────────────────────────────────
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const { client, action, icp_description, sell_to, competitors, partners } = req.body || {};
+    const { client, action, website, stage, icp_description, sell_to, competitors, partners } = req.body || {};
     if (!client) return res.status(400).json({ error: "Missing client" });
 
     // ── action: save ──────────────────────────────────────────────────────────
@@ -52,6 +52,8 @@ export default async function handler(req, res) {
       const payload = {
         org_id: orgId,
         client,
+        website: website || "",
+        stage: stage || "",
         icp_description: icp_description || "",
         sell_to: sell_to || "",
         competitors: competitors || [],

@@ -2695,7 +2695,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
 // ==================== GTM PROFILE TAB ====================
 function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
-  const [draft, setDraft] = useState({ website: "", icp_description: "", sell_to: "", competitors: [], partners: [] });
+  const [draft, setDraft] = useState({ website: "", stage: "", icp_description: "", sell_to: "", competitors: [], partners: [] });
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -2714,9 +2714,9 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
       });
       if (r.ok) {
         const data = await r.json();
-        const p = data.profile || { website: "", icp_description: "", sell_to: "", competitors: [], partners: [] };
+        const p = data.profile || { website: "", stage: "", icp_description: "", sell_to: "", competitors: [], partners: [] };
         setProfile(data.profile || null);
-        setDraft({ website: p.website || "", icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
+        setDraft({ website: p.website || "", stage: p.stage || "", icp_description: p.icp_description || "", sell_to: p.sell_to || "", competitors: p.competitors || [], partners: p.partners || [] });
       }
     } catch (e) {
       console.warn("GTM load error:", e);
@@ -2820,7 +2820,7 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
         <button
           onClick={handleSave}
           disabled={saving}
-          style={{ fontSize: 13, fontWeight: 600, padding: "9px 18px", borderRadius: 10, border: "1.5px solid var(--text-3)", background: saving ? "rgba(0,0,0,0.04)" : "#fff", color: saving ? "var(--text-3)" : "var(--text-1)", cursor: saving ? "default" : "pointer", fontFamily: "inherit" }}
+          style={{ fontSize: 13, fontWeight: 700, padding: "9px 18px", borderRadius: 10, border: "none", background: saving ? "rgba(49,206,129,0.5)" : "#31CE81", color: "#fff", cursor: saving ? "default" : "pointer", fontFamily: "inherit" }}
         >
           {saving ? "Saving…" : "Save Changes"}
         </button>
@@ -2845,6 +2845,21 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
           )}
         </div>
         <p style={{ fontSize: 11, color: "var(--text-3)", margin: "6px 0 0" }}>Used to automatically pull the company logo.</p>
+      </div>
+
+      {/* CURRENT STAGE */}
+      <div style={sectionStyle}>
+        <label style={labelStyle}>Current Stage</label>
+        <select
+          value={draft.stage}
+          onChange={e => setDraft(prev => ({ ...prev, stage: e.target.value }))}
+          style={{ ...inputStyle, cursor: "pointer" }}
+        >
+          <option value="">Select stage…</option>
+          {["Pre-Seed", "Seed", "Series A", "Series B", "Series C", "Series D+", "Growth", "Public"].map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </div>
 
       {/* WHO THEY SELL TO */}
