@@ -5116,6 +5116,13 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
   const [painPoints, setPainPoints] = useState("");
   const [refText, setRefText] = useState("");
 
+  // Existing deck upload for brand extraction
+  const [templateFileName, setTemplateFileName] = useState(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
+  const [extractedFields, setExtractedFields] = useState(null); // which fields were auto-filled
+  const templateInputRef = useRef(null);
+
   const [slides, setSlides] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -5151,6 +5158,81 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
       saveBrand("logoBase64", ev.target.result); saveBrand("logoFileName", file.name);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleTemplateUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setTemplateFileName(file.name);
+    setExtractError("");
+    setExtractedFields(null);
+    setExtracting(true);
+    try {
+      const validToken = await getValidToken();
+      let body;
+      const isPdf = file.name.toLowerCase().endsWith(".pdf");
+      const isPptx = file.name.toLowerCase().endsWith(".pptx") || file.name.toLowerCase().endsWith(".ppt");
+
+      if (isPptx) {
+        // Extract text from PPTX using JSZip
+        const { default: JSZip } = await import("jszip");
+        const zip = await JSZip.loadAsync(file);
+        const slideKeys = Object.keys(zip.files)
+          .filter(k => /^ppt\/slides\/slide\d+\.xml$/i.test(k))
+          .sort((a, b) => {
+            const na = parseInt(a.match(/\d+/)?.[0] || "0");
+            const nb = parseInt(b.match(/\d+/)?.[0] || "0");
+            return na - nb;
+          });
+        let text = "";
+        for (const key of slideKeys.slice(0, 30)) {
+          const xml = await zip.files[key].async("text");
+          const matches = xml.match(/<a:t[^>]*>([^<]*)<\/a:t>/g) || [];
+          const slideText = matches.map(m => m.replace(/<[^>]+>/g, "")).filter(t => t.trim()).join(" ");
+          if (slideText.trim()) text += slideText + "\n";
+        }
+        if (!text.trim()) throw new Error("Could not extract text from this PPTX file.");
+        body = JSON.stringify({ text, apiKey: apiKey || undefined });
+      } else if (isPdf) {
+        // Send PDF as base64 to the server (Claude handles document parsing)
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        body = JSON.stringify({ pdfBase64: base64, apiKey: apiKey || undefined });
+      } else {
+        throw new Error("Please upload a .pdf or .pptx file.");
+      }
+
+      const res = await fetch("/api/extract-brand", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
+        body,
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Extraction failed"); }
+      const { brand } = await res.json();
+
+      // Auto-fill brand fields with what was extracted
+      const filled = [];
+      if (brand.companyName && !companyName) { handleCompanyNameChange(brand.companyName); filled.push("Company name"); }
+      if (brand.primaryColor) { handlePrimaryChange(brand.primaryColor); filled.push("Primary color"); }
+      if (brand.accentColor) { handleAccentChange(brand.accentColor); filled.push("Accent color"); }
+      if (brand.referenceText) {
+        const combined = [brand.referenceText, brand.toneNotes].filter(Boolean).join("\n\n");
+        setRefText(combined);
+        filled.push("Brand voice & messaging");
+      }
+      setExtractedFields(filled);
+    } catch (e) {
+      setExtractError(e.message);
+      setTemplateFileName(null);
+    } finally {
+      setExtracting(false);
+      // Reset the input so the same file can be re-uploaded if needed
+      if (templateInputRef.current) templateInputRef.current.value = "";
+    }
   };
 
   const generateDeck = async () => {
@@ -5327,6 +5409,55 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
             {/* BRAND */}
             <div>
               <div style={sectionLabel}>Brand Guidelines</div>
+
+              {/* Template deck upload */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>Import from existing deck</label>
+                <div
+                  onClick={() => !extracting && templateInputRef.current?.click()}
+                  style={{
+                    border: `1px dashed ${extractedFields ? "rgba(49,206,129,0.5)" : "var(--border-soft)"}`,
+                    borderRadius: 7,
+                    padding: "9px 10px",
+                    cursor: extracting ? "wait" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: extractedFields ? "rgba(49,206,129,0.06)" : "var(--surface-2)",
+                    transition: "border-color 0.15s, background 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>
+                    {extracting ? "⏳" : extractedFields ? "✓" : "📄"}
+                  </span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    {extracting
+                      ? <span style={{ fontSize: 11, color: "var(--text-2)" }}>Extracting brand…</span>
+                      : extractedFields
+                        ? <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>{templateFileName}</span>
+                        : <span style={{ fontSize: 11, color: "var(--text-3)" }}>Upload .pdf or .pptx to auto-fill</span>
+                    }
+                    {extractedFields && (
+                      <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        Filled: {extractedFields.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                  {(templateFileName && !extracting) && (
+                    <button
+                      onClick={ev => { ev.stopPropagation(); setTemplateFileName(null); setExtractedFields(null); setExtractError(""); setRefText(""); }}
+                      style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 14, padding: 0, flexShrink: 0, lineHeight: 1 }}
+                      title="Remove"
+                    >×</button>
+                  )}
+                </div>
+                <input ref={templateInputRef} type="file" accept=".pdf,.pptx,.ppt" onChange={handleTemplateUpload} style={{ display: "none" }} />
+                {extractError && <div style={{ fontSize: 10, color: "#f04438", marginTop: 4 }}>{extractError}</div>}
+                <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4, lineHeight: 1.5 }}>
+                  Extracts colors, messaging & structure. Or fill manually below.
+                </div>
+              </div>
+
               <div style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>Company</label>
                 <input value={companyName} onChange={e => handleCompanyNameChange(e.target.value)} placeholder="e.g. Cuota" style={inputStyle} />
@@ -5374,6 +5505,10 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
                 <div>
                   <label style={labelStyle}>Pain Points</label>
                   <textarea value={painPoints} onChange={e => setPainPoints(e.target.value)} placeholder="Key challenges…" rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Brand Voice & Reference{refText ? " ✓" : " (optional)"}</label>
+                  <textarea value={refText} onChange={e => setRefText(e.target.value)} placeholder="Paste messaging, tone notes, or key language from your deck. Auto-filled when you upload a template above." rows={4} style={{ ...inputStyle, resize: "vertical", fontSize: 11 }} />
                 </div>
               </div>
             </div>
