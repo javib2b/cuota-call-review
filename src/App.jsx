@@ -6426,6 +6426,7 @@ export default function CuotaCallReview() {
         quotaClosed={repQuota?.closed}
         salesExperience={repMeta[selectedRep]?.salesExperience || ""}
         timeInRole={repMeta[selectedRep]?.timeInRole || ""}
+        role={repMeta[selectedRep]?.role || ""}
         onUpdateMeta={(data) => updateRepMeta(selectedRep, data)}
         onBack={() => setPage("client")}
         onViewCall={loadCallIntoReview}
