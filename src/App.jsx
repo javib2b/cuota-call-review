@@ -5839,6 +5839,14 @@ export default function CuotaCallReview() {
   const [archivedClients, setArchivedClients] = useState(loadArchivedClients);
   const [selectedClientProfile, setSelectedClientProfile] = useState(null);
   const [selectedRep, setSelectedRep] = useState(null);
+  const [repMeta, setRepMeta] = useState(() => loadStored("cuota_rep_meta") || {});
+  const updateRepMeta = useCallback((repName, data) => {
+    setRepMeta(prev => {
+      const next = { ...prev, [repName]: { ...(prev[repName] || {}), ...data } };
+      try { localStorage.setItem("cuota_rep_meta", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
   const [clientPageTab, setClientPageTab] = useState("calls");
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
   const [sidebarSections, setSidebarSections] = useState({ clients: false, assessments: false, admin: false });
@@ -6416,6 +6424,9 @@ export default function CuotaCallReview() {
         repCalls={repCalls}
         quotaTarget={repQuota?.target}
         quotaClosed={repQuota?.closed}
+        salesExperience={repMeta[selectedRep]?.salesExperience || ""}
+        timeInRole={repMeta[selectedRep]?.timeInRole || ""}
+        onUpdateMeta={(data) => updateRepMeta(selectedRep, data)}
         onBack={() => setPage("client")}
         onViewCall={loadCallIntoReview}
         onNavigate={setPage}

@@ -281,6 +281,9 @@ interface Props {
   repCalls: any[];
   quotaTarget?: number;
   quotaClosed?: number;
+  salesExperience?: string;
+  timeInRole?: string;
+  onUpdateMeta?: (data: { salesExperience: string; timeInRole: string }) => void;
   onBack: () => void;
   onViewCall: (call: any) => void;
   onNavigate: (page: string) => void;
@@ -289,9 +292,13 @@ interface Props {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────
-export default function RepDetailPage({ client, repName, repCalls, quotaTarget, quotaClosed, onBack, onViewCall, onNavigate, onNewReview, photoUrl }: Props) {
+export default function RepDetailPage({ client, repName, repCalls, quotaTarget, quotaClosed, salesExperience = "", timeInRole = "", onUpdateMeta, onBack, onViewCall, onNavigate, onNewReview, photoUrl }: Props) {
   const [collapsed] = useState(getSavedCollapsed);
   const [imgError, setImgError] = useState(false);
+  const [editingSalesExp, setEditingSalesExp] = useState(false);
+  const [editingTimeInRole, setEditingTimeInRole] = useState(false);
+  const [salesExpDraft, setSalesExpDraft] = useState(salesExperience);
+  const [timeInRoleDraft, setTimeInRoleDraft] = useState(timeInRole);
   const W = collapsed ? MINI : FULL;
 
   const sorted = [...repCalls].sort(
@@ -354,11 +361,57 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
               <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700, color: TEXT, letterSpacing: "-0.3px" }}>
                 {repName}
               </h2>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED }}>{repCalls.length} calls</span>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED }}>{repCalls.length} calls reviewed</span>
                 {repCalls.some(c => c.category_scores?.rep_type === "SDR") && (
                   <span style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#a78bfa", fontWeight: 600 }}>SDR</span>
                 )}
+
+                {/* Sales Experience block */}
+                <div
+                  title="Click to edit"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                  onClick={() => { setEditingSalesExp(true); setSalesExpDraft(salesExperience); }}
+                >
+                  <span style={{ color: FAINT, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>Sales Exp.</span>
+                  {editingSalesExp ? (
+                    <input
+                      autoFocus
+                      value={salesExpDraft}
+                      onChange={e => setSalesExpDraft(e.target.value)}
+                      onBlur={() => { setEditingSalesExp(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft }); }}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingSalesExp(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft }); } }}
+                      onClick={e => e.stopPropagation()}
+                      placeholder="e.g. 3 years"
+                      style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 80 }}
+                    />
+                  ) : (
+                    <span style={{ color: salesExperience ? TEXT : "rgba(255,255,255,0.25)" }}>{salesExperience || "—"}</span>
+                  )}
+                </div>
+
+                {/* Time in Role block */}
+                <div
+                  title="Click to edit"
+                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                  onClick={() => { setEditingTimeInRole(true); setTimeInRoleDraft(timeInRole); }}
+                >
+                  <span style={{ color: FAINT, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>Time in Role</span>
+                  {editingTimeInRole ? (
+                    <input
+                      autoFocus
+                      value={timeInRoleDraft}
+                      onChange={e => setTimeInRoleDraft(e.target.value)}
+                      onBlur={() => { setEditingTimeInRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft }); }}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingTimeInRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft }); } }}
+                      onClick={e => e.stopPropagation()}
+                      placeholder="e.g. 8 months"
+                      style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 80 }}
+                    />
+                  ) : (
+                    <span style={{ color: timeInRole ? TEXT : "rgba(255,255,255,0.25)" }}>{timeInRole || "—"}</span>
+                  )}
+                </div>
               </div>
             </div>
 
