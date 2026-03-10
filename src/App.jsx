@@ -2720,7 +2720,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                     </div>
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
-                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{e.lastCall?.category_scores?.call_type || e.lastCall?.call_type || "Call"}</div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.lastCall?.prospect_company || "—"}</div>
                     </div>
                     <button
                       className="rep-del-btn"
