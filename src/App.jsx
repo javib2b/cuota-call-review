@@ -2321,7 +2321,7 @@ function ScoreTrendsChart({ repEntries }) {
           {[40, 60, 80].map(s => (
             <g key={s}>
               <line x1={0} x2={W} y1={toY(s)} y2={toY(s)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-              <text x={10} y={toY(s) - 4} textAnchor="start" fontSize={9} fill="rgba(255,255,255,0.25)">{s}</text>
+              <text x={10} y={toY(s) - 4} textAnchor="start" fontSize={9} fill="#7a8ba0">{s}</text>
             </g>
           ))}
 
@@ -2363,7 +2363,7 @@ function ScoreTrendsChart({ repEntries }) {
 
           {/* X-axis labels */}
           {xLabels.map((c, i) => (
-            <text key={i} x={toX(c.date)} y={H - 6} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.25)">
+            <text key={i} x={toX(c.date)} y={H - 6} textAnchor="middle" fontSize={9} fill="#7a8ba0">
               {c.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </text>
           ))}
@@ -2542,7 +2542,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                 { label: `${repEntries.length} Reps` },
                 { label: `${clientDocs.length} Docs` }
               ].map(p => (
-                <span key={p.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "rgba(255,255,255,0.6)", fontWeight: 500, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{p.label}</span>
+                <span key={p.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#9ca3af", fontWeight: 500, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{p.label}</span>
               ))}
             </div>
           </div>
@@ -6096,7 +6096,7 @@ export default function CuotaCallReview() {
                     onMouseEnter={e => { if (!isClientsActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = isClientsActive ? "rgba(49,206,129,0.14)" : "transparent"; }}
                   >
-                    {iconClients(isClientsActive ? "#31CE81" : "rgba(255,255,255,0.5)")}
+                    {iconClients(isClientsActive ? "#31CE81" : "#7a8ba0")}
                   </button>
                   <button onClick={startNewReview} title="New Review"
                     style={{ width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "rgba(49,206,129,0.12)", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: "inherit" }}>
@@ -6115,7 +6115,7 @@ export default function CuotaCallReview() {
                     style={{ display: "flex", alignItems: "center", width: "100%", padding: "8px 10px", border: "none", background: isClientsActive ? "rgba(49,206,129,0.14)" : "transparent", borderRadius: 8, cursor: "pointer", fontFamily: "inherit", textAlign: "left", boxSizing: "border-box" }}
                     onMouseEnter={e => { if (!isClientsActive) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = isClientsActive ? "rgba(49,206,129,0.14)" : "transparent"; }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: isClientsActive ? "#31CE81" : "rgba(255,255,255,0.55)" }}>Clients</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: isClientsActive ? "#31CE81" : "#9ca3af" }}>Clients</span>
                     {isClientsActive && <div style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#31CE81", flexShrink: 0 }} />}
                   </button>
                   <button onClick={startNewReview}
@@ -6135,7 +6135,7 @@ export default function CuotaCallReview() {
             </nav>
             {/* Footer */}
             <div style={{ padding: sidebarCollapsed ? "12px 8px" : "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", alignItems: sidebarCollapsed ? "center" : "flex-start", gap: 8 }}>
-              <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", color: page === "settings" ? "#31CE81" : "rgba(255,255,255,0.5)", fontSize: 15, fontFamily: "inherit", flexShrink: 0 }}>⚙</button>
+              <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", color: page === "settings" ? "#31CE81" : "#7a8ba0", fontSize: 15, fontFamily: "inherit", flexShrink: 0 }}>⚙</button>
               {!sidebarCollapsed && (
                 <>
                   <div style={{ fontSize: 11, color: "#7a8ba0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{session.user?.email}</div>
@@ -6365,7 +6365,7 @@ export default function CuotaCallReview() {
                           <p style={{ fontSize: 13, color: "var(--text-1)", margin: "0 0 8px", lineHeight: 1.6 }}>{area.description}</p>
                           <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(99,102,241,0.04)", borderLeft: "3px solid #6366F1", borderRadius: "0 6px 6px 0" }}>
                             <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", textTransform: "uppercase", letterSpacing: 0.8 }}>↳ Fix</span>
-                            <p style={{ fontSize: 12, color: "#374151", margin: "4px 0 0", lineHeight: 1.6 }}>{area.fix}</p>
+                            <p style={{ fontSize: 12, color: "#9ca3af", margin: "4px 0 0", lineHeight: 1.6 }}>{area.fix}</p>
                           </div>
                         </div>
                       ))}
