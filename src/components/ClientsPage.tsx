@@ -9,8 +9,8 @@ const GREEN   = "#31CE81";
 const AMBER   = "#F5A623";
 const RED     = "#FF4D4D";
 const TEXT    = "#F5F3F0";
-const MUTED   = "rgba(245,243,240,0.5)";
-const FAINT   = "rgba(245,243,240,0.25)";
+const MUTED   = "#9eb5c4";
+const FAINT   = "#7a8ba0";
 const FONT    = "'DM Sans', system-ui, sans-serif";
 const MONO    = "'IBM Plex Mono', monospace";
 

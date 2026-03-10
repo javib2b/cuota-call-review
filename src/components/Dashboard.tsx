@@ -10,8 +10,8 @@ const CARD   = "var(--bg-card)";
 const BORDER = "var(--border)";
 const TEXT   = "#f0f0f0";
 const TEXT2  = "#9ca3af";
-const TEXT3  = "#4b5563";
-const FAINT  = "rgba(245,243,240,0.25)";
+const TEXT3  = "#7a8ba0";
+const FAINT  = "#7a8ba0";
 const FONT   = "'DM Sans', system-ui, sans-serif";
 
 // ─── Sidebar widths ───────────────────────────────────────────────

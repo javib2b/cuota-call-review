@@ -2549,10 +2549,10 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           {avgCallScore !== null && (
             <div style={{ textAlign: "center", flexShrink: 0 }}>
               <div style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
-              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,255,255,0.35)", marginTop: 4, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Avg Score</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#7a8ba0", marginTop: 4, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Avg Score</div>
               <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "rgba(49,206,129,0.15)", color: "#31CE81", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{getScoreLabel(avgCallScore)}</span>
-                {trendArrow !== null && <span style={{ fontSize: 14, color: trendArrow > 5 ? "#31CE81" : trendArrow < -5 ? "#FF4D4D" : "rgba(255,255,255,0.35)" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
+                {trendArrow !== null && <span style={{ fontSize: 14, color: trendArrow > 5 ? "#31CE81" : trendArrow < -5 ? "#FF4D4D" : "#7a8ba0" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
               </div>
             </div>
           )}
@@ -4924,7 +4924,7 @@ function SlideSolution({ data, primary, accent }) {
 function SlideProof({ data, primary, accent }) {
   return (
     <div style={{ width: NATURAL_W, height: NATURAL_H, background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 60px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 18 }}>Social Proof</div>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", marginBottom: 18 }}>Social Proof</div>
       {data.quote && (
         <div style={{ fontSize: 18, fontStyle: "italic", color: "#ffffff", lineHeight: 1.65, marginBottom: 14, borderLeft: `4px solid ${accent}`, paddingLeft: 22 }}>"{data.quote}"</div>
       )}
@@ -5235,13 +5235,13 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
               <div style={{ width: 200, height: 113, border: "2px dashed rgba(255,255,255,0.1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
                 <span style={{ fontSize: 28 }}>🎨</span>
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.25)" }}>Configure & Generate on the right</div>
+              <div style={{ fontSize: 13, color: "#7a8ba0" }}>Configure & Generate on the right</div>
             </div>
           )}
           {generating && (
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>Building your deck…</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Usually takes 15–20 seconds</div>
+              <div style={{ fontSize: 13, color: "#9eb5c4", marginBottom: 6 }}>Building your deck…</div>
+              <div style={{ fontSize: 11, color: "#7a8ba0" }}>Usually takes 15–20 seconds</div>
             </div>
           )}
           {slides && currentSlide && (
@@ -5257,7 +5257,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
                   {renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName)}
                 </div>
               </div>
-              <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: "'IBM Plex Mono', monospace" }}>
+              <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "#7a8ba0", fontFamily: "'IBM Plex Mono', monospace" }}>
                 {activeSlide + 1} / {slides.length}
               </div>
             </>
@@ -6091,7 +6091,7 @@ export default function CuotaCallReview() {
                     style={{ marginTop: "auto", width: "100%", padding: "10px 0", border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", display: "flex", justifyContent: "center", fontFamily: "inherit" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <span style={{ fontSize: 14, color: "rgba(245,243,240,0.25)", lineHeight: 1 }}>›</span>
+                    <span style={{ fontSize: 14, color: "#7a8ba0", lineHeight: 1 }}>›</span>
                   </button>
                 </>
               ) : (
@@ -6112,8 +6112,8 @@ export default function CuotaCallReview() {
                     style={{ marginTop: "auto", width: "100%", padding: "8px 10px", border: "none", borderRadius: 8, background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit", gap: 8 }}
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                    <span style={{ fontSize: 14, color: "rgba(245,243,240,0.25)", lineHeight: 1 }}>‹</span>
-                    <span style={{ fontSize: 11, color: "rgba(245,243,240,0.25)" }}>Collapse</span>
+                    <span style={{ fontSize: 14, color: "#7a8ba0", lineHeight: 1 }}>‹</span>
+                    <span style={{ fontSize: 11, color: "#7a8ba0" }}>Collapse</span>
                   </button>
                 </>
               )}
@@ -6123,8 +6123,8 @@ export default function CuotaCallReview() {
               <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", color: page === "settings" ? "#31CE81" : "rgba(255,255,255,0.5)", fontSize: 15, fontFamily: "inherit", flexShrink: 0 }}>⚙</button>
               {!sidebarCollapsed && (
                 <>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{session.user?.email}</div>
-                  <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "rgba(255,255,255,0.6)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
+                  <div style={{ fontSize: 11, color: "#7a8ba0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{session.user?.email}</div>
+                  <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "#9eb5c4", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
                 </>
               )}
             </div>

@@ -3,7 +3,7 @@ import { useState } from "react";
 const BG = "#07090f", SURFACE = "#0d1117", SURFACE2 = "#131920";
 const BORDER = "rgba(255,255,255,0.06)", BORDER2 = "rgba(255,255,255,0.10)";
 const GREEN = "#31CE81", AMBER = "#F5A623", RED = "#FF4D4D", BLUE = "#4D9EFF";
-const TEXT = "#F5F3F0", TEXT2 = "rgba(245,243,240,0.55)", TEXT3 = "rgba(245,243,240,0.3)";
+const TEXT = "#F5F3F0", TEXT2 = "#9eb5c4", TEXT3 = "#7a8ba0";
 
 const scoreColor = s => s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
 
