@@ -110,14 +110,15 @@ function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return d
 // ClientLogo: tries /logos/{client}.png → Clearbit → Google favicon → letter fallback
 // Pass `website` (e.g. "https://11x.ai") to derive domain instead of the hardcoded CLIENT_DOMAINS map
 function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
-  let domain = null;
-  if (website) {
+  // Hardcoded domain always wins — prevents bad saved-website data from showing a wrong logo
+  const hardcoded = CLIENT_DOMAINS[client];
+  let domain = hardcoded || null;
+  if (!domain && website) {
     try {
       const url = website.startsWith("http") ? website : `https://${website}`;
       domain = new URL(url).hostname.replace(/^www\./, "");
     } catch {}
   }
-  if (!domain) domain = CLIENT_DOMAINS[client]; // fallback for clients without a saved website
   const [srcIdx, setSrcIdx] = useState(0);
   const sources = [
     `/logos/${client.toLowerCase()}.png`,
