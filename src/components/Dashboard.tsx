@@ -6,7 +6,6 @@ const AMBER  = "#F5A623";
 const RED    = "#FF4D4D";
 const BG     = "var(--bg-app)";
 const SURFACE = "var(--bg-primary)";
-const CARD   = "var(--bg-card)";
 const BORDER = "var(--border)";
 const TEXT   = "#f0f0f0";
 const TEXT2  = "#9ca3af";
@@ -25,15 +24,7 @@ function saveCollapsed(v: boolean) {
   try { localStorage.setItem("sidebar_collapsed", v ? "1" : "0"); } catch {}
 }
 
-const scoreColor = (s: number) => s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
-
-const CLIENTS = [
-  { name: "11x",     stage: "Series B", score: 48, delta: -6,  gap: "Discovery", status: "At Risk"  },
-  { name: "Arc",     stage: "Series A", score: 61, delta: +4,  gap: "Objections",status: "On Track" },
-  { name: "Diio",    stage: "Seed",     score: 44, delta: -11, gap: "Closing",   status: "Critical" },
-  { name: "Factor",  stage: "Series A", score: 59, delta: 0,   gap: "Pitch",     status: "On Track" },
-  { name: "Xepelin", stage: "Series B", score: 72, delta: +9,  gap: "—",         status: "Healthy"  },
-];
+const scoreColor = (s: number) => s >= 70 ? GREEN : s >= 55 ? AMBER : RED;
 
 const statusStyle = (s: string) => ({
   "At Risk":  { color: AMBER, bg: "rgba(245,166,35,0.10)"  },
@@ -42,14 +33,87 @@ const statusStyle = (s: string) => ({
   "Healthy":  { color: GREEN, bg: "rgba(49,206,129,0.10)"  },
 } as Record<string, { color: string; bg: string }>)[s] ?? { color: TEXT2, bg: "transparent" };
 
+const CATEGORY_NAMES: Record<string, string> = {
+  pre_call_research: "Research",
+  intro_opening:     "Opening",
+  agenda:            "Agenda",
+  discovery:         "Discovery",
+  pitch:             "Pitch",
+  services_product:  "Product",
+  pricing:           "Pricing",
+  next_steps:        "Next Steps",
+  objection_handling:"Objections",
+  call_opener:       "Opener",
+  product_pitch:     "Pitch",
+  qualification:     "Qualification",
+  call_to_action:    "CTA",
+};
+
 interface Props {
   onNavigate?: (page: string) => void;
   onNewReview?: () => void;
   onClientClick?: (client: string) => void;
   userEmail?: string;
+  profile?: { full_name?: string; role?: string } | null;
+  clients?: string[];
+  savedCalls?: any[];
 }
 
-export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "" }: Props) {
+function callMatchesClient(call: any, client: string): boolean {
+  return (
+    call.category_scores?.client === client ||
+    (call.prospect_company || "").toLowerCase().includes(client.toLowerCase())
+  );
+}
+
+function computeClientRow(client: string, calls: any[]) {
+  const clientCalls = calls.filter(c => callMatchesClient(c, client));
+  if (clientCalls.length === 0) return null;
+
+  const allScores = clientCalls.map(c => c.overall_score || 0).filter(Boolean);
+  const score = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
+
+  // Trend: recent 30 days vs prior 30 days
+  const now = Date.now();
+  const d30 = 30 * 24 * 60 * 60 * 1000;
+  const recent = clientCalls.filter(c => now - new Date(c.call_date || c.created_at).getTime() < d30);
+  const older  = clientCalls.filter(c => {
+    const age = now - new Date(c.call_date || c.created_at).getTime();
+    return age >= d30 && age < 2 * d30;
+  });
+  const recentAvg = recent.length ? Math.round(recent.map(c => c.overall_score || 0).reduce((a, b) => a + b, 0) / recent.length) : null;
+  const olderAvg  = older.length  ? Math.round(older.map(c => c.overall_score || 0).reduce((a, b) => a + b, 0) / older.length)  : null;
+  const delta = (recentAvg !== null && olderAvg !== null) ? recentAvg - olderAvg : null;
+
+  // Biggest gap: weakest category across all calls
+  const catTotals: Record<string, number[]> = {};
+  clientCalls.forEach(call => {
+    const cs = call.category_scores;
+    if (!cs) return;
+    Object.entries(cs).forEach(([k, v]: [string, any]) => {
+      if (v && typeof v === "object" && typeof v.score === "number") {
+        if (!catTotals[k]) catTotals[k] = [];
+        catTotals[k].push(v.score);
+      }
+    });
+  });
+  let gap = "—";
+  let weakest = Infinity;
+  Object.entries(catTotals).forEach(([k, scores]) => {
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    if (avg < weakest) { weakest = avg; gap = CATEGORY_NAMES[k] ?? k; }
+  });
+
+  const status =
+    score === null ? null :
+    score >= 70 ? "Healthy" :
+    score >= 55 ? "On Track" :
+    score >= 40 ? "At Risk" : "Critical";
+
+  return { client, calls: clientCalls.length, score, delta, gap, status };
+}
+
+export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "", profile, clients = [], savedCalls = [] }: Props) {
   const hour = new Date().getHours();
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
   const [collapsed, setCollapsed] = useState(getSavedCollapsed);
@@ -59,6 +123,38 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
   }
 
   const W = collapsed ? MINI : FULL;
+
+  // Derived stats
+  const now = Date.now();
+  const d30 = 30 * 24 * 60 * 60 * 1000;
+  const reviewsThisMonth = savedCalls.filter(c => now - new Date(c.call_date || c.created_at).getTime() < d30).length;
+  const allScores = savedCalls.map(c => c.overall_score || 0).filter(Boolean);
+  const avgScore = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
+
+  // Critical AEs: reps with avg score < 50
+  const repScores: Record<string, number[]> = {};
+  savedCalls.forEach(c => {
+    const rep = c.category_scores?.rep_name || c.rep_name;
+    if (!rep) return;
+    if (!repScores[rep]) repScores[rep] = [];
+    repScores[rep].push(c.overall_score || 0);
+  });
+  const criticalAEs = Object.values(repScores).filter(scores => {
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    return avg < 50;
+  }).length;
+
+  // Client table rows (only clients with calls)
+  const clientRows = clients
+    .map(c => computeClientRow(c, savedCalls))
+    .filter(Boolean) as NonNullable<ReturnType<typeof computeClientRow>>[];
+
+  // Display name from profile or email
+  const displayName = profile?.full_name
+    ? profile.full_name.split(" ")[0]
+    : userEmail ? userEmail.split("@")[0].split(".")[0] : "";
+  const initials = (profile?.full_name || userEmail || "?")
+    .split(" ").map((p: string) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: BG, color: TEXT, fontFamily: FONT }}>
@@ -187,11 +283,15 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
             border: "1px solid rgba(49,206,129,0.3)", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
-          }}>JV</div>
+          }}>{initials}</div>
           {!collapsed && (
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
-              <div style={{ fontSize: 10, color: TEXT3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>javier@cuota.io</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {displayName || userEmail}
+              </div>
+              <div style={{ fontSize: 10, color: TEXT3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {userEmail}
+              </div>
             </div>
           )}
         </div>
@@ -205,7 +305,7 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
           <h1 style={{ margin: 0, fontSize: 26, fontWeight: 600, color: TEXT, lineHeight: 1.2, fontFamily: FONT }}>
             Good {tod},{" "}
             <em style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic", fontWeight: 400, color: GREEN }}>
-              Javier
+              {displayName || "there"}
             </em>
           </h1>
           <button
@@ -223,10 +323,10 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
         {/* KPI Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 32 }}>
           {([
-            { label: "Active Clients",      value: "5",    color: TEXT  },
-            { label: "Avg Score",           value: "48%",  color: AMBER },
-            { label: "Reviews This Month",  value: "269",  color: GREEN },
-            { label: "Critical AEs",        value: "3",    color: RED   },
+            { label: "Active Clients",     value: String(clients.length),                         color: TEXT  },
+            { label: "Avg Score",          value: avgScore !== null ? `${avgScore}%` : "—",       color: avgScore !== null ? scoreColor(avgScore) : TEXT3 },
+            { label: "Reviews This Month", value: String(reviewsThisMonth),                        color: GREEN },
+            { label: "Critical AEs",       value: String(criticalAEs),                             color: criticalAEs > 0 ? RED : GREEN },
           ] as { label: string; value: string; color: string }[]).map(k => (
             <div key={k.label} style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)",
@@ -238,10 +338,7 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: TEXT3, textTransform: "uppercase", marginBottom: 12, fontFamily: FONT }}>
                 {k.label}
               </div>
-              <div style={{
-                fontSize: 34, fontWeight: 800, color: k.color, lineHeight: 1,
-                fontFamily: "'IBM Plex Mono', monospace",
-              }}>
+              <div style={{ fontSize: 34, fontWeight: 800, color: k.color, lineHeight: 1, fontFamily: "'IBM Plex Mono', monospace" }}>
                 {k.value}
               </div>
             </div>
@@ -263,38 +360,45 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
             <span>Status</span>
           </div>
 
-          {CLIENTS.map((c, i) => {
-            const col = scoreColor(c.score);
-            const st  = statusStyle(c.status);
+          {clientRows.length === 0 ? (
+            <div style={{ padding: "32px 24px", textAlign: "center", color: TEXT3, fontSize: 13 }}>
+              No call reviews yet. <button onClick={onNewReview} style={{ color: GREEN, background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontWeight: 600 }}>Add one →</button>
+            </div>
+          ) : clientRows.map((c, i) => {
+            const col = c.score !== null ? scoreColor(c.score) : TEXT3;
+            const st  = c.status ? statusStyle(c.status) : { color: TEXT3, bg: "transparent" };
             return (
               <div
-                key={c.name}
-                onClick={() => onClientClick?.(c.name)}
+                key={c.client}
+                onClick={() => onClientClick?.(c.client)}
                 style={{
                   display: "grid", gridTemplateColumns: "1fr 180px 70px 130px 100px",
                   padding: "15px 24px", gap: 16, alignItems: "center",
-                  borderBottom: i < CLIENTS.length - 1 ? `1px solid ${BORDER}` : "none",
+                  borderBottom: i < clientRows.length - 1 ? `1px solid ${BORDER}` : "none",
                   cursor: "pointer", transition: "background 0.1s",
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: FONT }}>{c.name}</div>
-                  <div style={{ fontSize: 11, color: TEXT3, marginTop: 2, fontFamily: FONT }}>{c.stage}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: FONT }}>{c.client}</div>
+                  <div style={{ fontSize: 11, color: TEXT3, marginTop: 2, fontFamily: FONT }}>{c.calls} review{c.calls !== 1 ? "s" : ""}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{ width: `${c.score}%`, height: "100%", background: col, borderRadius: 3 }} />
+                    <div style={{ width: `${c.score ?? 0}%`, height: "100%", background: col, borderRadius: 3 }} />
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: col, width: 34, textAlign: "right", flexShrink: 0, fontFamily: "'IBM Plex Mono', monospace" }}>
-                    {c.score}%
+                    {c.score !== null ? `${c.score}%` : "—"}
                   </span>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: c.delta > 0 ? GREEN : c.delta < 0 ? RED : TEXT3 }}>
-                    {c.delta > 0 ? `↑ +${c.delta}` : c.delta < 0 ? `↓ ${c.delta}` : "— 0"}
-                  </span>
+                  {c.delta !== null
+                    ? <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", color: c.delta > 0 ? GREEN : c.delta < 0 ? RED : TEXT3 }}>
+                        {c.delta > 0 ? `↑ +${c.delta}` : c.delta < 0 ? `↓ ${c.delta}` : "— 0"}
+                      </span>
+                    : <span style={{ fontSize: 12, color: TEXT3 }}>—</span>
+                  }
                 </div>
                 <div>
                   {c.gap !== "—"
@@ -303,9 +407,10 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
                   }
                 </div>
                 <div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: st.color, background: st.bg, borderRadius: 6, padding: "4px 10px", fontFamily: FONT }}>
-                    {c.status}
-                  </span>
+                  {c.status
+                    ? <span style={{ fontSize: 11, fontWeight: 700, color: st.color, background: st.bg, borderRadius: 6, padding: "4px 10px", fontFamily: FONT }}>{c.status}</span>
+                    : <span style={{ fontSize: 11, color: TEXT3 }}>—</span>
+                  }
                 </div>
               </div>
             );
