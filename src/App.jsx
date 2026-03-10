@@ -2454,7 +2454,7 @@ function ScoreTrendsChart({ repEntries }) {
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate, repMeta = {} }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const [repRoleFilter, setRepRoleFilter] = useState("");
@@ -6581,6 +6581,7 @@ export default function CuotaCallReview() {
           onRefresh={loadCalls}
           repPhotos={repPhotos}
           onDocsUpdate={loadDocs}
+          repMeta={repMeta}
         />}
 
         {/* CLIENTS — handled by early return above */}
