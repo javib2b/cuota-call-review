@@ -415,7 +415,7 @@ function AuthScreen({ onAuth }) {
           <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text-1)", letterSpacing: 2, fontFamily: "'Syne', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
           <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4, letterSpacing: 1 }}>GTM Audit Engine</div>
         </div>
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 28 }}>
+        <div className="glass-card" style={{ borderRadius: 16, padding: 28 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "var(--surface)", borderRadius: 10, padding: 4 }}>
             {["login", "signup"].map(m => (
               <button key={m} onClick={() => { setMode(m); setError(""); setMessage(""); }} style={{ flex: 1, padding: "8px 0", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, background: mode === m ? "var(--border-soft)" : "transparent", color: mode === m ? "var(--text-1)" : "var(--text-3)", fontFamily: "inherit" }}>{m === "login" ? "Log In" : "Sign Up"}</button>
@@ -686,7 +686,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
     const RepSection = ({ ae }) => {
       const [open, setOpen] = useState(true);
       return (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, overflow: "hidden", marginBottom: 8 }}>
+        <div className="glass-card" style={{ borderRadius: 14, overflow: "hidden", marginBottom: 8 }}>
           {/* Rep header row */}
           <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", cursor: "pointer" }} onClick={() => setOpen(v => !v)}>
             <CircularScore score={ae.avg} size={44} strokeWidth={4} />
@@ -792,7 +792,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       </div>
 
       {/* SECTION 1: Header Card */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: 24, marginBottom: 16, display: "flex", alignItems: "center", gap: 20 }}>
+      <div className="glass-card" style={{ borderRadius: 14, padding: 24, marginBottom: 16, display: "flex", alignItems: "center", gap: 20 }}>
         <CircularScore score={latestScore} size={80} strokeWidth={6} />
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -826,7 +826,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
       {/* SECTION 2: Score Trend (only if >1 call) */}
       {sortedAeCalls.length > 1 && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+        <div className="glass-card" style={{ borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
           <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", fontWeight: 700, marginBottom: 12 }}>Score Trend</div>
           <svg width="100%" height={svgH} viewBox={`0 0 100 ${svgH}`} preserveAspectRatio="none" style={{ display: "block" }}>
             <polyline points={polyline} fill="none" stroke="rgba(49,206,129,0.4)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
@@ -844,7 +844,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       )}
 
       {/* SECTION 3: Category Performance */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+      <div className="glass-card" style={{ borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           <div>
             <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#31CE81", fontWeight: 700, marginBottom: 10 }}>Strongest</div>
@@ -869,7 +869,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 
       {/* SECTION 4: Risk Patterns */}
       {riskPatterns.length > 0 && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+        <div className="glass-card" style={{ borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
           <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-2)", fontWeight: 700, marginBottom: 10 }}>Risk Patterns (last {recentCalls.length} calls)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {riskPatterns.map(r => {
@@ -2503,7 +2503,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
   );
 
   const Section = ({ title, icon, items, emptyText, children, action }) => (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+    <div className="glass-card" style={{ borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: items.length > 0 ? 14 : 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 16 }}>{icon}</span>
@@ -2528,7 +2528,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       </div>
 
       {/* Hero header */}
-      <div style={{ background: "linear-gradient(135deg, #062035 0%, #0a2a45 100%)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%), rgba(6,32,53,0.90)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.11)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, opacity: 0.025, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -6200,7 +6200,7 @@ export default function CuotaCallReview() {
         {page === "settings" && (
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-1)", margin: "0 0 24px" }}>Settings</h1>
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
+            <div className="glass-card" style={{ borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 6 }}>Account</div>
               <div style={{ fontSize: 13, color: "var(--text-1)" }}>{session?.user?.email}</div>
               <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>Role: {profile?.role || "—"}</div>
@@ -6223,7 +6223,7 @@ export default function CuotaCallReview() {
             </div>
 
             {/* Call Info — grouped WHO / WHAT & WHEN */}
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 20, marginBottom: 24 }}>
+            <div className="glass-card" style={{ borderRadius: 16, padding: 20, marginBottom: 24 }}>
               <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>Who</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
                 {[
@@ -6270,7 +6270,7 @@ export default function CuotaCallReview() {
             </div>
 
             {/* Score Hero */}
-            <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14, padding: "12px 18px", marginBottom: 14 }}>
+            <div className="glass-card" style={{ borderRadius: 14, padding: "12px 18px", marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
                   <span style={{ fontSize: 40, fontWeight: 700, lineHeight: 1, color: getScoreColor(overallScore), fontFamily: "'IBM Plex Mono', monospace" }}>{overallScore}</span>
@@ -6324,7 +6324,7 @@ export default function CuotaCallReview() {
             {activeTab === "insights" && (aiAnalysis ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {/* Gut Check */}
-                <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 18 }}>
+                <div className="glass-card" style={{ borderRadius: 12, padding: 18 }}>
                   <h4 style={{ fontSize: 13, fontWeight: 700, color: "#7c3aed", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Gut Check</h4>
                   <p style={{ fontSize: 14, color: "var(--text-1)", lineHeight: 1.7, margin: 0 }}>{aiAnalysis.gut_check}</p>
                 </div>
@@ -6346,7 +6346,7 @@ export default function CuotaCallReview() {
                     <h4 style={{ fontSize: 13, fontWeight: 700, color: "#eab308", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Areas of Opportunity</h4>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {(aiAnalysis.areas_of_opportunity || []).map((area, i) => (
-                        <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 14 }}>
+                        <div key={i} className="glass-card" style={{ borderRadius: 12, padding: 14 }}>
                           <p style={{ fontSize: 13, color: "var(--text-1)", margin: "0 0 8px", lineHeight: 1.6 }}>{area.description}</p>
                           <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(99,102,241,0.04)", borderLeft: "3px solid #6366F1", borderRadius: "0 6px 6px 0" }}>
                             <span style={{ fontSize: 9, fontWeight: 700, color: "#6366F1", textTransform: "uppercase", letterSpacing: 0.8 }}>↳ Fix</span>

@@ -229,8 +229,11 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
             { label: "Critical AEs",        value: "3",    color: RED   },
           ] as { label: string; value: string; color: string }[]).map(k => (
             <div key={k.label} style={{
-              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
-              padding: "22px 22px",
+              background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)",
+              backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any,
+              border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)",
+              borderRadius: 14, padding: "22px 22px",
             }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: TEXT3, textTransform: "uppercase", marginBottom: 12, fontFamily: FONT }}>
                 {k.label}
@@ -246,7 +249,7 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
         </div>
 
         {/* Client Health Table */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any, border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)", borderRadius: 16, overflow: "hidden" }}>
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 180px 70px 130px 100px",
             padding: "10px 24px", gap: 16,

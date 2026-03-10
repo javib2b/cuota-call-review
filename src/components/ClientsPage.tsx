@@ -383,7 +383,10 @@ export default function ClientsPage({
 
           {/* Active clients table */}
           <div style={{
-            background: SURFACE, border: `1px solid ${BORDER}`,
+            background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)",
+            backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any,
+            border: "1px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)",
             borderRadius: 14, overflow: "hidden", marginBottom: 32,
           }}>
             {/* Column headers */}
@@ -503,7 +506,7 @@ export default function ClientsPage({
               }}>
                 Past clients
               </div>
-              <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+              <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any, border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)", borderRadius: 14, overflow: "hidden" }}>
                 {pastClients.map((client, i) => {
                   const meta    = metaMap[client];
                   const hovered = hoveredPast === client;

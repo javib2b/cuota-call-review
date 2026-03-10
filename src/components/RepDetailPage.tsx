@@ -169,7 +169,10 @@ function CategoryBreakdown({ calls }: { calls: any[] }) {
 
   return (
     <div style={{
-      background: SURFACE, border: `1px solid ${BORDER}`,
+      background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)",
+      backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any,
+      border: "1px solid rgba(255,255,255,0.10)",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)",
       borderRadius: 14, padding: "20px 24px", marginBottom: 20,
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 16 }}>
@@ -319,8 +322,10 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
 
           {/* Hero */}
           <div style={{
-            background: "linear-gradient(135deg, #062035 0%, #0a2a45 100%)",
-            border: `1px solid ${BORDER}`,
+            background: "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%), rgba(6,32,53,0.90)",
+            backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any,
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.11)",
             borderRadius: 16, padding: "24px 28px", marginBottom: 20,
             display: "flex", alignItems: "center", gap: 20,
           }}>
@@ -389,7 +394,7 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
 
           {/* Score progression chart */}
           {repCalls.length > 0 && (
-            <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, padding: "20px 24px", marginBottom: 20 }}>
+            <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any, border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)", borderRadius: 14, padding: "20px 24px", marginBottom: 20 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: FAINT, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 14 }}>
                 Score Progression
               </div>
@@ -401,7 +406,7 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
           <CategoryBreakdown calls={repCalls} />
 
           {/* Call list */}
-          <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any, border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.09)", borderRadius: 14, overflow: "hidden" }}>
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 52px 100px 100px",
               padding: "9px 20px", gap: 12,
