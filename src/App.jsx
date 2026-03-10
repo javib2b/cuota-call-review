@@ -6,6 +6,11 @@ import RepDetailPage from "./components/RepDetailPage.tsx";
 const SUPABASE_URL = "https://vflmrqtpdrhnyvokquyu.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZmbG1ycXRwZHJobnl2b2txdXl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NTU0OTUsImV4cCI6MjA4NjQzMTQ5NX0.66eeDUOONigyN3YG2JfqvCjrLe9m5a4ipBhp8TXZOms";
 
+// Quarterly quota targets per rep (target in USD, closed = current attainment)
+const REP_QUOTAS = {
+  "Juan Manuel Bello": { target: 500000, closed: 460000 },
+};
+
 // Lightweight Supabase client
 const supabase = {
   headers: (token) => ({
@@ -6014,11 +6019,14 @@ export default function CuotaCallReview() {
       const repMatch = c.category_scores?.rep_name === selectedRep || c.rep_name === selectedRep;
       return clientMatch && repMatch;
     });
+    const repQuota = REP_QUOTAS[selectedRep] ?? null;
     return (
       <RepDetailPage
         client={selectedClientProfile || ""}
         repName={selectedRep}
         repCalls={repCalls}
+        quotaTarget={repQuota?.target}
+        quotaClosed={repQuota?.closed}
         onBack={() => setPage("client")}
         onViewCall={loadCallIntoReview}
         onNavigate={setPage}

@@ -271,6 +271,8 @@ interface Props {
   client: string;
   repName: string;
   repCalls: any[];
+  quotaTarget?: number;
+  quotaClosed?: number;
   onBack: () => void;
   onViewCall: (call: any) => void;
   onNavigate: (page: string) => void;
@@ -278,7 +280,7 @@ interface Props {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────
-export default function RepDetailPage({ client, repName, repCalls, onBack, onViewCall, onNavigate, onNewReview }: Props) {
+export default function RepDetailPage({ client, repName, repCalls, quotaTarget, quotaClosed, onBack, onViewCall, onNavigate, onNewReview }: Props) {
   const [collapsed] = useState(getSavedCollapsed);
   const W = collapsed ? MINI : FULL;
 
@@ -357,6 +359,32 @@ export default function RepDetailPage({ client, repName, repCalls, onBack, onVie
                 )}
               </div>
             )}
+
+            {/* Quota attainment */}
+            {quotaTarget != null && quotaClosed != null && (() => {
+              const pct = Math.round((quotaClosed / quotaTarget) * 100);
+              const barColor = pct >= 90 ? GREEN : pct >= 70 ? AMBER : RED;
+              const fmtK = (n: number) => n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${n}`;
+              return (
+                <div style={{
+                  textAlign: "center", flexShrink: 0,
+                  borderLeft: `1px solid rgba(255,255,255,0.08)`, paddingLeft: 24,
+                }}>
+                  <div style={{ fontSize: 44, fontWeight: 800, color: barColor, fontFamily: MONO, lineHeight: 1 }}>
+                    {pct}%
+                  </div>
+                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: FAINT, marginTop: 4 }}>
+                    Quota Attainment
+                  </div>
+                  <div style={{ marginTop: 8, width: 80, height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden", marginLeft: "auto", marginRight: "auto" }}>
+                    <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: barColor, borderRadius: 2 }} />
+                  </div>
+                  <div style={{ marginTop: 6, fontSize: 11, color: MUTED, fontFamily: MONO }}>
+                    {fmtK(quotaClosed)} / {fmtK(quotaTarget)}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Score progression chart */}
