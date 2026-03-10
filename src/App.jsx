@@ -2530,7 +2530,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {/* Hero header */}
       <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%), rgba(6,32,53,0.90)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.11)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, opacity: 0.025, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px", pointerEvents: "none" }} />
-        <div style={{ position: "relative", display: "flex", alignItems: "flex-start", gap: 20 }}>
+        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)", overflow: "hidden" }}>
             <ClientLogo client={client} website={clientProfiles[client]?.website} size={64} letterStyle={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }} />
           </div>
