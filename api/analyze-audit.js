@@ -459,6 +459,17 @@ export default async function handler(req, res) {
       dataStr = combined;
     } else {
       dataStr = buildDataLines(type, data);
+      // Append uploaded documents when provided (any non-full_assessment type)
+      if (Array.isArray(documents) && documents.length > 0) {
+        const MAX_DOC_CHARS = 40000;
+        let docText = documents
+          .map(d => `=== DOCUMENT: ${d.filename} (${d.docType}) ===\n${(d.content || "").substring(0, 8000)}`)
+          .join("\n\n");
+        if (docText.length > MAX_DOC_CHARS) docText = docText.slice(0, MAX_DOC_CHARS) + "\n[truncated]";
+        dataStr = dataStr
+          ? `${dataStr}\n\nATTACHED DOCUMENTS FOR REFERENCE:\n${docText}`
+          : `ATTACHED DOCUMENTS FOR REFERENCE:\n${docText}`;
+      }
       if (!dataStr) return res.status(400).json({ error: "No data provided." });
     }
 

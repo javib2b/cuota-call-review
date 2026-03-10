@@ -2428,7 +2428,7 @@ function ScoreTrendsChart({ repEntries }) {
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {} }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate }) {
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const [deletingRep, setDeletingRep] = useState(null);
@@ -2730,7 +2730,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* GTM AUDIT TAB */}
       {activeTab === "audit" && (
-        <GtmAuditTab client={client} assessments={gtmAssessments} getValidToken={getValidToken} profile={profile} onUpdate={onGtmUpdate} />
+        <GtmAuditTab client={client} assessments={gtmAssessments} getValidToken={getValidToken} profile={profile} onUpdate={onGtmUpdate} docs={clientDocs} onDocsUpdate={onDocsUpdate} />
       )}
     </div>
   );
@@ -2983,7 +2983,7 @@ function GTMProfileTab({ client, getValidToken, onProfileUpdate }) {
 }
 
 // ==================== GTM AUDIT TAB ====================
-function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) {
+function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate, docs = [], onDocsUpdate }) {
   const clientAssessments = assessments.filter(a => a.client === client);
   const [mode, setMode] = useState("list");
   const [selected, setSelected] = useState(null);
@@ -2994,8 +2994,28 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState("");
 
-  const startNew = () => { setSelected(null); setAssessmentDate(new Date().toISOString().split("T")[0]); setData({ icp: "", personas: "", valueProposition: "", channels: "", competitive: "", notes: "" }); setAnalysis(null); setError(""); setMode("new"); };
-  const viewItem = (item) => { setSelected(item); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]); setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view"); };
+  // Document management
+  const [selectedDocIds, setSelectedDocIds] = useState(new Set());
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadType, setUploadType] = useState("pitch_deck");
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const uploadInputRef = useRef(null);
+
+  const startNew = () => {
+    setSelected(null); setAssessmentDate(new Date().toISOString().split("T")[0]);
+    setData({ icp: "", personas: "", valueProposition: "", channels: "", competitive: "", notes: "" });
+    setAnalysis(null); setError(""); setMode("new");
+    // Auto-select all docs for the client
+    setSelectedDocIds(new Set(docs.map(d => d.id)));
+  };
+  const viewItem = (item) => {
+    setSelected(item); setAssessmentDate(item.assessment_date || new Date().toISOString().split("T")[0]);
+    setData(item.input_data || {}); setAnalysis(item.ai_analysis || null); setError(""); setMode("view");
+    setSelectedDocIds(new Set(docs.map(d => d.id)));
+  };
 
   const ta = (key, label, placeholder, rows = 3) => (
     <div key={key} style={{ marginBottom: 16 }}>
@@ -3004,11 +3024,45 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
     </div>
   );
 
+  const handleDocUpload = async () => {
+    if (!uploadTitle.trim()) { setUploadError("Enter a document title."); return; }
+    if (!uploadFile) { setUploadError("Choose a file to upload."); return; }
+    setUploading(true); setUploadError("");
+    try {
+      const content = await extractTextFromFile(uploadFile);
+      if (!content.trim()) throw new Error("Could not extract text from this file.");
+      const t = await getValidToken();
+      const row = { org_id: profile?.org_id || "00000000-0000-0000-0000-000000000001", client, doc_type: uploadType, title: uploadTitle, content };
+      const table = await supabase.from("enablement_docs", t);
+      const saved = await table.insert(row);
+      if (onDocsUpdate) await onDocsUpdate();
+      // Auto-select the newly uploaded doc
+      const newId = Array.isArray(saved) ? saved[0]?.id : saved?.id;
+      if (newId) setSelectedDocIds(prev => new Set([...prev, newId]));
+      setShowUploadForm(false); setUploadFile(null); setUploadTitle(""); setUploadType("pitch_deck");
+      if (uploadInputRef.current) uploadInputRef.current.value = "";
+    } catch (e) { setUploadError("Upload failed: " + e.message); }
+    finally { setUploading(false); }
+  };
+
+  const toggleDoc = (id) => setSelectedDocIds(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
   const analyze = async () => {
     setAnalyzing(true); setError("");
     try {
       const t = await getValidToken();
-      const r = await fetch("/api/analyze-audit", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` }, body: JSON.stringify({ type: "gtm_strategy", client, data }) });
+      const selectedDocs = docs
+        .filter(d => selectedDocIds.has(d.id) && d.content?.trim())
+        .map(d => ({ filename: d.title, docType: d.doc_type, content: d.content }));
+      const r = await fetch("/api/analyze-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ type: "gtm_strategy", client, data, documents: selectedDocs }),
+      });
       if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || "Analysis failed"); }
       setAnalysis(await r.json());
     } catch (e) { setError("Analysis failed: " + e.message); }
@@ -3027,6 +3081,8 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
     finally { setSaving(false); }
   };
 
+  const docTypeLabel = (id) => ENABLEMENT_DOC_TYPES.find(t => t.id === id)?.name || id;
+
   if (mode === "list") return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -3036,6 +3092,18 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
         </div>
         <button onClick={startNew} style={{ padding: "9px 18px", border: "none", borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ New Assessment</button>
       </div>
+
+      {/* Document repository summary on list view */}
+      {docs.length > 0 && (
+        <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.18)", borderRadius: 12, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>📂</span>
+          <div style={{ flex: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{docs.length} document{docs.length !== 1 ? "s" : ""} in repository</span>
+            <span style={{ fontSize: 11, color: "var(--text-2)", marginLeft: 8 }}>{docs.map(d => d.title).join(" · ")}</span>
+          </div>
+        </div>
+      )}
+
       {clientAssessments.length === 0 ? (
         <div className="glass-card" style={{ textAlign: "center", padding: "60px 20px", borderRadius: 16 }}>
           <div style={{ fontSize: 40, marginBottom: 14 }}>🎯</div>
@@ -3068,6 +3136,66 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
     </div>
   );
 
+  // ── Document section (shown in new/view form) ──
+  const docsSection = (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)" }}>
+          Documents ({selectedDocIds.size} selected for analysis)
+        </label>
+        <button onClick={() => { setShowUploadForm(v => !v); setUploadError(""); }} style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+          {showUploadForm ? "Cancel" : "+ Upload Document"}
+        </button>
+      </div>
+
+      {/* Upload form */}
+      {showUploadForm && (
+        <div style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, padding: "14px 16px", marginBottom: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-3)", display: "block", marginBottom: 4 }}>Title</label>
+              <input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} placeholder="e.g. Sales Deck Q1 2025" style={{ width: "100%", padding: "8px 10px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 7, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-3)", display: "block", marginBottom: 4 }}>Type</label>
+              <select value={uploadType} onChange={e => setUploadType(e.target.value)} style={{ width: "100%", padding: "8px 10px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 7, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}>
+                {ENABLEMENT_DOC_TYPES.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "var(--text-3)", display: "block", marginBottom: 4 }}>File (PDF, PPTX, DOCX, TXT)</label>
+            <input ref={uploadInputRef} type="file" accept=".pdf,.pptx,.docx,.txt,.md" onChange={e => setUploadFile(e.target.files?.[0] || null)}
+              style={{ fontSize: 12, color: "var(--text-2)", fontFamily: "inherit", width: "100%" }} />
+          </div>
+          {uploadError && <div style={{ fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{uploadError}</div>}
+          <button onClick={handleDocUpload} disabled={uploading} style={{ padding: "8px 18px", border: "none", borderRadius: 8, background: uploading ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #6366f1, #4f46e5)", color: uploading ? "var(--text-3)" : "#fff", fontSize: 13, fontWeight: 700, cursor: uploading ? "default" : "pointer", fontFamily: "inherit" }}>
+            {uploading ? "Extracting & saving..." : "Save to Repository"}
+          </button>
+        </div>
+      )}
+
+      {/* Doc checklist */}
+      {docs.length === 0 ? (
+        <div style={{ fontSize: 12, color: "var(--text-3)", padding: "10px 0" }}>No documents in repository yet. Upload one above to include it in the assessment.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {docs.map(doc => (
+            <label key={doc.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: selectedDocIds.has(doc.id) ? "rgba(99,102,241,0.08)" : "var(--surface)", border: `1px solid ${selectedDocIds.has(doc.id) ? "rgba(99,102,241,0.3)" : "var(--border-soft)"}`, borderRadius: 8, cursor: "pointer" }}>
+              <input type="checkbox" checked={selectedDocIds.has(doc.id)} onChange={() => toggleDoc(doc.id)} style={{ accentColor: "#6366f1", flexShrink: 0 }} />
+              <span style={{ fontSize: 16, flexShrink: 0 }}>📄</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</div>
+                <div style={{ fontSize: 11, color: "var(--text-3)" }}>{docTypeLabel(doc.doc_type)}{doc.overall_score ? ` · ${doc.overall_score}%` : ""}</div>
+              </div>
+              {selectedDocIds.has(doc.id) && <span style={{ fontSize: 10, color: "#6366f1", fontWeight: 700, flexShrink: 0 }}>INCLUDED</span>}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <AssessmentFormShell title="GTM Audit" emoji="🎯" accentColor="#6366f1" gradient="linear-gradient(135deg, #6366f1, #4f46e5)" breadcrumb={selected ? selected.assessment_date : "New Assessment"} client={client} setClient={() => {}} clients={[client]} assessmentDate={assessmentDate} setAssessmentDate={setAssessmentDate} analyzing={analyzing} saving={saving} analysis={analysis} error={error} onAnalyze={analyze} onSave={save} onBack={() => setMode("list")} analyzeLabel="Assess GTM Strategy">
@@ -3077,6 +3205,7 @@ function GtmAuditTab({ client, assessments, getValidToken, profile, onUpdate }) 
         {ta("channels", "Customer Acquisition Channels", "What channels are you using? (Outbound, Inbound, Referrals, Partnerships, Events) How is each performing?", 3)}
         {ta("competitive", "Competitive Positioning", "Who are your main competitors? How do you position against them? What are your key differentiators?", 3)}
         {ta("notes", "Additional Context", "Any other context: recent pivots, market shifts, experiments underway...", 2)}
+        {docsSection}
       </AssessmentFormShell>
       <AuditAnalysisDisplay analysis={analysis} accentColor="#6366f1" />
     </>
@@ -6385,6 +6514,7 @@ export default function CuotaCallReview() {
           onGtmUpdate={loadGtmAssessments}
           onRefresh={loadCalls}
           repPhotos={repPhotos}
+          onDocsUpdate={loadDocs}
         />}
 
         {/* CLIENTS — handled by early return above */}
