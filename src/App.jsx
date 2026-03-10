@@ -2221,6 +2221,15 @@ const CHART_PALETTE = ["#6366F1", "#10B981", "#F59E0B", "#F43F5E", "#0EA5E9"];
 function ScoreTrendsChart({ repEntries }) {
   const [tooltip, setTooltip] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [chartWidth, setChartWidth] = useState(700);
+  const containerRef = React.useRef(null);
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => setChartWidth(entries[0].contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Flatten all calls from all reps, sorted by date
   const allCalls = repEntries.flatMap(e =>
@@ -2248,9 +2257,9 @@ function ScoreTrendsChart({ repEntries }) {
   const trendColor = isPositive ? "#31CE81" : isNegative ? "#ef4444" : "#9ca3af";
   const trendLabel = isPositive ? `↑ +${trendDelta} pts` : isNegative ? `↓ ${trendDelta} pts` : "→ Flat";
 
-  // Chart layout — PAD_L/R = 0 so chart fills full card width
+  // Chart layout — W matches measured container width so chart fills exactly edge-to-edge
   const PAD_L = 0, PAD_R = 0, PAD_T = 12, PAD_B = 28;
-  const W = 700, H = 190;
+  const W = chartWidth, H = 190;
   const chartW = W;
   const chartH = H - PAD_T - PAD_B;
   const Y_MIN = 20, Y_MAX = 100;
@@ -2309,8 +2318,8 @@ function ScoreTrendsChart({ repEntries }) {
       </div>
 
       {/* Chart */}
-      <div style={{ position: "relative" }} onMouseLeave={() => { setHoveredIdx(null); setTooltip(null); }}>
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 190, display: "block" }}>
+      <div ref={containerRef} style={{ position: "relative" }} onMouseLeave={() => { setHoveredIdx(null); setTooltip(null); }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 190, display: "block" }}>
           <defs>
             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={trendColor} stopOpacity={0.22} />
