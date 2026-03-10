@@ -5108,7 +5108,7 @@ function renderSlide(slide, primary, accent, prospectCompany, client, companyNam
   }
 }
 
-function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
+function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient }) {
   const _stored = loadStored("cuota_deck_brand") || {};
   const [primaryColor, setPrimaryColor] = useState(_stored.primaryColor || "#1e3a5f");
   const [accentColor, setAccentColor] = useState(_stored.accentColor || "#31CE81");
@@ -5116,7 +5116,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken }) {
   const [logoBase64, setLogoBase64] = useState(_stored.logoBase64 || null);
   const [logoFileName, setLogoFileName] = useState(_stored.logoFileName || null);
 
-  const [client, setClient] = useState("");
+  const [client, setClient] = useState(defaultClient || "");
   const [prospectCompany, setProspectCompany] = useState("");
   const [deckType, setDeckType] = useState("Demo");
   const [dealStage, setDealStage] = useState("Mid-Pipe");
@@ -6408,7 +6408,7 @@ export default function CuotaCallReview() {
         {page === "cuotaAgent" && <CuotaAgentPage getValidToken={getValidToken} savedCalls={savedCalls} />}
 
         {/* PRESENTATIONS */}
-        {page === "deck" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} />}
+        {page === "deck" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
