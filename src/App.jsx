@@ -2222,8 +2222,8 @@ function ScoreTrendsChart({ repEntries }) {
   const [tooltip, setTooltip] = useState(null);
   const [hoveredIdx, setHoveredIdx] = useState(null);
   const [chartWidth, setChartWidth] = useState(700);
-  const containerRef = React.useRef(null);
-  React.useEffect(() => {
+  const containerRef = useRef(null);
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver(entries => setChartWidth(entries[0].contentRect.width));
