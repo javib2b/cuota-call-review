@@ -5958,13 +5958,15 @@ export default function CuotaCallReview() {
     return currentToken;
   }, [session, refreshSessionToken]);
 
-  // Load saved calls
+  // Load saved calls — excludes transcript & ai_analysis (large columns) to avoid statement timeout.
+  // Those are fetched on-demand when a call is opened for review.
+  const CALLS_LIST_COLS = "id,org_id,created_at,call_date,overall_score,call_type,prospect_company,prospect_name,rep_name,category_scores,coaching_notes,deal_stage,deal_value";
   const loadCalls = useCallback(async () => {
     const validToken = await getValidToken();
     if (!validToken) return;
     try {
       const table = await supabase.from("call_reviews", validToken);
-      const data = await table.selectWhere("*", "limit=10000&order=created_at.desc");
+      const data = await table.selectWhere(CALLS_LIST_COLS, "limit=10000&order=created_at.desc");
       if (Array.isArray(data)) {
         const enriched = data.map(c => ({ ...c, rep_name: c.category_scores?.rep_name || c.prospect_company }));
         setCallsError("");
@@ -6299,23 +6301,34 @@ export default function CuotaCallReview() {
     } finally { setSaving(false); }
   };
 
-  const loadCallIntoReview = (call) => {
+  const loadCallIntoReview = async (call) => {
     setSelectedCall(call);
     setCallInfo({ client: call.category_scores?.client || "", repName: call.category_scores?.rep_name || "", prospectName: call.category_scores?.prospect_name || "", prospectCompany: call.prospect_company || "", callDate: call.call_date || "", callType: call.call_type || "Discovery", dealStage: call.deal_stage || "Early", dealValue: call.deal_value || "", repType: call.category_scores?.rep_type || "AE" });
     // Detect old format (boolean criteria) vs new format ({ score, details })
     const cs = call.category_scores || {};
     const isOld = OLD_CATEGORY_IDS.some(id => cs[id] && typeof Object.values(cs[id])[0] === "boolean");
-    if (isOld) {
-      // Old format: don't load category scores into the new scorecard — just show overall
-      setScores({});
-    } else {
-      setScores(cs);
-    }
+    setScores(isOld ? {} : cs);
     setNotes(call.coaching_notes || "");
+    // Use cached values if present (e.g. call was just saved this session)
     setTranscript(call.transcript || "");
     setAiAnalysis(call.ai_analysis || null);
     setPage("review");
     setActiveTab("scorecard");
+    // Fetch transcript + ai_analysis on demand (excluded from list query to avoid timeout)
+    if (!call.transcript && !call.ai_analysis && call.id) {
+      try {
+        const t = await getValidToken();
+        if (t) {
+          const table = await supabase.from("call_reviews", t);
+          const rows = await table.selectWhere("transcript,ai_analysis", `id=eq.${call.id}`);
+          const full = Array.isArray(rows) ? rows[0] : rows;
+          if (full) {
+            if (full.transcript) setTranscript(full.transcript);
+            if (full.ai_analysis) setAiAnalysis(full.ai_analysis);
+          }
+        }
+      } catch (e) { console.warn("Failed to load call details:", e.message); }
+    }
   };
 
   const startNewReview = () => {
