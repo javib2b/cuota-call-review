@@ -2468,7 +2468,11 @@ function ScoreTrendsChart({ repEntries }) {
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
 // ==================== CLIENT PROFILE PAGE ====================
-function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate, repMeta = {} }) {
+function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate, repMeta: repMetaProp = {} }) {
+  // Merge prop (live state) with localStorage so roles always display
+  const repMeta = useMemo(() => {
+    try { const local = JSON.parse(localStorage.getItem("cuota_rep_meta") || "{}"); return { ...local, ...repMetaProp }; } catch { return repMetaProp; }
+  }, [repMetaProp]);
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const [repRoleFilter, setRepRoleFilter] = useState("");
