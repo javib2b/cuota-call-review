@@ -951,6 +951,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
 function InviteModal({ token, profile, onClose }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("rep");
+  const [clientCompany, setClientCompany] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -966,12 +967,15 @@ function InviteModal({ token, profile, onClose }) {
 
   const sendInvite = async () => {
     if (!email.includes("@")) { setError("Enter a valid email"); return; }
+    if (role === "client" && !clientCompany.trim()) { setError("Enter the client's company name"); return; }
     setSending(true); setError("");
     try {
       const t = await supabase.from("invitations", token);
-      const result = await t.insert({ org_id: profile.org_id, email, role, invited_by: profile.id });
+      const payload = { org_id: profile.org_id, email, role, invited_by: profile.id };
+      if (role === "client") payload.client_company = clientCompany.trim();
+      const result = await t.insert(payload);
       if (result?.error) throw new Error(result.error.message || "Failed");
-      setSent(true); setEmail(""); setTimeout(() => setSent(false), 3000);
+      setSent(true); setEmail(""); setClientCompany(""); setTimeout(() => setSent(false), 3000);
     } catch (e) { setError(e.message); } finally { setSending(false); }
   };
 
@@ -982,13 +986,23 @@ function InviteModal({ token, profile, onClose }) {
           <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", margin: 0 }}>Invite Team Members</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-2)", fontSize: 20, cursor: "pointer" }}>\u2715</button>
         </div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: role === "client" ? 8 : 12 }}>
           <input value={email} onChange={e => setEmail(e.target.value)} placeholder="colleague@company.com" style={{ flex: 1, padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
-          <select value={role} onChange={e => setRole(e.target.value)} style={{ padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none" }}>
+          <select value={role} onChange={e => { setRole(e.target.value); setClientCompany(""); }} style={{ padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none" }}>
             <option value="rep" style={{ background: "var(--surface)" }}>Rep</option>
             <option value="manager" style={{ background: "var(--surface)" }}>Manager</option>
+            <option value="client" style={{ background: "var(--surface)" }}>Client</option>
           </select>
         </div>
+        {role === "client" && (
+          <input
+            value={clientCompany}
+            onChange={e => setClientCompany(e.target.value)}
+            placeholder="Client company name (e.g. Paymend)"
+            style={{ width: "100%", padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box", marginBottom: 12 }}
+          />
+        )}
+        {role !== "client" && <div style={{ marginBottom: 4 }} />}
         <button onClick={sendInvite} disabled={sending} style={{ width: "100%", padding: "10px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>{sending ? "Sending..." : "Send Invite"}</button>
         {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
         {sent && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>Invite created! They can sign up and will be added to your org.</div>}
@@ -1000,7 +1014,7 @@ function InviteModal({ token, profile, onClose }) {
                 <span style={{ fontSize: 13, color: "var(--text-1)" }}>{inv.email}</span>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: inv.accepted ? "rgba(49,206,129,0.15)" : "rgba(234,179,8,0.15)", color: inv.accepted ? "#31CE81" : "#eab308" }}>{inv.accepted ? "Joined" : "Pending"}</span>
-                  <span style={{ fontSize: 11, color: "var(--text-2)" }}>{inv.role}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-2)" }}>{inv.role}{inv.client_company ? ` · ${inv.client_company}` : ""}</span>
                 </div>
               </div>
             ))}
@@ -5823,6 +5837,108 @@ function CmdKPalette({ open, onClose, onNavigate, onNewReview, savedCalls }) {
   );
 }
 
+// ==================== CLIENT PORTAL ====================
+function ClientPortal({ companyName, calls, onViewCall, onSignOut, loading }) {
+  const sorted = [...calls].sort((a, b) =>
+    new Date(b.call_date || b.created_at).getTime() - new Date(a.call_date || a.created_at).getTime()
+  );
+  const avgScore = calls.length
+    ? Math.round(calls.reduce((s, c) => s + (c.overall_score ?? 0), 0) / calls.length)
+    : null;
+  const latestDate = sorted[0]?.call_date
+    ? new Date(sorted[0].call_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
+  const relTime = (d) => {
+    if (!d) return "";
+    const days = Math.floor((Date.now() - new Date(d)) / 86400000);
+    if (days === 0) return "Today";
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days}d ago`;
+    if (days < 30) return `${Math.floor(days / 7)}w ago`;
+    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      {/* Top bar */}
+      <div style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--bg)", borderBottom: "1px solid var(--border)", padding: "0 32px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18, fontWeight: 800, color: "#31CE81", letterSpacing: "-0.5px" }}>Cuota</span>
+          {companyName && (
+            <>
+              <span style={{ color: "var(--text-3)", fontSize: 16 }}>/</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-1)" }}>{companyName}</span>
+            </>
+          )}
+        </div>
+        <button onClick={onSignOut} style={{ padding: "6px 14px", border: "1px solid var(--border-soft)", borderRadius: 8, background: "transparent", color: "var(--text-2)", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Sign out</button>
+      </div>
+
+      {/* Content */}
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "32px 24px" }}>
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-1)", margin: "0 0 4px" }}>Call Reviews</h1>
+          <p style={{ fontSize: 14, color: "var(--text-2)", margin: 0 }}>Recorded call reviews for {companyName || "your company"}.</p>
+        </div>
+
+        {/* Stats */}
+        {calls.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+            {[
+              { label: "Total Reviews", value: String(calls.length), accent: "#31CE81" },
+              { label: "Avg Score", value: avgScore !== null ? `${avgScore}%` : "—", accent: getScoreColor(avgScore || 0) },
+              { label: "Latest", value: latestDate || "—", accent: "#6366f1" },
+            ].map(card => (
+              <div key={card.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${card.accent}` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>{card.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: card.label === "Avg Score" ? card.accent : "var(--text-1)" }}>{card.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Table */}
+        {loading ? (
+          <div style={{ padding: 40, textAlign: "center", color: "var(--text-3)", fontSize: 13 }}>Loading…</div>
+        ) : calls.length === 0 ? (
+          <div style={{ padding: "48px 24px", textAlign: "center", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📞</div>
+            <p style={{ fontSize: 14, color: "var(--text-2)", margin: 0 }}>No call reviews have been recorded yet.</p>
+          </div>
+        ) : (
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 90px 80px 60px", padding: "10px 20px", fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, borderBottom: "1px solid var(--border-subtle)" }}>
+              <span>Date / Rep</span><span>Call Type</span><span>Stage</span><span>Score</span><span />
+            </div>
+            {sorted.map(call => {
+              const score = call.overall_score;
+              const repName = call.category_scores?.rep_name || "";
+              const callDate = call.call_date || call.created_at;
+              return (
+                <div key={call.id} onClick={() => onViewCall(call)}
+                  style={{ display: "grid", gridTemplateColumns: "1fr 120px 90px 80px 60px", padding: "12px 20px", cursor: "pointer", alignItems: "center", borderBottom: "1px solid var(--border-subtle)", transition: "background 0.1s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-card-hover)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{relTime(callDate)}</div>
+                    {repName && <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{repName}</div>}
+                  </div>
+                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{call.call_type || "—"}</span>
+                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{call.deal_stage || "—"}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: score ? getScoreColor(score) : "var(--text-muted)", fontFamily: "'IBM Plex Mono', monospace" }}>{score ? `${score}%` : "—"}</span>
+                  <span style={{ fontSize: 12, color: "#31CE81", fontWeight: 600 }}>View →</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -6213,18 +6329,20 @@ export default function CuotaCallReview() {
         // No profile exists — check for invitation to determine org
         let orgId = "00000000-0000-0000-0000-000000000001";
         let role = "admin";
+        let clientCompany = null;
         try {
           const invTable = await supabase.from("invitations", accessToken);
           const invites = await invTable.selectWhere("*", "email=eq." + encodeURIComponent(user.email) + "&accepted=eq.false");
           if (Array.isArray(invites) && invites.length > 0) {
             orgId = invites[0].org_id;
             role = invites[0].role || "rep";
+            clientCompany = invites[0].client_company || null;
             // Mark invitation as accepted
             try { await invTable.update({ accepted: true }, "id=eq." + invites[0].id); } catch (e) { console.error("Invitation accept failed:", e.message); }
           }
         } catch (e) { console.error("Invitation lookup failed:", e.message); }
         // Create the profile in Supabase (include email for Gravatar)
-        const newProfile = { id: user.id, org_id: orgId, role, full_name: user.user_metadata?.full_name || user.email, email: user.email || null };
+        const newProfile = { id: user.id, org_id: orgId, role, full_name: user.user_metadata?.full_name || user.email, email: user.email || null, ...(clientCompany ? { client_company: clientCompany } : {}) };
         try {
           const created = await table.insert(newProfile);
           const profileData = Array.isArray(created) && created[0] ? created[0] : newProfile;
@@ -6387,6 +6505,19 @@ export default function CuotaCallReview() {
   if (loading && !session) return <div style={{ minHeight: "100vh", background: "var(--bg)" }} />;
   if (!session) return <AuthScreen onAuth={handleAuth} />;
 
+  // Client portal — restricted read-only view showing only their company's data
+  if (profile?.role === "client" && page !== "review") {
+    return (
+      <ClientPortal
+        companyName={profile.client_company || ""}
+        calls={savedCalls}
+        onViewCall={loadCallIntoReview}
+        onSignOut={clearSession}
+        loading={loading}
+      />
+    );
+  }
+
   if (page === "home") return (
     <Dashboard
       userEmail={session.user?.email}
@@ -6464,8 +6595,8 @@ export default function CuotaCallReview() {
       {/* COMMAND PALETTE */}
       <CmdKPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={(p) => { setPage(p); if (p === "clients") { setFolderClient(null); setFolderAE(null); } }} onNewReview={startNewReview} savedCalls={savedCalls} />
 
-      {/* SIDEBAR */}
-      {(() => {
+      {/* SIDEBAR — hidden for client-role users */}
+      {profile?.role !== "client" && (() => {
         const W = sidebarCollapsed ? 64 : 220;
         const isClientsActive = page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review" || page === "deck";
         const iconClients = (color) => (
@@ -6545,7 +6676,7 @@ export default function CuotaCallReview() {
       })()}
 
 
-      <div style={{ marginLeft: sidebarCollapsed ? 64 : 220, flex: 1, padding: "32px 40px", transition: "margin-left 0.2s ease" }}>
+      <div style={{ marginLeft: profile?.role === "client" ? 0 : (sidebarCollapsed ? 64 : 220), flex: 1, padding: "32px 40px", transition: "margin-left 0.2s ease" }}>
         {/* HOME PAGE — Dashboard */}
         {page === "home" && <HomePage savedCalls={savedCalls} enablementDocs={enablementDocs} crmSnapshots={crmSnapshots} gtmAssessments={gtmAssessments} tofAssessments={tofAssessments} hiringAssessments={hiringAssessments} metricsAssessments={metricsAssessments} clients={clients} onNavigate={(p) => { if (p === "review") { startNewReview(); } else { setPage(p); if (p === "calls" || p === "clients") { setFolderClient(null); setFolderAE(null); } } }} onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }} userEmail={session?.user?.email} onCmdK={() => setCmdKOpen(true)} onNewReview={startNewReview} />}
 
@@ -6632,6 +6763,13 @@ export default function CuotaCallReview() {
         {/* REVIEW PAGE */}
         {page === "review" && (
           <>
+            {/* Client back button */}
+            {profile?.role === "client" && (
+              <button onClick={() => setPage("home")} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", border: "1px solid var(--border-soft)", borderRadius: 8, background: "transparent", color: "var(--text-2)", fontSize: 13, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>
+                ← Back to Reviews
+              </button>
+            )}
+
             {/* Sticky context header */}
             <div style={{ position: "sticky", top: -32, marginTop: -32, paddingTop: 32, paddingBottom: 16, background: "var(--bg)", zIndex: 10, borderBottom: "1px solid var(--border-soft)", marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-2)" }}>
@@ -6819,18 +6957,20 @@ export default function CuotaCallReview() {
             {activeTab === "notes" && (
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)", margin: "0 0 12px" }}>Coaching Notes</h3>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Key observations, coaching points..." style={{ width: "100%", minHeight: 200, background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, fontSize: 13, color: "var(--text-1)", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                <textarea value={notes} onChange={e => { if (profile?.role !== "client") setNotes(e.target.value); }} readOnly={profile?.role === "client"} placeholder="Key observations, coaching points..." style={{ width: "100%", minHeight: 200, background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, fontSize: 13, color: "var(--text-1)", lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box", cursor: profile?.role === "client" ? "default" : "auto" }} />
               </div>
             )}
 
-            {/* Save Button */}
-            <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "flex-end" }}>
-              {saveSuccess && <span style={{ padding: "12px 0", fontSize: 13, color: "#6366F1", fontWeight: 600 }}>Saved successfully!</span>}
-              {error && !analyzing && <span style={{ padding: "12px 0", fontSize: 13, color: "#ef4444" }}>{error}</span>}
-              <button onClick={saveCall} disabled={saving} style={{ padding: "14px 32px", border: "none", borderRadius: 12, cursor: "pointer", background: "#31CE81", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
-                {saving ? "Saving..." : selectedCall ? "Update Call" : "Save This Call"}
-              </button>
-            </div>
+            {/* Save Button — hidden for client-role users */}
+            {profile?.role !== "client" && (
+              <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                {saveSuccess && <span style={{ padding: "12px 0", fontSize: 13, color: "#6366F1", fontWeight: 600 }}>Saved successfully!</span>}
+                {error && !analyzing && <span style={{ padding: "12px 0", fontSize: 13, color: "#ef4444" }}>{error}</span>}
+                <button onClick={saveCall} disabled={saving} style={{ padding: "14px 32px", border: "none", borderRadius: 12, cursor: "pointer", background: "#31CE81", color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
+                  {saving ? "Saving..." : selectedCall ? "Update Call" : "Save This Call"}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
