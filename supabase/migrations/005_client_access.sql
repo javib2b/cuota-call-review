@@ -34,7 +34,7 @@ DO $$
 DECLARE pol_name TEXT;
 BEGIN
   FOR pol_name IN
-    SELECT polname FROM pg_policies
+    SELECT policyname FROM pg_policies
     WHERE tablename = 'call_reviews' AND schemaname = 'public'
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON call_reviews', pol_name);
