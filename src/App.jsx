@@ -2685,7 +2685,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           </div>
         ) : (
           <div>
-            <ScoreTrendsChart repEntries={filteredReps} />
+            <ScoreTrendsChart key={repRoleFilter + "|" + repSearch} repEntries={filteredReps} />
             {/* Rep Leaderboard */}
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
