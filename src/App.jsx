@@ -2727,7 +2727,10 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                       <RepAvatar name={e.repName} photoUrl={repPhotos?.[e.repName]} size={28} fontSize={11} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
-                        {e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--ai)", background: "rgba(139,92,246,0.12)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>}
+                        {repMeta[e.repName]?.role
+                          ? <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{repMeta[e.repName].role}</div>
+                          : e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--ai)", background: "rgba(139,92,246,0.12)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>
+                        }
                       </div>
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", textAlign: "center" }}>{e.repCalls.length}</span>
