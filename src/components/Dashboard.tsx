@@ -150,10 +150,11 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
   // Client table rows — all clients always shown; empty ones show "—"
   const clientRows = clients.map(c => computeClientRow(c, savedCalls));
 
-  // Display name from profile or email
-  const displayName = profile?.full_name
+  // Display name from profile or email — always capitalize first letter
+  const _rawDisplayName = profile?.full_name
     ? profile.full_name.split(" ")[0]
     : userEmail ? userEmail.split("@")[0].split(".")[0] : "";
+  const displayName = _rawDisplayName ? _rawDisplayName.charAt(0).toUpperCase() + _rawDisplayName.slice(1) : "";
   const initials = (profile?.full_name || userEmail || "?")
     .split(" ").map((p: string) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
