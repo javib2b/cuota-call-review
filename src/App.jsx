@@ -2668,7 +2668,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
-        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "deck", label: "Deck" }, { id: "gtm", label: "GTM Profile" }, { id: "audit", label: "GTM Audit" }].map(tab => (
+        {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "assets", label: "Assets" }, { id: "gtm", label: "GTM Profile" }, { id: "audit", label: "GTM Audit" }].map(tab => (
           <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(49,206,129,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)" }}>{tab.count}</span>}
@@ -2768,13 +2768,13 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         )
       )}
 
-      {/* DECK TAB */}
-      {activeTab === "deck" && (
+      {/* ASSETS TAB */}
+      {activeTab === "assets" && (
         <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "40px 32px", textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🗂</div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", marginBottom: 8 }}>Create a deck for {client}</h3>
-          <p style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>Build a customized presentation deck for {client} using AI-generated slides and your call data.</p>
-          <button onClick={() => onNavigate("deck")} style={{ padding: "12px 28px", background: "#31CE81", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Open Deck Builder</button>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", marginBottom: 8 }}>Create assets for {client}</h3>
+          <p style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>Build a customized presentation for {client} using AI-generated slides and your call data.</p>
+          <button onClick={() => onNavigate("assets")} style={{ padding: "12px 28px", background: "#31CE81", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Open Asset Builder</button>
         </div>
       )}
 
@@ -5509,7 +5509,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
       {/* TOPBAR */}
       <div style={{ height: 52, flexShrink: 0, background: "var(--surface-3)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Deck Builder</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Asset Builder</div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {error && <span style={{ fontSize: 12, color: "#f04438" }}>{error}</span>}
           {slides && (
@@ -5734,13 +5734,13 @@ function CmdKPalette({ open, onClose, onNavigate, onNewReview, savedCalls }) {
 
   const quickActions = [
     { label: "New Review", shortcut: "⌘N", action: () => { onNewReview(); onClose(); } },
-    { label: "Create Deck", shortcut: "⌘D", action: () => { onNavigate("deck"); onClose(); } },
+    { label: "Create Asset", shortcut: "⌘D", action: () => { onNavigate("assets"); onClose(); } },
   ];
   const navItems = [
     { label: "Home", action: () => { onNavigate("home"); onClose(); } },
     { label: "Clients", action: () => { onNavigate("clients"); onClose(); } },
     { label: "Reviews", action: () => { onNavigate("reviews"); onClose(); } },
-    { label: "Decks", action: () => { onNavigate("deck"); onClose(); } },
+    { label: "Assets", action: () => { onNavigate("assets"); onClose(); } },
   ];
 
   const q = query.toLowerCase();
@@ -6603,7 +6603,7 @@ export default function CuotaCallReview() {
       {/* SIDEBAR — hidden for client-role users */}
       {profile?.role !== "client" && (() => {
         const W = sidebarCollapsed ? 64 : 220;
-        const isClientsActive = page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review" || page === "deck";
+        const isClientsActive = page === "clients" || page === "calls" || page === "client" || page === "reviews" || page === "review" || page === "assets";
         const iconClients = (color) => (
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
@@ -6741,7 +6741,7 @@ export default function CuotaCallReview() {
         {page === "cuotaAgent" && <CuotaAgentPage getValidToken={getValidToken} savedCalls={savedCalls} />}
 
         {/* PRESENTATIONS */}
-        {page === "deck" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} />}
+        {page === "assets" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} />}
 
         {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
