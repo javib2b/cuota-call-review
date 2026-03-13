@@ -2731,16 +2731,14 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                     <option value="calls">By Calls</option>
                     <option value="trend">By Trend</option>
                   </select>
-                  {repRoleOptions.length > 0 && (
-                    <select value={repRoleFilter} onChange={e => setRepRoleFilter(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--border-default)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: repRoleFilter ? "var(--text-primary)" : "var(--text-muted)", background: "var(--bg-input)" }}>
-                      <option value="">All Roles</option>
-                      {repRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  )}
+                  <select value={repRoleFilter} onChange={e => setRepRoleFilter(e.target.value)} style={{ fontSize: 12, padding: "5px 10px", border: "1px solid var(--border-default)", borderRadius: 8, outline: "none", fontFamily: "inherit", cursor: "pointer", color: repRoleFilter ? "var(--text-primary)" : "var(--text-muted)", background: "var(--bg-input)" }}>
+                    <option value="">All Roles</option>
+                    {repRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
                 </div>
               </div>
               {/* Column headers */}
-              <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px 28px", padding: "8px 20px", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, gap: 12, borderBottom: "1px solid var(--border-subtle)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 110px 28px", padding: "8px 20px", fontSize: 9, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, gap: 12, borderBottom: "1px solid var(--border-subtle)" }}>
                 <span>#</span><span>Rep</span><span style={{ textAlign: "center" }}>Calls</span><span>Avg Score</span><span style={{ textAlign: "center" }}>Trend</span><span>Last Call</span><span />
               </div>
               {filteredReps.length === 0 ? (
@@ -2752,7 +2750,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                   <div
                     key={e.repName}
                     onClick={() => onBrowseByRep(e.repName)}
-                    style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 90px 28px", padding: "12px 20px", cursor: "pointer", alignItems: "center", gap: 12, borderBottom: "1px solid var(--border-subtle)", transition: "background 0.1s" }}
+                    style={{ display: "grid", gridTemplateColumns: "36px 1fr 52px 1fr 56px 110px 28px", padding: "12px 20px", cursor: "pointer", alignItems: "center", gap: 12, borderBottom: "1px solid var(--border-subtle)", transition: "background 0.1s" }}
                     onMouseEnter={ev => { ev.currentTarget.style.background = "var(--bg-card-hover)"; ev.currentTarget.querySelector(".rep-del-btn").style.opacity = "1"; }}
                     onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.querySelector(".rep-del-btn").style.opacity = "0"; }}
                   >
@@ -2763,10 +2761,9 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                       <RepAvatar name={e.repName} photoUrl={repPhotos?.[e.repName]} size={28} fontSize={11} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.repName}</div>
-                        {repMeta[e.repName]?.role
-                          ? <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{repMeta[e.repName].role}</div>
-                          : e.isSdr && <span style={{ fontSize: 9, fontWeight: 700, color: "var(--ai)", background: "rgba(139,92,246,0.12)", borderRadius: 3, padding: "1px 5px" }}>SDR</span>
-                        }
+                        <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {repMeta[e.repName]?.role || (e.isSdr ? "SDR" : "—")}
+                        </div>
                       </div>
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", textAlign: "center" }}>{e.repCalls.length}</span>
@@ -2781,9 +2778,12 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
                         ? <span style={{ fontSize: 12, fontWeight: 700, color: e.trend > 5 ? "#31CE81" : e.trend < -5 ? "#ef4444" : "var(--text-muted)" }}>{e.trend > 5 ? `↑${e.trend}` : e.trend < -5 ? `↓${Math.abs(e.trend)}` : "→"}</span>
                         : <span style={{ color: "var(--text-muted)", fontSize: 12 }}>—</span>}
                     </div>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
-                      <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.lastCall?.prospect_company || "—"}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0 }}>
+                      <ProspectLogo company={e.lastCall?.prospect_company || ""} size={26} borderRadius={6} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.lastCall?.prospect_company || "—"}</div>
+                        <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>{relTime(e.lastCall?.call_date || e.lastCall?.created_at)}</div>
+                      </div>
                     </div>
                     <button
                       className="rep-del-btn"
