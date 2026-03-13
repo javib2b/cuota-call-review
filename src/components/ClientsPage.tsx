@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 
 // ─── Design tokens ────────────────────────────────────────────────
 const BG      = "var(--bg-app)";
@@ -49,13 +49,13 @@ const CLIENT_SUBTITLE: Record<string, string> = {
 // ─── Domain map for Brandfetch logo lookup ─────────────────────────
 const CLIENT_DOMAIN: Record<string, string> = {
   "11x":       "11x.ai",
-  "Arc":       "arc.dev",
-  "Diio":      "diio.io",
-  "Factor":    "factor.com",
+  "Arc":       "experiencearc.com",
+  "Diio":      "diio.com",
+  "Factor":    "factor.ai",
+  "Nauta":     "getnauta.com",
   "Paymend":   "paymend.com",
-  "Nauta":     "nauta.vc",
   "Planimatik":"planimatik.com",
-  "Rapido":    "rapido.com.br",
+  "Rapido":    "rapidosaas.com",
   "Xepelin":   "xepelin.com",
 };
 
@@ -64,19 +64,10 @@ function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
 function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED; }
 
 // ─── ClientLogo with cascading fallback ───────────────────────────
-// 1. local /logos/{name}.png  2. Brandfetch CDN  3. initials
+// 1. Brandfetch CDN  2. initials
 function ClientLogo({ name, size, borderRadius }: { name: string; size: number; borderRadius: number }) {
   const domain = CLIENT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
-  const [src, setSrc] = useState(`/logos/${name.toLowerCase()}.png`);
   const [failed, setFailed] = useState(false);
-
-  const handleError = useCallback(() => {
-    if (src.startsWith("/logos/")) {
-      setSrc(`https://cdn.brandfetch.io/${domain}/w/400/h/400`);
-    } else {
-      setFailed(true);
-    }
-  }, [src, domain]);
 
   return (
     <div style={{
@@ -89,9 +80,9 @@ function ClientLogo({ name, size, borderRadius }: { name: string; size: number; 
       {logoInitials(name)}
       {!failed && (
         <img
-          src={src}
+          src={`https://cdn.brandfetch.io/${domain}/w/400/h/400`}
           alt=""
-          onError={handleError}
+          onError={() => setFailed(true)}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
         />
       )}

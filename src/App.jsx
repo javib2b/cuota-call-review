@@ -104,11 +104,11 @@ const RISK_INDICATORS = [
 
 const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Planimatik", "Xepelin"];
 const DEFAULT_PAST_CLIENTS = ["Rapido"];
-const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
-function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://logo.clearbit.com/${domain}` : null; }
+const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Paymend": "paymend.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
+function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null; }
 
-// ClientLogo: tries /logos/{client}.png → Clearbit → Google favicon → letter fallback
-// Pass `website` (e.g. "https://11x.ai") to derive domain instead of the hardcoded CLIENT_DOMAINS map
+// ClientLogo: Brandfetch CDN → Google favicon → letter fallback
+// Pass `website` (e.g. "https://11x.ai") to derive domain for unlisted clients
 function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
   // Hardcoded domain always wins — prevents bad saved-website data from showing a wrong logo
   const hardcoded = CLIENT_DOMAINS[client];
@@ -121,11 +121,10 @@ function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }
   }
   const [srcIdx, setSrcIdx] = useState(0);
   const sources = [
-    `/logos/${client.toLowerCase()}.png`,
-    domain ? `https://logo.clearbit.com/${domain}` : null,
+    domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null,
     domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
   ].filter(Boolean);
-  if (srcIdx >= sources.length) {
+  if (!domain || srcIdx >= sources.length) {
     return <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", ...letterStyle }}>{client.charAt(0).toUpperCase()}</span>;
   }
   return <img src={sources[srcIdx]} alt={client} style={{ width: size, height: size, objectFit: "contain", ...style }} onError={() => setSrcIdx(i => i + 1)} />;
