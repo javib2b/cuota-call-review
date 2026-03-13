@@ -519,7 +519,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           </div>
           <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
-              <ClientLogo key={client} client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "var(--text-3)" : "#6366F1" }} />
+              <ClientLogo key={client + (clientProfiles[client]?.website || "")} client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: isPast ? "var(--text-3)" : "#6366F1" }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: isPast ? "var(--text-2)" : "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -611,7 +611,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                     </div>
                     <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                       <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
-                        <ClientLogo key={client} client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
+                        <ClientLogo key={client + (clientProfiles[client]?.website || "")} client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -677,7 +677,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                       </div>
                       <div style={{ padding: "20px 20px 14px", display: "flex", alignItems: "center", gap: 14 }}>
                         <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border-soft)", flexShrink: 0, overflow: "hidden" }}>
-                          <ClientLogo key={client} client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
+                          <ClientLogo key={client + (clientProfiles[client]?.website || "")} client={client} website={clientProfiles[client]?.website} size={48} letterStyle={{ fontSize: 20, fontWeight: 700, color: "var(--text-3)" }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-3)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
@@ -2619,7 +2619,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
         <div style={{ position: "absolute", inset: 0, opacity: 0.025, backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px", pointerEvents: "none" }} />
         <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ width: 64, height: 64, borderRadius: 16, flexShrink: 0, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.13)", overflow: "hidden" }}>
-            <ClientLogo key={client} client={client} website={clientProfiles[client]?.website} size={64} letterStyle={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }} />
+            <ClientLogo key={client + (clientProfiles[client]?.website || "")} client={client} website={clientProfiles[client]?.website} size={64} letterStyle={{ fontSize: 24, fontWeight: 700, color: "#fff", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: "#fff", margin: "0 0 10px", letterSpacing: "-0.3px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{client}</h2>

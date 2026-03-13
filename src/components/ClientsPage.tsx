@@ -448,7 +448,7 @@ export default function ClientsPage({
                 >
                   {/* Logo + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-                    <ClientLogo name={client} size={34} borderRadius={8} website={clientProfiles[client]?.website} />
+                    <ClientLogo key={client + (clientProfiles[client]?.website || "")} name={client} size={34} borderRadius={8} website={clientProfiles[client]?.website} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
                       {subtitle && <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{subtitle}</div>}
@@ -543,7 +543,7 @@ export default function ClientsPage({
                         transition: "opacity 0.15s",
                       }}
                     >
-                      <ClientLogo name={client} size={30} borderRadius={7} website={clientProfiles[client]?.website} />
+                      <ClientLogo key={client + (clientProfiles[client]?.website || "")} name={client} size={30} borderRadius={7} website={clientProfiles[client]?.website} />
                       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{client}</span>
                         <span style={{ fontSize: 12, color: MUTED }}>
