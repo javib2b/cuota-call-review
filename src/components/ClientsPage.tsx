@@ -237,7 +237,7 @@ export default function ClientsPage({
           display: "flex", justifyContent: collapsed ? "center" : "flex-start",
         }}>
           {collapsed ? (
-            <img src="/favicon.svg" alt="Cuota" onClick={() => onNavigate("home")} style={{ width: 34, height: 34, cursor: "pointer", display: "block" }} />
+            <img src="/favicon.png" alt="Cuota" onClick={() => onNavigate("home")} style={{ width: 34, height: 34, cursor: "pointer", display: "block" }} />
           ) : (
             <img
               src="/cuota_logo_official_White.png" alt="Cuota"
