@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vercel/functions": "^1.0.0",
+    "geist": "^1.7.0",
     "mammoth": "^1.11.0",
     "pdfjs-dist": "^5.4.624",
     "pptxgenjs": "^4.0.1",

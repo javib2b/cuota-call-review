@@ -6575,8 +6575,7 @@ export default function CuotaCallReview() {
   ];
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg)", color: "var(--text-1)", fontFamily: "'Geist', system-ui, sans-serif" }}>
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
