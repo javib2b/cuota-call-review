@@ -6595,7 +6595,7 @@ export default function CuotaCallReview() {
           </svg>
         );
         return (
-          <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: W, background: "var(--bg-primary)", borderRight: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", zIndex: 100, transition: "width 0.2s ease", overflow: "hidden" }}>
+          <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: W, background: "rgba(4,9,20,0.82)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderRight: "1px solid var(--border-subtle)", display: "flex", flexDirection: "column", zIndex: 100, transition: "width 0.2s ease", overflow: "hidden" }}>
             {/* Logo */}
             <div style={{ padding: sidebarCollapsed ? "20px 0" : "20px 16px 16px", display: "flex", justifyContent: sidebarCollapsed ? "center" : "flex-start" }}>
               {sidebarCollapsed ? (

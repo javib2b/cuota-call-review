@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 // ─── Design tokens ────────────────────────────────────────────────
-const BG      = "var(--bg-app)";
-const SURFACE = "var(--bg-primary)";
+const BG      = "transparent";
+const SURFACE = "rgba(4, 9, 20, 0.82)";
 const BORDER  = "var(--border)";
 const BORDER2 = "rgba(255,255,255,0.13)";
 const GREEN   = "#31CE81";
@@ -225,7 +225,8 @@ export default function ClientsPage({
       {/* ── SIDEBAR ── */}
       <aside style={{
         width: W, flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0,
-        background: SURFACE, borderRight: `1px solid ${BORDER}`,
+        background: SURFACE, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+        borderRight: `1px solid ${BORDER}`,
         display: "flex", flexDirection: "column", zIndex: 100,
         transition: "width 0.2s ease", overflow: "hidden",
       }}>

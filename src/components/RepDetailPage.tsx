@@ -37,8 +37,8 @@ function ProspectLogo({ company, size = 30, borderRadius = 7 }: { company: strin
 }
 
 // ─── Design tokens ────────────────────────────────────────────────
-const BG      = "var(--bg-app)";
-const SURFACE = "var(--bg-primary)";
+const BG      = "transparent";
+const SURFACE = "rgba(4, 9, 20, 0.82)";
 const CARD    = "var(--bg-card)";
 const BORDER  = "var(--border)";
 const GREEN   = "#31CE81";
@@ -252,7 +252,8 @@ function Sidebar({
   return (
     <aside style={{
       width: W, flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0,
-      background: SURFACE, borderRight: `1px solid ${BORDER}`,
+      background: SURFACE, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      borderRight: `1px solid ${BORDER}`,
       display: "flex", flexDirection: "column", zIndex: 100,
       transition: "width 0.2s ease", overflow: "hidden",
     }}>
