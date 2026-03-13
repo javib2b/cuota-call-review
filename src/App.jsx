@@ -2327,7 +2327,7 @@ function RepAvatar({ name, photoUrl, size = 32, fontSize = 13, color = "#31CE81"
 
 function ScoreTrendsChart({ repEntries }) {
   const [tooltip, setTooltip] = useState(null);
-  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [hoveredRep, setHoveredRep] = useState(null);
   const [chartWidth, setChartWidth] = useState(700);
   const containerRef = useRef(null);
   useEffect(() => {
@@ -2338,159 +2338,169 @@ function ScoreTrendsChart({ repEntries }) {
     return () => ro.disconnect();
   }, []);
 
-  // Flatten all calls from all reps, sorted by date
-  const allCalls = repEntries.flatMap(e =>
-    e.repCalls
-      .filter(c => (c.call_date || c.created_at) && c.overall_score)
-      .map(c => ({
-        date: new Date(((c.call_date || c.created_at || "").slice(0, 10)) + "T12:00:00"),
-        score: c.overall_score,
-        repName: e.repName,
-        callType: c.category_scores?.call_type || c.call_type || "Call",
-      }))
-  ).sort((a, b) => a.date - b.date);
+  // Per-rep series sorted by date
+  const repSeries = repEntries
+    .map((e, i) => ({
+      repName: e.repName,
+      color: CHART_PALETTE[i % CHART_PALETTE.length],
+      calls: [...e.repCalls]
+        .filter(c => (c.call_date || c.created_at) && c.overall_score)
+        .map(c => ({
+          date: new Date(((c.call_date || c.created_at || "").slice(0, 10)) + "T12:00:00"),
+          score: c.overall_score,
+          callType: c.category_scores?.call_type || c.call_type || "Call",
+          prospect: c.prospect_company || "",
+        }))
+        .sort((a, b) => a.date - b.date),
+    }))
+    .filter(s => s.calls.length > 0);
 
-  if (allCalls.length === 0) return null;
+  if (repSeries.length === 0) return null;
 
+  const allCalls = repSeries.flatMap(s => s.calls);
   const overallAvg = Math.round(allCalls.reduce((s, c) => s + c.score, 0) / allCalls.length);
 
-  // Trend: compare first half avg to second half avg
-  const mid = Math.ceil(allCalls.length / 2);
-  const firstAvg = Math.round(allCalls.slice(0, mid).reduce((s, c) => s + c.score, 0) / mid);
-  const secondAvg = Math.round(allCalls.slice(mid).reduce((s, c) => s + c.score, 0) / Math.max(1, allCalls.length - mid));
-  const trendDelta = allCalls.length >= 2 ? secondAvg - firstAvg : null;
+  const sorted = [...allCalls].sort((a, b) => a.date - b.date);
+  const mid = Math.ceil(sorted.length / 2);
+  const firstAvg = Math.round(sorted.slice(0, mid).reduce((s, c) => s + c.score, 0) / mid);
+  const secondAvg = Math.round(sorted.slice(mid).reduce((s, c) => s + c.score, 0) / Math.max(1, sorted.length - mid));
+  const trendDelta = sorted.length >= 2 ? secondAvg - firstAvg : null;
   const isPositive = (trendDelta ?? 0) > 3;
   const isNegative = (trendDelta ?? 0) < -3;
   const trendColor = isPositive ? "#31CE81" : isNegative ? "#ef4444" : "#9ca3af";
   const trendLabel = isPositive ? `↑ +${trendDelta} pts` : isNegative ? `↓ ${trendDelta} pts` : "→ Flat";
 
-  // Chart layout — W matches measured container width so chart fills exactly edge-to-edge
-  const PAD_L = 0, PAD_R = 0, PAD_T = 12, PAD_B = 28;
-  const W = chartWidth, H = 190;
-  const chartW = W;
+  // Layout
+  const PAD_L = 38, PAD_R = 16, PAD_T = 16, PAD_B = 30;
+  const W = chartWidth, H = 240;
+  const chartW = W - PAD_L - PAD_R;
   const chartH = H - PAD_T - PAD_B;
   const Y_MIN = 20, Y_MAX = 100;
 
   const allTs = allCalls.map(c => c.date.getTime());
-  const minT = Math.min(...allTs);
-  const maxT = Math.max(...allTs);
+  const minT = Math.min(...allTs), maxT = Math.max(...allTs);
   const dateSpan = maxT - minT || 86400000;
 
-  const toX = (date) => ((date.getTime() - minT) / dateSpan) * W;
+  const toX = (date) => PAD_L + ((date.getTime() - minT) / dateSpan) * chartW;
   const toY = (score) => PAD_T + chartH - ((Math.min(Y_MAX, Math.max(Y_MIN, score)) - Y_MIN) / (Y_MAX - Y_MIN)) * chartH;
 
-  // Area fill path
-  const linePts = allCalls.map(c => `${toX(c.date)},${toY(c.score)}`);
-  const linePath = `M ${linePts.join(" L ")}`;
-  const areaPath = `M ${toX(allCalls[0].date)},${toY(allCalls[0].score)} L ${linePts.slice(1).join(" L ")} L ${toX(allCalls[allCalls.length - 1].date)},${PAD_T + chartH} L ${toX(allCalls[0].date)},${PAD_T + chartH} Z`;
-
-  // Linear regression trend line
-  const xs = allCalls.map(c => (c.date.getTime() - minT) / Math.max(1, dateSpan));
-  const ys = allCalls.map(c => c.score);
-  const n = allCalls.length;
-  const sumX = xs.reduce((s, x) => s + x, 0), sumY = ys.reduce((s, y) => s + y, 0);
-  const sumXY = xs.reduce((s, x, i) => s + x * ys[i], 0), sumXX = xs.reduce((s, x) => s + x * x, 0);
-  const slope = n > 1 ? (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX) : 0;
-  const intercept = (sumY - slope * sumX) / n;
-
-  // X-axis labels (up to 6)
-  const step = Math.max(1, Math.floor(allCalls.length / 5));
-  const xLabels = allCalls.filter((_, i) => i === 0 || i === allCalls.length - 1 || i % step === 0);
-
-  // Rep color map for dots
-  const repNames = [...new Set(repEntries.map(e => e.repName))];
+  // X-axis date labels (up to 6 evenly spaced)
+  const uniqueTs = [...new Set(allCalls.map(c => c.date.getTime()))].sort((a, b) => a - b);
+  const maxLabels = Math.min(6, uniqueTs.length);
+  const labelStep = uniqueTs.length <= maxLabels ? 1 : Math.floor(uniqueTs.length / (maxLabels - 1));
+  const xLabelTs = uniqueTs.filter((_, i) => i === 0 || i === uniqueTs.length - 1 || i % labelStep === 0).slice(0, maxLabels);
 
   return (
     <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: 16, overflow: "hidden", marginBottom: 20 }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 12px" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 24px 8px", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Score Trend</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 6 }}>Score Progression</div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
             <span style={{ fontSize: 36, fontWeight: 800, color: "var(--text-primary)", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{overallAvg}%</span>
             {trendDelta !== null && <span style={{ fontSize: 14, fontWeight: 700, color: trendColor }}>{trendLabel}</span>}
           </div>
-          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>{allCalls.length} call{allCalls.length !== 1 ? "s" : ""} · {repEntries.length} rep{repEntries.length !== 1 ? "s" : ""}</div>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>{allCalls.length} call{allCalls.length !== 1 ? "s" : ""} · {repSeries.length} rep{repSeries.length !== 1 ? "s" : ""}</div>
         </div>
-        {/* Mini rep legend */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 260, justifyContent: "flex-end" }}>
-          {repNames.slice(0, 6).map((name, i) => (
-            <div key={name} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: CHART_PALETTE[i % CHART_PALETTE.length], flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{name.split(" ")[0]}</span>
+        {/* Rep legend — hover to highlight */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, maxWidth: 320, justifyContent: "flex-end", alignItems: "center" }}>
+          {repSeries.slice(0, 8).map(s => (
+            <div key={s.repName}
+              style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", opacity: hoveredRep && hoveredRep !== s.repName ? 0.35 : 1, transition: "opacity 0.15s" }}
+              onMouseEnter={() => setHoveredRep(s.repName)}
+              onMouseLeave={() => setHoveredRep(null)}
+            >
+              <div style={{ width: 22, height: 3, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{s.repName.split(" ")[0]}</span>
             </div>
           ))}
-          {repNames.length > 6 && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>+{repNames.length - 6} more</span>}
+          {repSeries.length > 8 && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>+{repSeries.length - 8}</span>}
         </div>
       </div>
 
       {/* Chart */}
-      <div ref={containerRef} style={{ position: "relative" }} onMouseLeave={() => { setHoveredIdx(null); setTooltip(null); }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 190, display: "block" }}>
+      <div ref={containerRef} style={{ position: "relative" }} onMouseLeave={() => { setHoveredRep(null); setTooltip(null); }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: H, display: "block" }}>
           <defs>
-            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={trendColor} stopOpacity={0.22} />
-              <stop offset="100%" stopColor={trendColor} stopOpacity={0} />
-            </linearGradient>
+            {repSeries.map(s => (
+              <linearGradient key={s.repName} id={`rg-${s.repName.replace(/\W/g, "")}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={s.color} stopOpacity={0.18} />
+                <stop offset="100%" stopColor={s.color} stopOpacity={0} />
+              </linearGradient>
+            ))}
           </defs>
 
-          {/* Grid lines — full width, labels overlaid inside */}
-          {[40, 60, 80].map(s => (
+          {/* Y-axis gridlines + labels */}
+          {[40, 60, 80, 100].map(s => (
             <g key={s}>
-              <line x1={0} x2={W} y1={toY(s)} y2={toY(s)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
-              <text x={10} y={toY(s) - 4} textAnchor="start" fontSize={9} fill="#7a8ba0">{s}</text>
+              <line x1={PAD_L} x2={W - PAD_R} y1={toY(s)} y2={toY(s)} stroke="rgba(255,255,255,0.05)" strokeWidth={1} />
+              <text x={PAD_L - 6} y={toY(s) + 4} textAnchor="end" fontSize={9} fill="#7a8ba0" fontFamily="'IBM Plex Mono',monospace">{s}</text>
             </g>
           ))}
 
-          {/* Area fill */}
-          {allCalls.length > 1 && <path d={areaPath} fill="url(#areaGrad)" />}
+          {/* Y-axis line */}
+          <line x1={PAD_L} x2={PAD_L} y1={PAD_T} y2={PAD_T + chartH} stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
 
-          {/* Regression trend line */}
-          {allCalls.length > 1 && (
-            <line
-              x1={toX(allCalls[0].date)} y1={toY(intercept)}
-              x2={toX(allCalls[allCalls.length - 1].date)} y2={toY(slope + intercept)}
-              stroke={trendColor} strokeWidth={1.5} strokeDasharray="5 3" opacity={0.5}
-            />
-          )}
+          {/* Average reference line */}
+          <line x1={PAD_L} x2={W - PAD_R} y1={toY(overallAvg)} y2={toY(overallAvg)}
+            stroke="rgba(255,255,255,0.18)" strokeWidth={1} strokeDasharray="4 4" />
+          <text x={W - PAD_R + 2} y={toY(overallAvg) + 4} fontSize={8} fill="rgba(255,255,255,0.3)" fontFamily="'IBM Plex Mono',monospace">avg</text>
 
-          {/* Main score line */}
-          {allCalls.length > 1 && (
-            <path d={linePath} fill="none" stroke={trendColor} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-          )}
-
-          {/* Call dots — colored by rep */}
-          {allCalls.map((c, i) => {
-            const repIdx = repNames.indexOf(c.repName);
-            const dotColor = CHART_PALETTE[repIdx % CHART_PALETTE.length];
-            const cx = toX(c.date), cy = toY(c.score);
-            const active = hoveredIdx === i;
-            return (
-              <circle key={i} cx={cx} cy={cy} r={active ? 6 : 4}
-                fill={dotColor} stroke="var(--bg-card)" strokeWidth={2}
-                style={{ cursor: "pointer", transition: "r 0.1s" }}
-                onMouseEnter={(ev) => {
-                  setHoveredIdx(i);
-                  const rect = ev.currentTarget.closest("svg").getBoundingClientRect();
-                  setTooltip({ x: cx * (rect.width / W), y: cy * (rect.height / H), score: c.score, rep: c.repName, type: c.callType, date: c.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }), color: dotColor });
-                }}
-              />
-            );
+          {/* Per-rep area fills */}
+          {repSeries.map(s => {
+            if (s.calls.length < 2) return null;
+            const pts = s.calls.map(c => `${toX(c.date)},${toY(c.score)}`);
+            const aPath = `M ${toX(s.calls[0].date)},${toY(s.calls[0].score)} L ${pts.slice(1).join(" L ")} L ${toX(s.calls[s.calls.length - 1].date)},${PAD_T + chartH} L ${toX(s.calls[0].date)},${PAD_T + chartH} Z`;
+            const dimmed = hoveredRep && hoveredRep !== s.repName;
+            return <path key={s.repName + "-a"} d={aPath} fill={`url(#rg-${s.repName.replace(/\W/g, "")})`} opacity={dimmed ? 0 : 1} style={{ transition: "opacity 0.15s" }} />;
           })}
 
+          {/* Per-rep lines */}
+          {repSeries.map(s => {
+            if (s.calls.length < 2) return null;
+            const pts = s.calls.map(c => `${toX(c.date)},${toY(c.score)}`);
+            const dimmed = hoveredRep && hoveredRep !== s.repName;
+            return <path key={s.repName + "-l"} d={`M ${pts.join(" L ")}`} fill="none"
+              stroke={s.color} strokeWidth={dimmed ? 1 : 2.5} strokeLinecap="round" strokeLinejoin="round"
+              opacity={dimmed ? 0.18 : 1} style={{ transition: "opacity 0.15s, stroke-width 0.15s" }} />;
+          })}
+
+          {/* Per-rep dots */}
+          {repSeries.map(s => s.calls.map((c, ci) => {
+            const cx = toX(c.date), cy = toY(c.score);
+            const key = `${s.repName}-${ci}`;
+            const isHovered = tooltip?.key === key;
+            const dimmed = hoveredRep && hoveredRep !== s.repName;
+            return (
+              <circle key={key} cx={cx} cy={cy} r={isHovered ? 6 : 4}
+                fill={s.color} stroke="var(--bg-card)" strokeWidth={2}
+                opacity={dimmed ? 0.18 : 1}
+                style={{ cursor: "pointer", transition: "r 0.1s, opacity 0.15s" }}
+                onMouseEnter={(ev) => {
+                  setHoveredRep(s.repName);
+                  const rect = ev.currentTarget.closest("svg").getBoundingClientRect();
+                  setTooltip({ key, x: cx * (rect.width / W), y: cy * (rect.height / H), score: c.score, rep: s.repName, color: s.color, type: c.callType, prospect: c.prospect, date: c.date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }) });
+                }}
+                onMouseLeave={() => { setHoveredRep(null); setTooltip(null); }}
+              />
+            );
+          }))}
+
           {/* X-axis labels */}
-          {xLabels.map((c, i) => (
-            <text key={i} x={toX(c.date)} y={H - 6} textAnchor="middle" fontSize={9} fill="#7a8ba0">
-              {c.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-            </text>
-          ))}
+          {xLabelTs.map((ts, i) => {
+            const d = new Date(ts);
+            return <text key={i} x={toX(d)} y={H - 8} textAnchor="middle" fontSize={9} fill="#7a8ba0">
+              {d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            </text>;
+          })}
         </svg>
 
         {/* Tooltip */}
         {tooltip && (
-          <div style={{ position: "absolute", left: Math.min(tooltip.x + 14, 220), top: Math.max(4, tooltip.y - 60), background: "var(--bg-primary)", border: "1px solid var(--border-default)", borderRadius: 10, padding: "10px 14px", fontSize: 12, pointerEvents: "none", zIndex: 20, whiteSpace: "nowrap" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, color: tooltip.color, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>{tooltip.score}%</div>
+          <div style={{ position: "absolute", left: Math.min(tooltip.x + 14, chartWidth - 190), top: Math.max(4, tooltip.y - 90), background: "var(--bg-primary)", border: `1px solid var(--border-default)`, borderLeft: `3px solid ${tooltip.color}`, borderRadius: 10, padding: "10px 14px", fontSize: 12, pointerEvents: "none", zIndex: 20, whiteSpace: "nowrap", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: tooltip.color, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, marginBottom: 4 }}>{tooltip.score}%</div>
             <div style={{ fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>{tooltip.rep}</div>
+            {tooltip.prospect && <div style={{ color: "var(--text-secondary)", fontSize: 11, marginBottom: 2 }}>{tooltip.prospect}</div>}
             <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{tooltip.type} · {tooltip.date}</div>
           </div>
         )}
