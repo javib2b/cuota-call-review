@@ -51,7 +51,7 @@ const CLIENT_DOMAIN: Record<string, string> = {
   "11x":       "11x.ai",
   "Arc":       "experiencearc.com",
   "Diio":      "diio.com",
-  "Factor":    "factor.ai",
+  "Factor":    "factor-labs.com",
   "Nauta":     "getnauta.com",
   "Paymend":   "paymend.com",
   "Planimatik":"planimatik.com",
