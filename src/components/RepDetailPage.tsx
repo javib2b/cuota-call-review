@@ -259,7 +259,7 @@ function Sidebar({
     }}>
       <div style={{ padding: collapsed ? "20px 0" : "24px 20px 20px", display: "flex", justifyContent: collapsed ? "center" : "flex-start" }}>
         {collapsed ? (
-          <div onClick={() => onNavigate("home")} style={{ width: 34, height: 34, borderRadius: 8, cursor: "pointer", background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: GREEN }}>C</div>
+          <img src="/favicon.svg" alt="Cuota" onClick={() => onNavigate("home")} style={{ width: 34, height: 34, cursor: "pointer", display: "block" }} />
         ) : (
           <img src="/cuota_logo_official_White.png" alt="Cuota" onClick={() => onNavigate("home")} style={{ height: 48, display: "block", maxWidth: "100%", cursor: "pointer" }} />
         )}

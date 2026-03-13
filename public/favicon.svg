@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Dark navy background, rounded square -->
+  <rect width="64" height="64" rx="10" fill="#0d1b2e"/>
+
+  <!-- Bold "C" — outer arc clockwise top-right → bottom-right via left side,
+       inner arc counter-clockwise back. Verified geometry, cx/cy = 32,32.
+       Outer r=22: (46,15) and (46,49) are ~22px from center.
+       Inner r=14: (41,21) and (41,43) are ~14px from center. -->
+  <path d="M46 15 A22 22 0 1 1 46 49 L41 43 A14 14 0 1 0 41 21 Z" fill="#ffffff"/>
+
+  <!-- Green upward arrow in the C opening — matches the brand growth mark -->
+  <line x1="48" y1="43" x2="55" y2="22" stroke="#31CE81" stroke-width="3.5" stroke-linecap="round"/>
+  <polyline points="51,22 55,22 55,27" fill="none" stroke="#31CE81" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
