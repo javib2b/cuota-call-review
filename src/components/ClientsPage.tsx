@@ -46,8 +46,8 @@ const CLIENT_SUBTITLE: Record<string, string> = {
   "Paymend": "New client",
 };
 
-// ─── Clearbit domain map ──────────────────────────────────────────
-const CLEARBIT_DOMAIN: Record<string, string> = {
+// ─── Domain map for Brandfetch logo lookup ─────────────────────────
+const CLIENT_DOMAIN: Record<string, string> = {
   "11x":       "11x.ai",
   "Arc":       "arc.dev",
   "Diio":      "diio.io",
@@ -64,15 +64,15 @@ function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
 function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED; }
 
 // ─── ClientLogo with cascading fallback ───────────────────────────
-// 1. local /logos/{name}.png  2. Clearbit  3. initials
+// 1. local /logos/{name}.png  2. Brandfetch CDN  3. initials
 function ClientLogo({ name, size, borderRadius }: { name: string; size: number; borderRadius: number }) {
-  const domain = CLEARBIT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
+  const domain = CLIENT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
   const [src, setSrc] = useState(`/logos/${name.toLowerCase()}.png`);
   const [failed, setFailed] = useState(false);
 
   const handleError = useCallback(() => {
     if (src.startsWith("/logos/")) {
-      setSrc(`https://logo.clearbit.com/${domain}`);
+      setSrc(`https://cdn.brandfetch.io/${domain}/w/400/h/400`);
     } else {
       setFailed(true);
     }
