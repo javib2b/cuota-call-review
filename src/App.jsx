@@ -107,6 +107,43 @@ const DEFAULT_PAST_CLIENTS = ["Rapido"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor.ai", "Nauta": "getnauta.com", "Paymend": "paymend.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null; }
 
+// Derive a likely domain from a company name for Brandfetch lookup
+function companyDomain(name) {
+  if (!name) return null;
+  const cleaned = name
+    .toLowerCase()
+    .replace(/[,.]?\s+(inc\.?|corp\.?|llc\.?|ltd\.?|s\.?a\.?|plc\.?|co\.?|company|technologies|tech|solutions|group|holdings|international|global|services|systems|software|consulting|ventures|capital|partners|labs?|studio s?|gmbh|bv|ag)\.?\s*$/i, "")
+    .trim()
+    .replace(/[^a-z0-9]/g, "");
+  return cleaned ? `${cleaned}.com` : null;
+}
+
+// ProspectLogo: shows a company logo for a call's prospect company via Brandfetch
+function ProspectLogo({ company, size = 30, borderRadius = 7 }) {
+  const domain = companyDomain(company);
+  const initials = company ? company.slice(0, 2).toUpperCase() : "?";
+  const [failed, setFailed] = useState(false);
+  return (
+    <div style={{
+      width: size, height: size, borderRadius, flexShrink: 0,
+      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: Math.round(size * 0.37), fontWeight: 700, color: "rgba(255,255,255,0.45)",
+      position: "relative", overflow: "hidden",
+    }}>
+      {initials}
+      {domain && !failed && (
+        <img
+          src={`https://cdn.brandfetch.io/${domain}/w/400/h/400`}
+          alt=""
+          onError={() => setFailed(true)}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 3 }}
+        />
+      )}
+    </div>
+  );
+}
+
 // ClientLogo: Brandfetch CDN → Google favicon → letter fallback
 // Pass `website` (e.g. "https://11x.ai") to derive domain for unlisted clients
 function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
@@ -726,14 +763,14 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
           {open && (
             <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               {ae.calls.map(call => (
-                <div key={call.id} onClick={() => onSelect(call)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 16px 11px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <CircularScore score={call.overall_score || 0} size={38} strokeWidth={3} />
+                <div key={call.id} onClick={() => onSelect(call)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px 10px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", transition: "background 0.15s" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <ProspectLogo company={call.prospect_company} size={34} borderRadius={8} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{call.prospect_company || "Unknown Company"}</div>
                     <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>{call.call_type} · {call.call_date}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0) }}>{getScoreLabel(call.overall_score || 0)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: getScoreColor(call.overall_score || 0) }}>{call.overall_score || 0}%</div>
                     {call.deal_value ? <div style={{ fontSize: 11, color: "var(--text-3)" }}>${Number(call.deal_value).toLocaleString()}</div> : null}
                   </div>
                 </div>
@@ -925,14 +962,14 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
       <h3 style={{ fontSize: 14, fontWeight: 700, color: "var(--text-2)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Calls ({sortedAeCalls.length})</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {sortedAeCalls.map(call => (
-          <div key={call.id} onClick={() => onSelect(call)} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 16, transition: "all 0.2s" }}>
-            <CircularScore score={call.overall_score || 0} size={50} strokeWidth={4} />
+          <div key={call.id} onClick={() => onSelect(call)} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, transition: "all 0.2s" }}>
+            <ProspectLogo company={call.prospect_company} size={44} borderRadius={10} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>{call.prospect_company || "Unknown Company"}</div>
-              <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>{call.call_type} | {call.call_date}</div>
+              <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>{call.call_type} · {call.call_date}</div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: getScoreColor(call.overall_score || 0), textTransform: "uppercase", letterSpacing: 0.5 }}>{getScoreLabel(call.overall_score || 0)}</div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: getScoreColor(call.overall_score || 0) }}>{call.overall_score || 0}%</div>
               <div style={{ fontSize: 11, color: "var(--text-2)" }}>{call.deal_value ? "$" + Number(call.deal_value).toLocaleString() : ""}</div>
             </div>
           </div>

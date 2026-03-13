@@ -1,5 +1,41 @@
 import { useState } from "react";
 
+// ─── Prospect logo (Brandfetch CDN with initials fallback) ─────────
+function companyDomain(name: string): string | null {
+  if (!name) return null;
+  const cleaned = name
+    .toLowerCase()
+    .replace(/[,.]?\s+(inc\.?|corp\.?|llc\.?|ltd\.?|s\.?a\.?|plc\.?|co\.?|company|technologies|tech|solutions|group|holdings|international|global|services|systems|software|consulting|ventures|capital|partners|labs?|studios?|gmbh|bv|ag)\.?\s*$/i, "")
+    .trim()
+    .replace(/[^a-z0-9]/g, "");
+  return cleaned ? `${cleaned}.com` : null;
+}
+
+function ProspectLogo({ company, size = 30, borderRadius = 7 }: { company: string; size?: number; borderRadius?: number }) {
+  const domain = companyDomain(company);
+  const initials = company ? company.slice(0, 2).toUpperCase() : "?";
+  const [failed, setFailed] = useState(false);
+  return (
+    <div style={{
+      width: size, height: size, borderRadius, flexShrink: 0,
+      background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: Math.round(size * 0.37), fontWeight: 700, color: "rgba(255,255,255,0.45)",
+      position: "relative", overflow: "hidden",
+    }}>
+      {initials}
+      {domain && !failed && (
+        <img
+          src={`https://cdn.brandfetch.io/${domain}/w/400/h/400`}
+          alt=""
+          onError={() => setFailed(true)}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", padding: 3 }}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── Design tokens ────────────────────────────────────────────────
 const BG      = "var(--bg-app)";
 const SURFACE = "var(--bg-primary)";
@@ -516,27 +552,31 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
               const date  = call.call_date || call.created_at;
               const type  = call.category_scores?.call_type || call.call_type || "Call";
               const prospect = call.category_scores?.prospect_name || call.prospect_name || "";
+              const company  = call.prospect_company || call.category_scores?.prospect_company || "";
 
               return (
                 <div
                   key={call.id || i}
                   onClick={() => onViewCall(call)}
                   style={{
-                    display: "grid", gridTemplateColumns: "1fr 52px 100px 100px",
-                    padding: "13px 20px", gap: 12, alignItems: "center",
+                    display: "grid", gridTemplateColumns: "36px 1fr 52px 100px 100px",
+                    padding: "12px 20px", gap: 12, alignItems: "center",
                     borderBottom: i < sorted.length - 1 ? `1px solid ${BORDER}` : "none",
                     cursor: "pointer", transition: "background 0.1s",
                   }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
+                  {/* Prospect company logo */}
+                  <ProspectLogo company={company || prospect} size={36} borderRadius={8} />
+
                   {/* Call title / prospect */}
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>
-                      {prospect || `${client} call`}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {company || prospect || `${client} call`}
                     </div>
                     <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>
-                      {relTime(date)}
+                      {prospect && company ? `${prospect} · ` : ""}{relTime(date)}
                     </div>
                   </div>
 
