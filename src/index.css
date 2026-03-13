@@ -2,7 +2,7 @@
 
 :root {
   /* v2 design tokens */
-  --bg-app:        #011e38;
+  --bg-app:        #04090f;
   --bg-primary:    #062035;
   --bg-card:       #062035;
   --bg-card-hover: #0a2a45;
@@ -23,7 +23,7 @@
   --ai:       #8b5cf6;
 
   /* Aliases — keeps all existing inline styles working */
-  --bg: var(--bg-app);
+  --bg: transparent;         /* page-level containers are transparent — depth comes from bg-canvas */
   --surface: var(--bg-card);
   --surface-2: #0a2a45;
   --surface-3: var(--bg-primary);
@@ -40,7 +40,86 @@
   --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.12);
   --purple: #a855f7; --purple-dim: rgba(168,85,247,0.12);
 }
-body { background: var(--bg); color: var(--text-1); font-family: 'DM Sans', 'Syne', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+html { background: #04090f; }
+body { background: transparent; color: var(--text-1); font-family: 'DM Sans', 'Syne', system-ui, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+/* ── Ambient depth canvas ──────────────────────────────────────────────── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* Very dark navy base with a large soft blue light source in the upper-left */
+  background:
+    radial-gradient(ellipse 70% 60% at -8% -10%, rgba(22, 80, 210, 0.30) 0%, rgba(12, 48, 140, 0.10) 45%, transparent 68%),
+    #04090f;
+}
+
+/* Orb base */
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+/* Deep blue orb — upper-right quadrant */
+.bg-orb.orb-1 {
+  width: 750px;
+  height: 750px;
+  top: 2%;
+  right: -12%;
+  background: radial-gradient(circle, rgba(18, 58, 185, 0.22) 0%, rgba(10, 35, 110, 0.08) 55%, transparent 72%);
+  filter: blur(72px);
+  animation: drift1 32s ease-in-out infinite;
+}
+
+/* Indigo orb — lower-left */
+.bg-orb.orb-2 {
+  width: 640px;
+  height: 640px;
+  bottom: -8%;
+  left: 5%;
+  background: radial-gradient(circle, rgba(68, 22, 158, 0.20) 0%, rgba(40, 12, 90, 0.07) 55%, transparent 72%);
+  filter: blur(88px);
+  animation: drift2 40s ease-in-out infinite;
+}
+
+/* Mid-blue orb — center-right, partially hidden */
+.bg-orb.orb-3 {
+  width: 500px;
+  height: 500px;
+  top: 48%;
+  right: 18%;
+  background: radial-gradient(circle, rgba(14, 48, 155, 0.16) 0%, rgba(8, 28, 90, 0.06) 55%, transparent 72%);
+  filter: blur(80px);
+  animation: drift3 25s ease-in-out infinite;
+}
+
+@keyframes drift1 {
+  0%,  100% { transform: translate(0px,   0px)  scale(1);    }
+  25%        { transform: translate(-14px, 18px) scale(1.02); }
+  50%        { transform: translate(10px, -10px) scale(0.98); }
+  75%        { transform: translate(-8px,  14px) scale(1.01); }
+}
+
+@keyframes drift2 {
+  0%,  100% { transform: translate(0px,   0px)  scale(1);    }
+  33%        { transform: translate(18px, -16px) scale(1.03); }
+  66%        { transform: translate(-12px, 10px) scale(0.97); }
+}
+
+@keyframes drift3 {
+  0%,  100% { transform: translate(0px,  0px) scale(1);    }
+  50%        { transform: translate(12px, 14px) scale(1.02); }
+}
+
+/* All app content sits above the canvas */
+#root {
+  position: relative;
+  z-index: 1;
+}
 
 /* ── Liquid glass card ─────────────────────────────────────────────────── */
 .glass-card {
