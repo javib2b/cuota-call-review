@@ -64,9 +64,15 @@ function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
 function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED; }
 
 // ─── ClientLogo with cascading fallback ───────────────────────────
-// 1. Brandfetch CDN  2. initials
-function ClientLogo({ name, size, borderRadius }: { name: string; size: number; borderRadius: number }) {
-  const domain = CLIENT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
+// 1. Brandfetch CDN (website-derived domain > hardcoded map > guessed)  2. initials
+function ClientLogo({ name, size, borderRadius, website }: { name: string; size: number; borderRadius: number; website?: string }) {
+  let domain = CLIENT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
+  if (website) {
+    try {
+      const url = website.startsWith("http") ? website : `https://${website}`;
+      domain = new URL(url).hostname.replace(/^www\./, "");
+    } catch {}
+  }
   const [failed, setFailed] = useState(false);
 
   return (
@@ -171,6 +177,7 @@ interface Props {
   clients: string[];
   pastClients: string[];
   savedCalls: any[];
+  clientProfiles?: Record<string, { website?: string }>;
   onClientClick: (client: string) => void;
   onNewReview: () => void;
   onNavigate: (page: string) => void;
@@ -186,6 +193,7 @@ const COL = "1fr 48px 56px 120px 48px 82px";
 // ─── Main ─────────────────────────────────────────────────────────
 export default function ClientsPage({
   clients, pastClients, savedCalls,
+  clientProfiles = {},
   onClientClick, onNewReview, onNavigate,
   onAddClient, onArchiveClient, onRestoreClient,
   callsError, onRetryLoadCalls,
@@ -440,7 +448,7 @@ export default function ClientsPage({
                 >
                   {/* Logo + name */}
                   <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-                    <ClientLogo name={client} size={34} borderRadius={8} />
+                    <ClientLogo name={client} size={34} borderRadius={8} website={clientProfiles[client]?.website} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client}</div>
                       {subtitle && <div style={{ fontSize: 11, color: MUTED, marginTop: 1 }}>{subtitle}</div>}
@@ -535,7 +543,7 @@ export default function ClientsPage({
                         transition: "opacity 0.15s",
                       }}
                     >
-                      <ClientLogo name={client} size={30} borderRadius={7} />
+                      <ClientLogo name={client} size={30} borderRadius={7} website={clientProfiles[client]?.website} />
                       <div style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}>
                         <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{client}</span>
                         <span style={{ fontSize: 12, color: MUTED }}>

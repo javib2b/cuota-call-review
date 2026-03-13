@@ -110,10 +110,9 @@ function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return d
 // ClientLogo: Brandfetch CDN → Google favicon → letter fallback
 // Pass `website` (e.g. "https://11x.ai") to derive domain for unlisted clients
 function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
-  // Hardcoded domain always wins — prevents bad saved-website data from showing a wrong logo
-  const hardcoded = CLIENT_DOMAINS[client];
-  let domain = hardcoded || null;
-  if (!domain && website) {
+  // Website from GTM profile takes priority — it's explicitly set by the user
+  let domain = CLIENT_DOMAINS[client] || null;
+  if (website) {
     try {
       const url = website.startsWith("http") ? website : `https://${website}`;
       domain = new URL(url).hostname.replace(/^www\./, "");
@@ -6542,6 +6541,7 @@ export default function CuotaCallReview() {
       clients={clients}
       pastClients={pastClients}
       savedCalls={savedCalls}
+      clientProfiles={clientProfiles}
       onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }}
       onNewReview={startNewReview}
       onNavigate={setPage}
