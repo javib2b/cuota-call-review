@@ -144,12 +144,12 @@ function ProspectLogo({ company, size = 30, borderRadius = 7 }) {
   );
 }
 
-// ClientLogo: Brandfetch CDN → Google favicon → letter fallback
-// Pass `website` (e.g. "https://11x.ai") to derive domain for unlisted clients
+// ClientLogo: Brandfetch CDN → letter fallback
+// Hardcoded CLIENT_DOMAINS takes priority; website prop used for unlisted clients only
 function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
-  // Website from GTM profile takes priority — it's explicitly set by the user
+  // Hardcoded map wins for known clients — prevents GTM website typos breaking logos
   let domain = CLIENT_DOMAINS[client] || null;
-  if (website) {
+  if (!domain && website) {
     try {
       const url = website.startsWith("http") ? website : `https://${website}`;
       domain = new URL(url).hostname.replace(/^www\./, "");
@@ -158,7 +158,6 @@ function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }
   const [srcIdx, setSrcIdx] = useState(0);
   const sources = [
     domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null,
-    domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null,
   ].filter(Boolean);
   if (!domain || srcIdx >= sources.length) {
     return <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", ...letterStyle }}>{client.charAt(0).toUpperCase()}</span>;

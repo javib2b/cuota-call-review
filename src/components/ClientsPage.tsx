@@ -64,15 +64,16 @@ function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
 function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED; }
 
 // ─── ClientLogo with cascading fallback ───────────────────────────
-// 1. Brandfetch CDN (website-derived domain > hardcoded map > guessed)  2. initials
+// 1. Brandfetch CDN (hardcoded map > website fallback for unlisted > name.com guess)  2. initials
 function ClientLogo({ name, size, borderRadius, website }: { name: string; size: number; borderRadius: number; website?: string }) {
-  let domain = CLIENT_DOMAIN[name] ?? `${name.toLowerCase()}.com`;
-  if (website) {
+  let domain: string = CLIENT_DOMAIN[name] ?? "";
+  if (!domain && website) {
     try {
       const url = website.startsWith("http") ? website : `https://${website}`;
       domain = new URL(url).hostname.replace(/^www\./, "");
     } catch {}
   }
+  if (!domain) domain = `${name.toLowerCase()}.com`;
   const [failed, setFailed] = useState(false);
 
   return (
