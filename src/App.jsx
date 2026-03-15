@@ -645,7 +645,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                 const callCount = clientCalls.length;
                 const avgScore = callCount > 0 ? Math.round(clientCalls.reduce((s, c) => s + (c.overall_score || 0), 0) / callCount) : 0;
                 return (
-                  <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
+                  <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 0, cursor: "pointer", overflow: "hidden", opacity: 0.65, transition: "all 0.2s" }} onClick={() => onClientClick ? onClientClick(client) : setFolderClient(client)}>
                     <div style={{ position: "absolute", top: 8, right: 8, display: "flex", gap: 4, zIndex: 2 }}>
                       {onRestoreClient && <button onClick={(e) => { e.stopPropagation(); onRestoreClient(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
                       {onArchiveFromPast && <button onClick={(e) => { e.stopPropagation(); if (window.confirm(`Archive "${client}"? They'll be moved to Archived Clients.`)) onArchiveFromPast(client); }} style={{ background: "rgba(255,255,255,0.07)", border: "none", color: "var(--text-3)", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontFamily: "inherit" }}>Archive</button>}
@@ -712,7 +712,7 @@ function SavedCallsList({ calls, onSelect, onNewCall, folderClient, setFolderCli
                   const clientCalls = Object.values(aes).flat();
                   const callCount = clientCalls.length;
                   return (
-                    <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 0, cursor: callCount === 0 ? "default" : "pointer", overflow: "hidden", opacity: 0.45, transition: "all 0.2s" }} onClick={() => callCount > 0 && (onClientClick ? onClientClick(client) : setFolderClient(client))}>
+                    <div key={client} style={{ position: "relative", background: "var(--surface)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 0, cursor: "pointer", overflow: "hidden", opacity: 0.45, transition: "all 0.2s" }} onClick={() => onClientClick ? onClientClick(client) : setFolderClient(client)}>
                       <div style={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}>
                         {onRestoreFromArchived && <button onClick={(e) => { e.stopPropagation(); onRestoreFromArchived(client); }} style={{ background: "rgba(49,206,129,0.12)", border: "none", color: "#31CE81", fontSize: 11, cursor: "pointer", padding: "2px 8px", borderRadius: 6, fontWeight: 600, fontFamily: "inherit" }}>Restore</button>}
                       </div>
