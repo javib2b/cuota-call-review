@@ -376,148 +376,154 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
             <span style={{ color: TEXT, fontWeight: 600 }}>{repName}</span>
           </div>
 
-          {/* Hero */}
+          {/* Hero — full-width frosted glass panel */}
           <div style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%), rgba(6,32,53,0.90)",
-            backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any,
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.11)",
-            borderRadius: 16, padding: "24px 28px", marginBottom: 20,
-            display: "flex", alignItems: "center", gap: 20,
+            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.82)",
+            backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any,
+            border: "1px solid rgba(255,255,255,0.11)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+            borderRadius: 20,
+            padding: "36px 40px",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "stretch",
+            gap: 0,
           }}>
-            {/* Avatar */}
-            {photoUrl && !imgError
-              ? <img src={photoUrl} alt={repName} style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "cover", flexShrink: 0, display: "block" }} onError={() => setImgError(true)} />
-              : <div style={{
-                  width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
-                  background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 18, fontWeight: 700, color: GREEN,
-                }}>
-                  {initials}
-                </div>
-            }
 
-            {/* Name + meta */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 700, color: TEXT, letterSpacing: "-0.3px" }}>
-                {repName}
-              </h2>
+            {/* Left — avatar + identity + meta pills */}
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 16 }}>
+
+              {/* Avatar row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                {photoUrl && !imgError
+                  ? <img src={photoUrl} alt={repName} style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", flexShrink: 0, display: "block", border: "2px solid rgba(49,206,129,0.25)", boxShadow: "0 0 0 4px rgba(49,206,129,0.07)" }} onError={() => setImgError(true)} />
+                  : <div style={{
+                      width: 64, height: 64, borderRadius: "50%", flexShrink: 0,
+                      background: "rgba(49,206,129,0.12)", border: "2px solid rgba(49,206,129,0.28)",
+                      boxShadow: "0 0 0 4px rgba(49,206,129,0.06)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 22, fontWeight: 700, color: GREEN, letterSpacing: "-0.5px",
+                    }}>
+                      {initials}
+                    </div>
+                }
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: TEXT, letterSpacing: "-0.5px", lineHeight: 1.15 }}>
+                    {repName}
+                  </h2>
+                  <div style={{ marginTop: 4, fontSize: 13, color: MUTED }}>{client}</div>
+                </div>
+              </div>
+
+              {/* Meta pills */}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED }}>{repCalls.length} calls reviewed</span>
+                <span style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: MUTED }}>{repCalls.length} calls reviewed</span>
                 {repCalls.some(c => c.category_scores?.rep_type === "SDR") && (
-                  <span style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#a78bfa", fontWeight: 600 }}>SDR</span>
+                  <span style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: "#a78bfa", fontWeight: 600 }}>SDR</span>
                 )}
 
-                {/* Sales Experience block */}
-                <div
-                  title="Click to edit"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
-                  onClick={() => { setEditingSalesExp(true); setSalesExpDraft(salesExperience); }}
-                >
+                {/* Sales Experience */}
+                <div title="Click to edit" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                  onClick={() => { setEditingSalesExp(true); setSalesExpDraft(salesExperience); }}>
                   <span style={{ color: FAINT, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>Sales Exp.</span>
-                  {editingSalesExp ? (
-                    <input
-                      autoFocus
-                      value={salesExpDraft}
-                      onChange={e => setSalesExpDraft(e.target.value)}
-                      onBlur={() => { setEditingSalesExp(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); }}
-                      onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingSalesExp(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); } }}
-                      onClick={e => e.stopPropagation()}
-                      placeholder="e.g. 3 years"
-                      style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 80 }}
-                    />
-                  ) : (
-                    <span style={{ color: salesExperience ? TEXT : "rgba(255,255,255,0.25)" }}>{salesExperience || "—"}</span>
-                  )}
+                  {editingSalesExp
+                    ? <input autoFocus value={salesExpDraft} onChange={e => setSalesExpDraft(e.target.value)}
+                        onBlur={() => { setEditingSalesExp(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); }}
+                        onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingSalesExp(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); } }}
+                        onClick={e => e.stopPropagation()} placeholder="e.g. 3 years"
+                        style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 80 }} />
+                    : <span style={{ color: salesExperience ? TEXT : "rgba(255,255,255,0.25)" }}>{salesExperience || "—"}</span>
+                  }
                 </div>
 
-                {/* Time in Role block */}
-                <div
-                  title="Click to edit"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
-                  onClick={() => { setEditingTimeInRole(true); setTimeInRoleDraft(timeInRole); }}
-                >
+                {/* Time in Role */}
+                <div title="Click to edit" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                  onClick={() => { setEditingTimeInRole(true); setTimeInRoleDraft(timeInRole); }}>
                   <span style={{ color: FAINT, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>Time in Role</span>
-                  {editingTimeInRole ? (
-                    <input
-                      autoFocus
-                      value={timeInRoleDraft}
-                      onChange={e => setTimeInRoleDraft(e.target.value)}
-                      onBlur={() => { setEditingTimeInRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); }}
-                      onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingTimeInRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); } }}
-                      onClick={e => e.stopPropagation()}
-                      placeholder="e.g. 8 months"
-                      style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 80 }}
-                    />
-                  ) : (
-                    <span style={{ color: timeInRole ? TEXT : "rgba(255,255,255,0.25)" }}>{timeInRole || "—"}</span>
-                  )}
+                  {editingTimeInRole
+                    ? <input autoFocus value={timeInRoleDraft} onChange={e => setTimeInRoleDraft(e.target.value)}
+                        onBlur={() => { setEditingTimeInRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); }}
+                        onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingTimeInRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); } }}
+                        onClick={e => e.stopPropagation()} placeholder="e.g. 8 months"
+                        style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 80 }} />
+                    : <span style={{ color: timeInRole ? TEXT : "rgba(255,255,255,0.25)" }}>{timeInRole || "—"}</span>
+                  }
                 </div>
 
-                {/* Role block */}
-                <div
-                  title="Click to edit"
-                  style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
-                  onClick={() => { setEditingRole(true); setRoleDraft(role); }}
-                >
+                {/* Role */}
+                <div title="Click to edit" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "4px 12px", fontSize: 12, color: MUTED, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+                  onClick={() => { setEditingRole(true); setRoleDraft(role); }}>
                   <span style={{ color: FAINT, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8 }}>Role</span>
-                  {editingRole ? (
-                    <input
-                      autoFocus
-                      value={roleDraft}
-                      onChange={e => setRoleDraft(e.target.value)}
-                      onBlur={() => { setEditingRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); }}
-                      onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); } }}
-                      onClick={e => e.stopPropagation()}
-                      placeholder="e.g. Account Executive"
-                      style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 120 }}
-                    />
-                  ) : (
-                    <span style={{ color: role ? TEXT : "rgba(255,255,255,0.25)" }}>{role || "—"}</span>
-                  )}
+                  {editingRole
+                    ? <input autoFocus value={roleDraft} onChange={e => setRoleDraft(e.target.value)}
+                        onBlur={() => { setEditingRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); }}
+                        onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") { setEditingRole(false); onUpdateMeta?.({ salesExperience: salesExpDraft, timeInRole: timeInRoleDraft, role: roleDraft }); } }}
+                        onClick={e => e.stopPropagation()} placeholder="e.g. Account Executive"
+                        style={{ background: "transparent", border: "none", outline: "none", color: TEXT, fontSize: 12, fontFamily: FONT, width: 120 }} />
+                    : <span style={{ color: role ? TEXT : "rgba(255,255,255,0.25)" }}>{role || "—"}</span>
+                  }
                 </div>
               </div>
             </div>
 
-            {/* Score + trend */}
-            {avgScore !== null && (
-              <div style={{ textAlign: "center", flexShrink: 0 }}>
-                <div style={{ fontSize: 44, fontWeight: 800, color: TEXT, fontFamily: MONO, lineHeight: 1 }}>{avgScore}</div>
-                <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: FAINT, marginTop: 4 }}>Avg Score</div>
-                {trend !== null && (
-                  <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: trend > 0 ? GREEN : trend < 0 ? RED : FAINT, fontFamily: MONO }}>
-                    {trend > 0 ? `↑ +${trend}` : trend < 0 ? `↓ ${trend}` : "→ 0"}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Right — stat columns separated by a hairline */}
+            <div style={{ display: "flex", alignItems: "center", gap: 0, flexShrink: 0, paddingLeft: 40, borderLeft: "1px solid rgba(255,255,255,0.08)" }}>
 
-            {/* Quota attainment */}
-            {quotaTarget != null && quotaClosed != null && (() => {
-              const pct = Math.round((quotaClosed / quotaTarget) * 100);
-              const barColor = pct >= 90 ? GREEN : pct >= 70 ? AMBER : RED;
-              const fmtK = (n: number) => n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${n}`;
-              return (
-                <div style={{
-                  textAlign: "center", flexShrink: 0,
-                  borderLeft: `1px solid rgba(255,255,255,0.08)`, paddingLeft: 24,
-                }}>
-                  <div style={{ fontSize: 44, fontWeight: 800, color: barColor, fontFamily: MONO, lineHeight: 1 }}>
-                    {pct}%
+              {/* Avg score — the hero number */}
+              {avgScore !== null && (
+                <div style={{ textAlign: "center", padding: "0 36px" }}>
+                  <div style={{
+                    fontSize: 96, fontWeight: 900, lineHeight: 1,
+                    fontFamily: MONO, letterSpacing: "-4px",
+                    color: TEXT,
+                    textShadow: "0 0 60px rgba(255,255,255,0.08)",
+                  }}>
+                    {avgScore}
                   </div>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: FAINT, marginTop: 4 }}>
-                    Quota Attainment
-                  </div>
-                  <div style={{ marginTop: 8, width: 80, height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden", marginLeft: "auto", marginRight: "auto" }}>
-                    <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: barColor, borderRadius: 2 }} />
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 11, color: MUTED, fontFamily: MONO }}>
-                    {fmtK(quotaClosed)} / {fmtK(quotaTarget)}
-                  </div>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: FAINT, marginTop: 6 }}>Avg Score</div>
+                  {/* Amber badge */}
+                  {trend !== null && (
+                    <div style={{
+                      marginTop: 10,
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      background: "rgba(245,158,11,0.13)",
+                      border: "1px solid rgba(245,158,11,0.30)",
+                      borderRadius: 20,
+                      padding: "3px 10px",
+                      fontSize: 12, fontWeight: 700,
+                      color: AMBER,
+                      fontFamily: MONO,
+                    }}>
+                      {trend > 0
+                        ? `▲ +${trend} pts this month`
+                        : trend < 0
+                        ? `▼ ${trend} pts this month`
+                        : `→ 0 pts this month`}
+                    </div>
+                  )}
                 </div>
-              );
-            })()}
+              )}
+
+              {/* Quota attainment */}
+              {quotaTarget != null && quotaClosed != null && (() => {
+                const pct = Math.round((quotaClosed / quotaTarget) * 100);
+                const barColor = pct >= 90 ? GREEN : pct >= 70 ? AMBER : RED;
+                const fmtK = (n: number) => n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${n}`;
+                return (
+                  <div style={{ textAlign: "center", padding: "0 36px", borderLeft: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div style={{ fontSize: 96, fontWeight: 900, lineHeight: 1, fontFamily: MONO, letterSpacing: "-4px", color: barColor, textShadow: `0 0 60px ${barColor}22` }}>
+                      {pct}<span style={{ fontSize: 44 }}>%</span>
+                    </div>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 2, color: FAINT, marginTop: 6 }}>Quota</div>
+                    <div style={{ marginTop: 10, width: 80, height: 3, background: "rgba(255,255,255,0.07)", borderRadius: 2, overflow: "hidden", margin: "10px auto 0" }}>
+                      <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: barColor, borderRadius: 2 }} />
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 11, color: MUTED, fontFamily: MONO }}>{fmtK(quotaClosed)} / {fmtK(quotaTarget)}</div>
+                  </div>
+                );
+              })()}
+            </div>
+
           </div>
 
           {/* Score progression chart */}
