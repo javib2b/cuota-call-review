@@ -5569,11 +5569,42 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
         {/* CENTER — Stage */}
         <div ref={stageRef} style={{ flex: 1, background: "#010d1a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
           {!slides && !generating && (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ width: 200, height: 113, border: "2px dashed rgba(255,255,255,0.1)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-                <span style={{ fontSize: 28 }}>🎨</span>
+            <div style={{ width: "100%", maxWidth: 640, padding: "0 32px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 18, textAlign: "center" }}>Choose an asset type</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {ASSET_TYPES.map((at, i) => {
+                  const selected = deckType === at.id;
+                  const icons = ["📊", "📧", "📋", "📖", "⚔️"];
+                  return (
+                    <div
+                      key={at.id}
+                      onClick={() => setDeckType(at.id)}
+                      style={{
+                        gridColumn: i === 4 ? "1 / -1" : undefined,
+                        padding: "20px 22px",
+                        borderRadius: 10,
+                        border: `1px solid ${selected ? "rgba(49,206,129,0.55)" : "rgba(255,255,255,0.07)"}`,
+                        background: selected ? "rgba(49,206,129,0.10)" : "rgba(255,255,255,0.03)",
+                        cursor: "pointer",
+                        transition: "border-color 0.15s, background 0.15s",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 14,
+                      }}
+                    >
+                      <span style={{ fontSize: 22, flexShrink: 0 }}>{icons[i]}</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#31CE81" : "rgba(255,255,255,0.75)", marginBottom: 3 }}>{at.id}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
+                          {["Structured sales narrative for new opportunities", "Post-call recap with next steps & materials", "Formal scoped solution with pricing & terms", "Customer proof & outcomes story", "Head-to-head competitive positioning"][i]}
+                        </div>
+                      </div>
+                      {selected && <span style={{ marginLeft: "auto", fontSize: 14, color: "#31CE81", flexShrink: 0 }}>✓</span>}
+                    </div>
+                  );
+                })}
               </div>
-              <div style={{ fontSize: 13, color: "#7a8ba0" }}>Configure & Generate on the right</div>
+              <div style={{ marginTop: 20, textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.2)" }}>Fill in the details on the right, then hit Generate</div>
             </div>
           )}
           {generating && (
