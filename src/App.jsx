@@ -6598,7 +6598,9 @@ export default function CuotaCallReview() {
             {/* Logo */}
             <div style={{ padding: sidebarCollapsed ? "20px 0" : "20px 16px 16px", display: "flex", justifyContent: sidebarCollapsed ? "center" : "flex-start" }}>
               {sidebarCollapsed ? (
-                <img src="/favicon.png" alt="Cuota" onClick={() => setPage("home")} style={{ width: 34, height: 34, cursor: "pointer", display: "block", borderRadius: 10, border: "none", outline: "none" }} />
+                <div onClick={() => setPage("home")} style={{ width: 34, height: 34, borderRadius: 10, overflow: "hidden", cursor: "pointer", flexShrink: 0 }}>
+                  <img src="/favicon.png" alt="Cuota" style={{ width: "115%", height: "115%", marginLeft: "-7.5%", marginTop: "-7.5%", display: "block" }} />
+                </div>
               ) : (
                 <img src="/cuota_logo_official_White.png" alt="Cuota" onClick={() => setPage("home")} style={{ height: 48, cursor: "pointer", display: "block", maxWidth: "100%" }} />
               )}
