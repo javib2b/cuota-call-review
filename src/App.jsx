@@ -2636,7 +2636,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
               {[
                 { label: `${clientCalls.length} Reviews` },
                 { label: `${repEntries.length} Reps` },
-                { label: `${clientDocs.length} Docs` }
+                { label: "SaaS · Sales" },
               ].map(p => (
                 <span key={p.label} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 6, padding: "3px 10px", fontSize: 12, color: "#9ca3af", fontWeight: 500, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{p.label}</span>
               ))}
