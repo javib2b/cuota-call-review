@@ -5280,8 +5280,17 @@ function renderSlide(slide, primary, accent, prospectCompany, client, companyNam
   }
 }
 
+const ASSET_TYPES = [
+  { id: "Sales Deck",              bg: "#3a3a3a", selectedBg: "rgba(49,206,129,0.15)", border: "#4a4a4a" },
+  { id: "Follow Up Deck",          bg: "#313131", selectedBg: "rgba(49,206,129,0.15)", border: "#414141" },
+  { id: "Proposal",                bg: "#292929", selectedBg: "rgba(49,206,129,0.15)", border: "#393939" },
+  { id: "Case Study",              bg: "#222222", selectedBg: "rgba(49,206,129,0.15)", border: "#323232" },
+  { id: "Competitor Battle Cards", bg: "#1a1a1a", selectedBg: "rgba(49,206,129,0.15)", border: "#2a2a2a" },
+];
+
 function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient }) {
-  const _stored = loadStored("cuota_deck_brand") || {};
+  const _initKey = defaultClient ? `cuota_deck_brand_${defaultClient}` : "cuota_deck_brand";
+  const _stored = loadStored(_initKey) || {};
   const [primaryColor, setPrimaryColor] = useState(_stored.primaryColor || "#1e3a5f");
   const [accentColor, setAccentColor] = useState(_stored.accentColor || "#31CE81");
   const [companyName, setCompanyName] = useState(_stored.companyName || "");
@@ -5290,7 +5299,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
   const [client, setClient] = useState(defaultClient || "");
   const [prospectCompany, setProspectCompany] = useState("");
-  const [deckType, setDeckType] = useState("Demo");
+  const [deckType, setDeckType] = useState("Sales Deck");
   const [dealStage, setDealStage] = useState("Mid-Pipe");
   const [painPoints, setPainPoints] = useState("");
   const [refText, setRefText] = useState("");
@@ -5319,10 +5328,27 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
     return () => ro.disconnect();
   }, []);
 
+  const brandStorageKey = client ? `cuota_deck_brand_${client}` : "cuota_deck_brand";
+
   const saveBrand = (key, val) => {
-    const prev = loadStored("cuota_deck_brand") || {};
-    localStorage.setItem("cuota_deck_brand", JSON.stringify({ ...prev, [key]: val }));
+    const k = client ? `cuota_deck_brand_${client}` : "cuota_deck_brand";
+    const prev = loadStored(k) || {};
+    localStorage.setItem(k, JSON.stringify({ ...prev, [key]: val }));
   };
+
+  // Reload brand when client selection changes
+  useEffect(() => {
+    const k = client ? `cuota_deck_brand_${client}` : "cuota_deck_brand";
+    const stored = loadStored(k) || {};
+    setPrimaryColor(stored.primaryColor || "#1e3a5f");
+    setAccentColor(stored.accentColor || "#31CE81");
+    setCompanyName(stored.companyName || "");
+    setLogoBase64(stored.logoBase64 || null);
+    setLogoFileName(stored.logoFileName || null);
+    setRefText(stored.referenceText || "");
+    setExtractedFields(null);
+    setTemplateFileName(null);
+  }, [client]);
 
   const handlePrimaryChange = (v) => { setPrimaryColor(v); saveBrand("primaryColor", v); };
   const handleAccentChange = (v) => { setAccentColor(v); saveBrand("accentColor", v); };
@@ -5396,6 +5422,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       if (brand.referenceText) {
         const combined = [brand.referenceText, brand.toneNotes].filter(Boolean).join("\n\n");
         setRefText(combined);
+        saveBrand("referenceText", combined);
         filled.push("Brand voice & messaging");
       }
       setExtractedFields(filled.length ? filled : ["Tone & messaging"]);
@@ -5664,10 +5691,32 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                   <input value={prospectCompany} onChange={e => setProspectCompany(e.target.value)} placeholder="e.g. Meijer" style={inputStyle} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Deck Type</label>
-                  <select value={deckType} onChange={e => setDeckType(e.target.value)} style={inputStyle}>
-                    {["Discovery", "Demo", "Follow-up", "QBR", "Closing"].map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                  <label style={labelStyle}>Asset Type</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {ASSET_TYPES.map(at => {
+                      const selected = deckType === at.id;
+                      return (
+                        <div
+                          key={at.id}
+                          onClick={() => setDeckType(at.id)}
+                          style={{
+                            padding: "8px 10px",
+                            borderRadius: 7,
+                            border: `1px solid ${selected ? "rgba(49,206,129,0.5)" : at.border}`,
+                            background: selected ? at.selectedBg : at.bg,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            transition: "border-color 0.15s, background 0.15s",
+                          }}
+                        >
+                          <span style={{ fontSize: 11, fontWeight: selected ? 600 : 400, color: selected ? "#31CE81" : "var(--text-2)" }}>{at.id}</span>
+                          {selected && <span style={{ fontSize: 10, color: "#31CE81" }}>✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>Deal Stage</label>
@@ -5681,7 +5730,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                 </div>
                 <div>
                   <label style={labelStyle}>Brand Voice & Reference{refText ? " ✓" : " (optional)"}</label>
-                  <textarea value={refText} onChange={e => setRefText(e.target.value)} placeholder="Paste messaging, tone notes, or key language from your deck. Auto-filled when you upload a template above." rows={4} style={{ ...inputStyle, resize: "vertical", fontSize: 11 }} />
+                  <textarea value={refText} onChange={e => { setRefText(e.target.value); saveBrand("referenceText", e.target.value); }} placeholder="Paste messaging, tone notes, or key language from your deck. Auto-filled when you upload a template above." rows={4} style={{ ...inputStyle, resize: "vertical", fontSize: 11 }} />
                 </div>
               </div>
             </div>
