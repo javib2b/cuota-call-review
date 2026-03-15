@@ -5519,13 +5519,29 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
   const currentSlide = slides?.[activeSlide];
 
+  const [nowStr, setNowStr] = useState(() =>
+    new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+  );
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNowStr(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div style={{ margin: "-32px -40px", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Syne', system-ui, sans-serif" }}>
+      <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:0.25}}`}</style>
 
       {/* TOPBAR */}
       <div style={{ height: 52, flexShrink: 0, background: "var(--surface-3)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Asset Builder</div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+          {/* Live clock */}
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#31CE81", flexShrink: 0, animation: "livePulse 2s ease-in-out infinite" }} />
+            <span style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "var(--text-3)", letterSpacing: 0.3 }}>Live · {nowStr}</span>
+          </div>
           {error && <span style={{ fontSize: 12, color: "#f04438" }}>{error}</span>}
           {slides && (
             <button onClick={exportToPPTX} disabled={exporting} style={{ padding: "8px 16px", background: "transparent", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-1)", fontSize: 12, fontWeight: 600, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}>
