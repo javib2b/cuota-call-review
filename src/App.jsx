@@ -6207,7 +6207,7 @@ export default function CuotaCallReview() {
   const [cmdKOpen, setCmdKOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
+    try { const v = localStorage.getItem("sidebar_collapsed"); return v === null ? true : v === "1"; } catch { return true; }
   });
   function toggleSidebar() {
     setSidebarCollapsed(prev => {

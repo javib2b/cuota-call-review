@@ -19,7 +19,7 @@ const FULL = 220;
 const MINI = 64;
 
 function getSavedCollapsed() {
-  try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
+  try { const v = localStorage.getItem("sidebar_collapsed"); return v === null ? true : v === "1"; } catch { return true; }
 }
 function saveCollapsed(v: boolean) {
   try { localStorage.setItem("sidebar_collapsed", v ? "1" : "0"); } catch {}
