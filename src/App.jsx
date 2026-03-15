@@ -2642,16 +2642,29 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
               ))}
             </div>
           </div>
-          {avgCallScore !== null && (
-            <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div style={{ fontSize: 48, fontWeight: 800, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1 }}>{avgCallScore}</div>
-              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#7a8ba0", marginTop: 4, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Avg Score</div>
-              <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6, background: "rgba(49,206,129,0.15)", color: "#31CE81", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{getScoreLabel(avgCallScore)}</span>
-                {trendArrow !== null && <span style={{ fontSize: 14, color: trendArrow > 5 ? "#31CE81" : trendArrow < -5 ? "#FF4D4D" : "#7a8ba0" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
-              </div>
+          <div style={{ display: "flex", alignItems: "center", flexShrink: 0, gap: 0 }}>
+            {/* Calls */}
+            <div style={{ textAlign: "center", padding: "0 28px", borderRight: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, letterSpacing: "-1px" }}>{clientCalls.length}</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#7a8ba0", marginTop: 5, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Calls</div>
             </div>
-          )}
+            {/* Reps */}
+            <div style={{ textAlign: "center", padding: "0 28px", borderRight: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 36, fontWeight: 800, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, letterSpacing: "-1px" }}>{repEntries.length}</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#7a8ba0", marginTop: 5, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reps</div>
+            </div>
+            {/* Avg Score */}
+            {avgCallScore !== null && (
+              <div style={{ textAlign: "center", padding: "0 0 0 28px" }}>
+                <div style={{ fontSize: 36, fontWeight: 800, color: "#fff", fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, letterSpacing: "-1px" }}>{avgCallScore}</div>
+                <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#7a8ba0", marginTop: 5, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Avg Score</div>
+                <div style={{ marginTop: 7, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: "rgba(49,206,129,0.15)", color: "#31CE81", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{getScoreLabel(avgCallScore)}</span>
+                  {trendArrow !== null && <span style={{ fontSize: 13, color: trendArrow > 5 ? "#31CE81" : trendArrow < -5 ? "#FF4D4D" : "#7a8ba0" }}>{trendArrow > 5 ? "↑" : trendArrow < -5 ? "↓" : "→"}</span>}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
