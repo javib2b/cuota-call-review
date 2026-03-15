@@ -105,6 +105,8 @@ const RISK_INDICATORS = [
 const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Planimatik", "Xepelin"];
 const DEFAULT_PAST_CLIENTS = ["Rapido"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor-labs.com", "Nauta": "getnauta.com", "Paymend": "paymend.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
+// Local logo overrides — used instead of Brandfetch when Brandfetch returns the wrong image
+const CLIENT_LOGO_OVERRIDES = { "Xepelin": "/logos/xepelin.png" };
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null; }
 
 // Derive a likely domain from a company name for Brandfetch lookup
@@ -147,7 +149,9 @@ function ProspectLogo({ company, size = 30, borderRadius = 7 }) {
 // ClientLogo: Brandfetch CDN → letter fallback
 // Hardcoded CLIENT_DOMAINS takes priority; website prop used for unlisted clients only
 function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }) {
-  // Hardcoded map wins for known clients — prevents GTM website typos breaking logos
+  // Local override wins first (for clients where Brandfetch returns the wrong logo)
+  const localOverride = CLIENT_LOGO_OVERRIDES[client] || null;
+  // Hardcoded domain map wins over GTM website — prevents typos breaking logos
   let domain = CLIENT_DOMAINS[client] || null;
   if (!domain && website) {
     try {
@@ -157,9 +161,10 @@ function ClientLogo({ client, website, size = 32, style = {}, letterStyle = {} }
   }
   const [srcIdx, setSrcIdx] = useState(0);
   const sources = [
+    localOverride,
     domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null,
   ].filter(Boolean);
-  if (!domain || srcIdx >= sources.length) {
+  if (srcIdx >= sources.length) {
     return <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", ...letterStyle }}>{client.charAt(0).toUpperCase()}</span>;
   }
   return <img src={sources[srcIdx]} alt={client} style={{ width: size, height: size, objectFit: "contain", ...style }} onError={() => setSrcIdx(i => i + 1)} />;

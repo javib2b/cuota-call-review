@@ -58,6 +58,10 @@ const CLIENT_DOMAIN: Record<string, string> = {
   "Rapido":    "rapidosaas.com",
   "Xepelin":   "xepelin.com",
 };
+// Local logo overrides — used instead of Brandfetch when Brandfetch returns the wrong image
+const CLIENT_LOGO_OVERRIDE: Record<string, string> = {
+  "Xepelin": "/logos/xepelin.png",
+};
 
 function logoInitials(name: string) { return name.slice(0, 2).toUpperCase(); }
 function logoBg(name: string) { return LOGO_BG[name] ?? "#1a2235"; }
@@ -66,6 +70,7 @@ function scoreColor(s: number) { return s >= 70 ? GREEN : s >= 40 ? AMBER : RED;
 // ─── ClientLogo with cascading fallback ───────────────────────────
 // 1. Brandfetch CDN (hardcoded map > website fallback for unlisted > name.com guess)  2. initials
 function ClientLogo({ name, size, borderRadius, website }: { name: string; size: number; borderRadius: number; website?: string }) {
+  const localOverride = CLIENT_LOGO_OVERRIDE[name] ?? null;
   let domain: string = CLIENT_DOMAIN[name] ?? "";
   if (!domain && website) {
     try {
@@ -75,6 +80,8 @@ function ClientLogo({ name, size, borderRadius, website }: { name: string; size:
   }
   if (!domain) domain = `${name.toLowerCase()}.com`;
   const [failed, setFailed] = useState(false);
+
+  const logoSrc = localOverride ?? `https://cdn.brandfetch.io/${domain}/w/400/h/400`;
 
   return (
     <div style={{
@@ -87,7 +94,7 @@ function ClientLogo({ name, size, borderRadius, website }: { name: string; size:
       {logoInitials(name)}
       {!failed && (
         <img
-          src={`https://cdn.brandfetch.io/${domain}/w/400/h/400`}
+          src={logoSrc}
           alt=""
           onError={() => setFailed(true)}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }}
