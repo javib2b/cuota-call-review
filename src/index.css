@@ -196,3 +196,9 @@ input, select, textarea {
 }
 /* Select options need opaque bg — browsers don't support rgba here */
 select option { background: #062035; color: var(--text-1); }
+
+/* ── Live pulse indicator ──────────────────────────────────────────────── */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}

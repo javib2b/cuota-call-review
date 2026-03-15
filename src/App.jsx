@@ -2459,6 +2459,17 @@ function ScoreTrendsChart({ repEntries }) {
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate, repMeta: repMetaProp = {} }) {
   // Merge localStorage (persistent) with prop (live state) so roles always display
   const repMeta = (() => { try { const local = JSON.parse(localStorage.getItem("cuota_rep_meta") || "{}"); return { ...local, ...repMetaProp }; } catch { return repMetaProp; } })();
+
+  const [nowStr, setNowStr] = useState(() =>
+    new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+  );
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNowStr(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const [repSearch, setRepSearch] = useState("");
   const [repSort, setRepSort] = useState("score");
   const [repRoleFilter, setRepRoleFilter] = useState("");
@@ -2598,10 +2609,16 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
   return (
     <div>
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-        <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 500 }}>Clients</span>
-        <span style={{ color: "var(--text-3)" }}>/</span>
-        <span style={{ color: "var(--text-1)", fontWeight: 600 }}>{client}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, fontSize: 13, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 500 }}>Clients</span>
+          <span style={{ color: "var(--text-3)" }}>/</span>
+          <span style={{ color: "var(--text-1)", fontWeight: 600 }}>{client}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#31CE81", flexShrink: 0, animation: "livePulse 2s ease-in-out infinite" }} />
+          <span style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "var(--text-3)", letterSpacing: 0.3 }}>Live · {nowStr}</span>
+        </div>
       </div>
 
       {/* Hero header */}
@@ -5531,7 +5548,6 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
   return (
     <div style={{ margin: "-32px -40px", height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", fontFamily: "'Syne', system-ui, sans-serif" }}>
-      <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:0.25}}`}</style>
 
       {/* TOPBAR */}
       <div style={{ height: 52, flexShrink: 0, background: "var(--surface-3)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
