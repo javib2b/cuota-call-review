@@ -2607,10 +2607,10 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
   );
 
   return (
-    <div>
-      {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, fontSize: 13, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <div style={{ margin: "-32px -40px" }}>
+      {/* TOPBAR */}
+      <div style={{ height: 52, flexShrink: 0, background: "rgba(4,9,20,0.85)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 28px", position: "sticky", top: 0, zIndex: 50 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
           <span onClick={onBack} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 500 }}>Clients</span>
           <span style={{ color: "var(--text-3)" }}>/</span>
           <span style={{ color: "var(--text-1)", fontWeight: 600 }}>{client}</span>
@@ -2620,6 +2620,8 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           <span style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "var(--text-3)", letterSpacing: 0.3 }}>Live · {nowStr}</span>
         </div>
       </div>
+
+      <div style={{ padding: "28px 40px" }}>
 
       {/* Hero header */}
       <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%), rgba(6,32,53,0.90)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.11)", borderRadius: 16, padding: "28px 28px 24px", marginBottom: 20, position: "relative", overflow: "hidden" }}>
@@ -2792,6 +2794,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {activeTab === "audit" && (
         <GtmAuditTab client={client} assessments={gtmAssessments} getValidToken={getValidToken} profile={profile} onUpdate={onGtmUpdate} docs={clientDocs} onDocsUpdate={onDocsUpdate} />
       )}
+    </div>
     </div>
   );
 }
