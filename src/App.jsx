@@ -106,7 +106,7 @@ const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Planimatik", 
 const DEFAULT_PAST_CLIENTS = ["Rapido"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor-labs.com", "Nauta": "getnauta.com", "Paymend": "paymend.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
 // Local logo overrides — used instead of Brandfetch when Brandfetch returns the wrong image
-const CLIENT_LOGO_OVERRIDES = { "Xepelin": "/logos/xepelin.png" };
+const CLIENT_LOGO_OVERRIDES = { "Xepelin": "/logos/xepelin.png", "Factor": "/logos/factor.png" };
 function getClientLogo(client) { const domain = CLIENT_DOMAINS[client]; return domain ? `https://cdn.brandfetch.io/${domain}/w/400/h/400` : null; }
 
 // Derive a likely domain from a company name for Brandfetch lookup

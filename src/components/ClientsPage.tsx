@@ -61,6 +61,7 @@ const CLIENT_DOMAIN: Record<string, string> = {
 // Local logo overrides — used instead of Brandfetch when Brandfetch returns the wrong image
 const CLIENT_LOGO_OVERRIDE: Record<string, string> = {
   "Xepelin": "/logos/xepelin.png",
+  "Factor":  "/logos/factor.png",
 };
 
 function logoInitials(name: string) { return name.slice(0, 2).toUpperCase(); }
