@@ -6759,6 +6759,7 @@ export default function CuotaCallReview() {
       onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
       onNewReview={startNewReview}
       onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}
+      onProfileClick={() => setProfileModalOpen(true)}
     />
   );
 
@@ -6774,6 +6775,9 @@ export default function CuotaCallReview() {
       onAddClient={addClient}
       onArchiveClient={archiveClient}
       onRestoreClient={restoreClient}
+      onProfileClick={() => setProfileModalOpen(true)}
+      userEmail={session?.user?.email}
+      profile={profile}
       callsError={callsError}
       onRetryLoadCalls={loadCalls}
     />

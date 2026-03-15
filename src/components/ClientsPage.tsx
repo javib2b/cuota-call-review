@@ -193,6 +193,9 @@ interface Props {
   onAddClient: (name: string) => void;
   onArchiveClient: (name: string) => void;
   onRestoreClient: (name: string) => void;
+  onProfileClick?: () => void;
+  userEmail?: string;
+  profile?: { full_name?: string; role?: string } | null;
   callsError?: string;
   onRetryLoadCalls?: () => void;
 }
@@ -205,6 +208,7 @@ export default function ClientsPage({
   clientProfiles = {},
   onClientClick, onNewReview, onNavigate,
   onAddClient, onArchiveClient, onRestoreClient,
+  onProfileClick, userEmail = "", profile,
   callsError, onRetryLoadCalls,
 }: Props) {
   const [collapsed, setCollapsed]     = useState(getSavedCollapsed);
@@ -338,27 +342,43 @@ export default function ClientsPage({
           </button>
         </nav>
 
-        {/* User footer */}
-        <div style={{
-          padding: collapsed ? "16px 0" : "16px 20px",
-          borderTop: `1px solid ${BORDER}`,
-          display: "flex", alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          gap: 10,
-        }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%",
-            background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
-            flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
-          }}>JV</div>
-          {!collapsed && (
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Javier V.</div>
-              <div style={{ fontSize: 10, color: FAINT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>javier@cuota.io</div>
+        {/* User footer — click to open Profile & Settings */}
+        {(() => {
+          const fullName = profile?.full_name || userEmail || "?";
+          const initials = fullName.split(" ").map((p: string) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+          const displayName = profile?.full_name ? profile.full_name.split(" ")[0] : (userEmail ? userEmail.split("@")[0] : "");
+          return (
+            <div
+              onClick={onProfileClick}
+              title="Profile & Settings"
+              style={{
+                padding: collapsed ? "10px 0" : "10px 12px",
+                borderTop: `1px solid ${BORDER}`,
+                display: "flex", alignItems: "center",
+                justifyContent: collapsed ? "center" : "flex-start",
+                gap: 10, cursor: "pointer", transition: "background 0.15s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+            >
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "rgba(49,206,129,0.15)", border: "1px solid rgba(49,206,129,0.3)",
+                flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
+              }}>{initials}</div>
+              {!collapsed && (
+                <>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName || userEmail}</div>
+                    <div style={{ fontSize: 10, color: FAINT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userEmail}</div>
+                  </div>
+                  <span style={{ fontSize: 14, color: FAINT, flexShrink: 0 }}>⚙</span>
+                </>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
       </aside>
 
       {/* ── MAIN ── */}

@@ -53,6 +53,7 @@ interface Props {
   onNavigate?: (page: string) => void;
   onNewReview?: () => void;
   onClientClick?: (client: string) => void;
+  onProfileClick?: () => void;
   userEmail?: string;
   profile?: { full_name?: string; role?: string } | null;
   clients?: string[];
@@ -116,7 +117,7 @@ function computeClientRow(client: string, calls: any[]) {
   return { client, calls: clientCalls.length, score, delta, gap, status };
 }
 
-export default function Dashboard({ onNavigate, onNewReview, onClientClick, userEmail = "", profile, clients = [], savedCalls = [], isLoading = false, callsError, onRetryLoad }: Props) {
+export default function Dashboard({ onNavigate, onNewReview, onClientClick, onProfileClick, userEmail = "", profile, clients = [], savedCalls = [], isLoading = false, callsError, onRetryLoad }: Props) {
   const hour = new Date().getHours();
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
   const [collapsed, setCollapsed] = useState(getSavedCollapsed);
@@ -266,14 +267,21 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
           </button>
         </nav>
 
-        {/* User footer */}
-        <div style={{
-          padding: collapsed ? "16px 0" : "16px 20px",
-          borderTop: `1px solid ${BORDER}`,
-          display: "flex", alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          gap: 10,
-        }}>
+        {/* User footer — click to open Profile & Settings */}
+        <div
+          onClick={onProfileClick}
+          title="Profile & Settings"
+          style={{
+            padding: collapsed ? "10px 0" : "10px 12px",
+            borderTop: `1px solid ${BORDER}`,
+            display: "flex", alignItems: "center",
+            justifyContent: collapsed ? "center" : "flex-start",
+            gap: 10, cursor: "pointer", borderRadius: 0,
+            transition: "background 0.15s",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+        >
           <div style={{
             width: 32, height: 32, borderRadius: "50%", background: "rgba(49,206,129,0.15)",
             border: "1px solid rgba(49,206,129,0.3)", flexShrink: 0,
@@ -281,14 +289,17 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, user
             fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: FONT,
           }}>{initials}</div>
           {!collapsed && (
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {displayName || userEmail}
+            <>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {displayName || userEmail}
+                </div>
+                <div style={{ fontSize: 10, color: TEXT3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {userEmail}
+                </div>
               </div>
-              <div style={{ fontSize: 10, color: TEXT3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {userEmail}
-              </div>
-            </div>
+              <span style={{ fontSize: 14, color: TEXT3, flexShrink: 0 }}>⚙</span>
+            </>
           )}
         </div>
       </aside>
