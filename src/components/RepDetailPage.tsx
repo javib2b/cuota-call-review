@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 // ─── Prospect logo (Brandfetch CDN with initials fallback) ─────────
 function companyDomain(name: string): string | null {
@@ -335,6 +335,8 @@ interface Props {
 export default function RepDetailPage({ client, repName, repCalls, quotaTarget, quotaClosed, salesExperience = "", timeInRole = "", role = "", onUpdateMeta, onBack, onViewCall, onNavigate, onNewReview, photoUrl }: Props) {
   const [collapsed] = useState(getSavedCollapsed);
   const [imgError, setImgError] = useState(false);
+  const [glowPos, setGlowPos] = useState<{ x: number; y: number } | null>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const [editingSalesExp, setEditingSalesExp] = useState(false);
   const [editingTimeInRole, setEditingTimeInRole] = useState(false);
   const [editingRole, setEditingRole] = useState(false);
@@ -377,18 +379,36 @@ export default function RepDetailPage({ client, repName, repCalls, quotaTarget, 
           </div>
 
           {/* Hero — full-width frosted glass panel */}
-          <div style={{
-            background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.82)",
-            backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any,
-            border: "1px solid rgba(255,255,255,0.11)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
-            borderRadius: 20,
-            padding: "36px 40px",
-            marginBottom: 24,
-            display: "flex",
-            alignItems: "stretch",
-            gap: 0,
-          }}>
+          <div
+            ref={heroRef}
+            onMouseMove={e => {
+              const rect = heroRef.current!.getBoundingClientRect();
+              setGlowPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+            }}
+            onMouseLeave={() => setGlowPos(null)}
+            style={{
+              position: "relative", overflow: "hidden",
+              background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.82)",
+              backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" as any,
+              border: "1px solid rgba(255,255,255,0.11)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+              borderRadius: 20,
+              padding: "36px 40px",
+              marginBottom: 24,
+              display: "flex",
+              alignItems: "stretch",
+              gap: 0,
+            }}>
+
+            {/* Cursor glow */}
+            <div style={{
+              position: "absolute", inset: 0, pointerEvents: "none",
+              borderRadius: 20,
+              background: glowPos
+                ? `radial-gradient(500px circle at ${glowPos.x}px ${glowPos.y}px, rgba(59,130,246,0.10) 0%, rgba(59,130,246,0.04) 40%, transparent 70%)`
+                : "none",
+              transition: "background 0.05s ease",
+            }} />
 
             {/* Left — avatar + identity + meta pills */}
             <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 16 }}>
