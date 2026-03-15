@@ -2671,18 +2671,47 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {/* Stats bar */}
       {clientCalls.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
-          {[
-            { label: "Total Reviews", value: String(clientCalls.length), accent: "#31CE81" },
-            { label: "Team Avg Score", value: avgCallScore !== null ? `${avgCallScore}%` : "—", accent: getScoreColor(avgCallScore || 0) },
-            { label: "Most Improved", value: mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—", accent: "#31CE81", sub: mostImproved?.improvement > 0 ? `+${mostImproved.improvement} pts` : null },
-            { label: "Need Attention", value: repsNeedingAttention > 0 ? String(repsNeedingAttention) : "None", accent: repsNeedingAttention > 0 ? "#FF4D4D" : "#31CE81" }
-          ].map(card => (
-            <div key={card.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${card.accent}` }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{card.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "var(--text-1)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>{card.value}</div>
-              {card.sub && <div style={{ fontSize: 11, color: card.accent, fontWeight: 600, marginTop: 2, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{card.sub}</div>}
+
+          {/* Total Reviews — blue tint */}
+          <div className="stat-card" style={{ position: "relative", background: "linear-gradient(135deg, rgba(59,130,246,0.10) 0%, rgba(59,130,246,0.04) 100%)", border: "1px solid rgba(59,130,246,0.22)", borderRadius: 12, padding: "14px 16px", borderLeft: "3px solid #3b82f6", overflow: "hidden" }}>
+            <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: "rgba(59,130,246,0.07)", pointerEvents: "none" }} />
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "#7a9fc4", marginBottom: 6 }}>Total Reviews</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#93c5fd" }}>{clientCalls.length}</div>
+          </div>
+
+          {/* Team Avg Score — green/amber/red depending on score */}
+          {(() => {
+            const sc = avgCallScore || 0;
+            const c  = getScoreColor(sc);
+            const bg = sc >= 70 ? "rgba(49,206,129,0.08)" : sc >= 55 ? "rgba(245,158,11,0.08)" : "rgba(240,68,56,0.08)";
+            const bd = sc >= 70 ? "rgba(49,206,129,0.22)" : sc >= 55 ? "rgba(245,158,11,0.22)" : "rgba(240,68,56,0.22)";
+            return (
+              <div className="stat-card" style={{ position: "relative", background: `linear-gradient(135deg, ${bg} 0%, transparent 100%)`, border: `1px solid ${bd}`, borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${c}`, overflow: "hidden" }}>
+                <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: bg, pointerEvents: "none" }} />
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>Team Avg Score</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: c }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
+              </div>
+            );
+          })()}
+
+          {/* Most Improved — subtle green */}
+          <div className="stat-card" style={{ position: "relative", background: "linear-gradient(135deg, rgba(49,206,129,0.07) 0%, transparent 100%)", border: "1px solid rgba(49,206,129,0.18)", borderRadius: 12, padding: "14px 16px", borderLeft: "3px solid #31CE81", overflow: "hidden" }}>
+            <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: "rgba(49,206,129,0.06)", pointerEvents: "none" }} />
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>Most Improved</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "var(--text-1)" }}>{mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—"}</div>
+            {mostImproved?.improvement > 0 && <div style={{ fontSize: 11, color: "#31CE81", fontWeight: 600, marginTop: 2 }}>{`+${mostImproved.improvement} pts`}</div>}
+          </div>
+
+          {/* Need Attention — red tint + pulsing dot */}
+          <div className="stat-card" style={{ position: "relative", background: "linear-gradient(135deg, rgba(240,68,56,0.10) 0%, rgba(240,68,56,0.04) 100%)", border: "1px solid rgba(240,68,56,0.24)", borderRadius: 12, padding: "14px 16px", borderLeft: "3px solid #f04438", overflow: "hidden" }}>
+            <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: "rgba(240,68,56,0.07)", pointerEvents: "none" }} />
+            {repsNeedingAttention > 0 && <div className="attn-dot" />}
+            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "#c4827a", marginBottom: 6 }}>Need Attention</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: repsNeedingAttention > 0 ? "#fca5a5" : "#31CE81" }}>
+              {repsNeedingAttention > 0 ? String(repsNeedingAttention) : "None"}
             </div>
-          ))}
+          </div>
+
         </div>
       )}
 
