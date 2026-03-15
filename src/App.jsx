@@ -2455,6 +2455,28 @@ function ScoreTrendsChart({ repEntries }) {
 
 // DEAD CODE KEPT FOR REFERENCE — old multi-rep chart helpers below, now unused:
 
+// ── CountUp: animates a number from 0 → target over `duration` ms ─────────
+function CountUp({ to, duration = 950, suffix = "" }) {
+  const [val, setVal] = useState(0);
+  const startTs = useRef(null);
+  const raf = useRef(null);
+  useEffect(() => {
+    setVal(0);
+    startTs.current = null;
+    if (!to) return;
+    const tick = (ts) => {
+      if (!startTs.current) startTs.current = ts;
+      const p = Math.min((ts - startTs.current) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+      setVal(Math.round(eased * to));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+  }, [to, duration]);
+  return <>{val}{suffix}</>;
+}
+
 // ==================== CLIENT PROFILE PAGE ====================
 function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewCall, onBrowseByRep, onNavigate, activeTab = "calls", onTabChange, getValidToken, clientProfiles = {}, onProfileUpdate, gtmAssessments = [], profile, onGtmUpdate, onRefresh, repPhotos = {}, onDocsUpdate, repMeta: repMetaProp = {} }) {
   // Merge localStorage (persistent) with prop (live state) so roles always display
@@ -2676,7 +2698,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
           <div className="stat-card" style={{ position: "relative", background: "linear-gradient(135deg, rgba(59,130,246,0.10) 0%, rgba(59,130,246,0.04) 100%)", border: "1px solid rgba(59,130,246,0.22)", borderRadius: 12, padding: "14px 16px", borderLeft: "3px solid #3b82f6", overflow: "hidden" }}>
             <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: "rgba(59,130,246,0.07)", pointerEvents: "none" }} />
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "#7a9fc4", marginBottom: 6 }}>Total Reviews</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "#93c5fd" }}>{clientCalls.length}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#93c5fd" }}><CountUp to={clientCalls.length} /></div>
           </div>
 
           {/* Team Avg Score — green/amber/red depending on score */}
@@ -2689,7 +2711,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
               <div className="stat-card" style={{ position: "relative", background: `linear-gradient(135deg, ${bg} 0%, transparent 100%)`, border: `1px solid ${bd}`, borderRadius: 12, padding: "14px 16px", borderLeft: `3px solid ${c}`, overflow: "hidden" }}>
                 <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: bg, pointerEvents: "none" }} />
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>Team Avg Score</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: c }}>{avgCallScore !== null ? `${avgCallScore}%` : "—"}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: c }}>{avgCallScore !== null ? <CountUp to={avgCallScore} suffix="%" /> : "—"}</div>
               </div>
             );
           })()}
@@ -2699,7 +2721,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
             <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: "rgba(49,206,129,0.06)", pointerEvents: "none" }} />
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>Most Improved</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: "var(--text-1)" }}>{mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—"}</div>
-            {mostImproved?.improvement > 0 && <div style={{ fontSize: 11, color: "#31CE81", fontWeight: 600, marginTop: 2 }}>{`+${mostImproved.improvement} pts`}</div>}
+            {mostImproved?.improvement > 0 && <div style={{ fontSize: 11, color: "#31CE81", fontWeight: 600, marginTop: 2 }}>+<CountUp to={mostImproved.improvement} /> pts</div>}
           </div>
 
           {/* Need Attention — red tint + pulsing dot */}
@@ -2708,7 +2730,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
             {repsNeedingAttention > 0 && <div className="attn-dot" />}
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "#c4827a", marginBottom: 6 }}>Need Attention</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: repsNeedingAttention > 0 ? "#fca5a5" : "#31CE81" }}>
-              {repsNeedingAttention > 0 ? String(repsNeedingAttention) : "None"}
+              {repsNeedingAttention > 0 ? <CountUp to={repsNeedingAttention} /> : "None"}
             </div>
           </div>
 
