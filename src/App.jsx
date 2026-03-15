@@ -6047,6 +6047,126 @@ function ClientPortal({ companyName, calls, onViewCall, onSignOut, loading }) {
   );
 }
 
+function ProfileSettingsModal({ session, profile, onClose, getValidToken, repPhotos, onSaved, apiKey, setApiKey, token, loadCalls, clients }) {
+  const [tab, setTab] = useState("profile");
+  const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [avatarPreview, setAvatarPreview] = useState(session?.user?.user_metadata?.avatar_url || null);
+  const [localApiKey, setLocalApiKey] = useState(apiKey || "");
+  const [showKey, setShowKey] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const photoInputRef = useRef(null);
+
+  const currentPhoto = avatarPreview || repPhotos?.[profile?.full_name];
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 200; canvas.height = 200;
+      const ctx = canvas.getContext("2d");
+      const min = Math.min(img.width, img.height);
+      const sx = (img.width - min) / 2, sy = (img.height - min) / 2;
+      ctx.drawImage(img, sx, sy, min, min, 0, 0, 200, 200);
+      setAvatarPreview(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.src = URL.createObjectURL(file);
+  };
+
+  const handleSave = async () => {
+    setSaving(true); setSaveMsg("");
+    try {
+      const t = await getValidToken();
+      if (fullName.trim() !== (profile?.full_name || "")) {
+        const tbl = await supabase.from("profiles", t);
+        await tbl.update({ full_name: fullName.trim() }, `id=eq.${session.user.id}`);
+      }
+      const metaUpdate = {};
+      if (avatarPreview !== (session?.user?.user_metadata?.avatar_url || null)) metaUpdate.avatar_url = avatarPreview;
+      if (localApiKey !== apiKey) metaUpdate.api_key = localApiKey;
+      if (Object.keys(metaUpdate).length) await supabase.updateUser(t, metaUpdate);
+      if (localApiKey !== apiKey) {
+        setApiKey(localApiKey);
+        localStorage.setItem("cuota_api_key", localApiKey);
+      }
+      setSaveMsg("Saved!");
+      onSaved?.({ full_name: fullName.trim() });
+      setTimeout(() => setSaveMsg(""), 2000);
+    } catch (e) {
+      setSaveMsg("Error: " + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputStyle = { width: "100%", padding: "9px 12px", border: "1px solid var(--border-default)", borderRadius: 8, fontSize: 13, color: "var(--text-1)", background: "var(--bg-input)", outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
+  const labelStyle = { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-muted)", display: "block", marginBottom: 5 };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9000, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 480, maxHeight: "88vh", background: "rgba(6,20,38,0.97)", border: "1px solid var(--border-default)", borderRadius: 16, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
+        {/* Header */}
+        <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Profile & Settings</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: 20, cursor: "pointer", lineHeight: 1, padding: "0 2px" }}>×</button>
+        </div>
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 4, padding: "12px 20px 0", flexShrink: 0 }}>
+          {["profile", "integrations"].map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ padding: "6px 14px", border: tab === t ? "1.5px solid #31CE81" : "1.5px solid var(--border-subtle)", borderRadius: 20, fontSize: 12, fontWeight: tab === t ? 600 : 400, background: tab === t ? "rgba(49,206,129,0.08)" : "transparent", color: tab === t ? "#31CE81" : "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", textTransform: "capitalize" }}>{t}</button>
+          ))}
+        </div>
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px" }}>
+          {tab === "profile" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {/* Avatar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <RepAvatar name={fullName || session?.user?.email || "?"} photoUrl={currentPhoto} size={72} fontSize={26} />
+                  <button onClick={() => photoInputRef.current?.click()} style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#31CE81", border: "2px solid rgba(6,20,38,0.97)", color: "#fff", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", padding: 0 }}>+</button>
+                  <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: "none" }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-1)" }}>{profile?.full_name || "—"}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{session?.user?.email}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3, textTransform: "capitalize" }}>Role: {profile?.role || "—"}</div>
+                </div>
+              </div>
+              {/* Fields */}
+              <div>
+                <label style={labelStyle}>Full Name</label>
+                <input value={fullName} onChange={e => setFullName(e.target.value)} style={inputStyle} placeholder="Your full name" />
+              </div>
+              <div>
+                <label style={labelStyle}>Email</label>
+                <input value={session?.user?.email || ""} readOnly style={{ ...inputStyle, opacity: 0.5, cursor: "not-allowed" }} />
+              </div>
+              <div>
+                <label style={labelStyle}>Anthropic API Key</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input type={showKey ? "text" : "password"} value={localApiKey} onChange={e => setLocalApiKey(e.target.value)} placeholder="sk-ant-..." style={{ ...inputStyle, flex: 1, fontFamily: "monospace" }} />
+                  <button onClick={() => setShowKey(s => !s)} style={{ padding: "0 12px", border: "1px solid var(--border-default)", borderRadius: 8, background: "transparent", color: "var(--text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{showKey ? "Hide" : "Show"}</button>
+                </div>
+              </div>
+              {/* Actions */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 4 }}>
+                <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "11px", background: saving ? "rgba(49,206,129,0.4)" : "#31CE81", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: saving ? "wait" : "pointer", fontFamily: "inherit" }}>{saving ? "Saving…" : "Save Changes"}</button>
+                {saveMsg && <span style={{ fontSize: 12, color: saveMsg.startsWith("Error") ? "#f04438" : "#31CE81" }}>{saveMsg}</span>}
+              </div>
+            </div>
+          )}
+          {tab === "integrations" && (
+            <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CuotaCallReview() {
   const [session, setSession] = useState(() => loadStored("cuota_session"));
   const [profile, setProfile] = useState(() => loadStored("cuota_profile"));
@@ -6085,6 +6205,7 @@ export default function CuotaCallReview() {
   const [sidebarOpenClients, setSidebarOpenClients] = useState({});
   const [sidebarSections, setSidebarSections] = useState({ clients: false, assessments: false, admin: false });
   const [cmdKOpen, setCmdKOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem("sidebar_collapsed") === "1"; } catch { return false; }
   });
@@ -6699,6 +6820,25 @@ export default function CuotaCallReview() {
       {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
       {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => setGongSettingsClient(null)} />}
       {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
+      {profileModalOpen && (
+        <ProfileSettingsModal
+          session={session}
+          profile={profile}
+          onClose={() => setProfileModalOpen(false)}
+          getValidToken={getValidToken}
+          repPhotos={repPhotos}
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          token={token}
+          loadCalls={loadCalls}
+          clients={clients}
+          onSaved={(updated) => {
+            const next = { ...profile, ...updated };
+            setProfile(next);
+            try { localStorage.setItem("cuota_profile", JSON.stringify(next)); } catch {}
+          }}
+        />
+      )}
 
       {/* COMMAND PALETTE */}
       <CmdKPalette open={cmdKOpen} onClose={() => setCmdKOpen(false)} onNavigate={(p) => { setPage(p); if (p === "clients") { setFolderClient(null); setFolderAE(null); } }} onNewReview={startNewReview} savedCalls={savedCalls} />
@@ -6771,15 +6911,24 @@ export default function CuotaCallReview() {
                 </>
               )}
             </nav>
-            {/* Footer */}
-            <div style={{ padding: sidebarCollapsed ? "12px 8px" : "12px 16px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", alignItems: sidebarCollapsed ? "center" : "flex-start", gap: 8 }}>
-              <button onClick={() => setPage("settings")} title="Settings" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "none", background: page === "settings" ? "rgba(49,206,129,0.14)" : "rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", color: page === "settings" ? "#31CE81" : "#7a8ba0", fontSize: 15, fontFamily: "inherit", flexShrink: 0 }}>⚙</button>
-              {!sidebarCollapsed && (
-                <>
-                  <div style={{ fontSize: 11, color: "#7a8ba0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>{session.user?.email}</div>
-                  <button onClick={handleLogout} style={{ width: "100%", padding: "7px 12px", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, background: "transparent", color: "#9eb5c4", fontSize: 11, cursor: "pointer", fontFamily: "inherit", textAlign: "center" }}>Logout</button>
-                </>
-              )}
+            {/* Footer — clickable profile row */}
+            <div style={{ padding: sidebarCollapsed ? "10px 8px" : "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div
+                onClick={() => setProfileModalOpen(true)}
+                title="Profile & Settings"
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarCollapsed ? "6px 0" : "8px 8px", borderRadius: 10, cursor: "pointer", transition: "background 0.15s" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              >
+                <RepAvatar name={profile?.full_name || session?.user?.email || "?"} photoUrl={session?.user?.user_metadata?.avatar_url || repPhotos[profile?.full_name]} size={32} fontSize={12} />
+                {!sidebarCollapsed && (
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile?.full_name || "Profile"}</div>
+                    <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session?.user?.email}</div>
+                  </div>
+                )}
+                {!sidebarCollapsed && <span style={{ fontSize: 14, color: "var(--text-muted)", flexShrink: 0 }}>⚙</span>}
+              </div>
             </div>
           </div>
         );
