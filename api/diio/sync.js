@@ -42,6 +42,34 @@ async function findOrCreateRep(repName, orgId) {
   return null;
 }
 
+// Extract prospect company from call title — Diio titles follow patterns like:
+// "Discovery X <> diio", "diio <> X", "Kickoff diio - X", "X - diio"
+function extractCompanyFromTitle(title) {
+  if (!title) return "";
+  const t = title.trim();
+  const diioVariants = /\bdiio\b/i;
+
+  if (t.includes("<>")) {
+    for (const part of t.split("<>").map((s) => s.trim())) {
+      if (!diioVariants.test(part) && part.length > 0) {
+        const cleaned = part.replace(/^(discovery|kickoff|seguimiento|business case|demo|pre kickoff|propuesta comercial|revisi[oó]n|integraci[oó]n|reuni[oó]n|talent acquisition|capacitaci[oó]n)\s+/i, "").trim();
+        if (cleaned.length > 1) return cleaned;
+      }
+    }
+  }
+
+  if (t.includes(" - ")) {
+    for (const part of t.split(" - ").map((s) => s.trim())) {
+      if (!diioVariants.test(part) && part.length > 0) {
+        const cleaned = part.replace(/^(discovery|kickoff|seguimiento|business case|demo|pre kickoff|propuesta comercial|revisi[oó]n|integraci[oó]n|reuni[oó]n|talent acquisition|capacitaci[oó]n)\s+/i, "").trim();
+        if (cleaned.length > 1) return cleaned;
+      }
+    }
+  }
+
+  return "";
+}
+
 // Compose a rich transcript preamble so Claude has context about the call
 function buildTranscriptText(callMeta, rawTranscript) {
   const sellers = (callMeta.attendees?.sellers || []).map((s) => s.name || s.email).filter(Boolean);
@@ -142,6 +170,24 @@ async function processDiioCall(diio, settings, callId, callType, orgId, client) 
     reviewData.category_scores.diio_call_type = callType;
     if (sellers.length > 0) reviewData.category_scores.diio_sellers = sellers.map((s) => s.name || s.email).filter(Boolean);
     if (customers.length > 0) reviewData.category_scores.diio_customers = customers.map((c) => c.name || c.email).filter(Boolean);
+
+    // Set prospect_company reliably: title parsing beats Claude (which often returns "Diio")
+    const titleCompany = extractCompanyFromTitle(callMeta.name);
+    const aiCompany = reviewData.prospect_company || "";
+    const isDiioSelf = /^diio$/i.test(aiCompany.trim());
+    if (titleCompany) {
+      reviewData.prospect_company = titleCompany;
+    } else if (aiCompany && !isDiioSelf) {
+      // keep AI result if it's not "Diio"
+    } else {
+      // Fall back to first customer email domain
+      const firstEmail = customers[0]?.email || "";
+      const domainBase = (firstEmail.split("@")[1] || "").split(".")[0];
+      const genericDomains = ["gmail", "hotmail", "yahoo", "outlook", "icloud", "live"];
+      if (domainBase && !genericDomains.includes(domainBase.toLowerCase())) {
+        reviewData.prospect_company = domainBase.charAt(0).toUpperCase() + domainBase.slice(1);
+      }
+    }
 
     // Save to call_reviews
     const saved = await callReviewsTable.insert(reviewData);
