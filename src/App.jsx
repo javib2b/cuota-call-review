@@ -6980,7 +6980,29 @@ export default function CuotaCallReview() {
               )}
             </nav>
             {/* Footer — clickable profile row */}
-            <div style={{ padding: sidebarCollapsed ? "10px 8px" : "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ padding: sidebarCollapsed ? "10px 8px" : "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 4 }}>
+
+              {/* Invite button — admin/manager only */}
+              {(profile?.role === "admin" || profile?.role === "manager") && (
+                <div
+                  onClick={() => setShowInvite(true)}
+                  title="Invite team member"
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: sidebarCollapsed ? "7px 0" : "8px 8px", borderRadius: 10, cursor: "pointer", transition: "background 0.15s", justifyContent: sidebarCollapsed ? "center" : "flex-start" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(49,206,129,0.09)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(49,206,129,0.12)", border: "1px solid rgba(49,206,129,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 3v14M3 10h14" stroke="#31CE81" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  {!sidebarCollapsed && (
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#31CE81", whiteSpace: "nowrap" }}>Invite Member</span>
+                  )}
+                </div>
+              )}
+
+              {/* Profile row */}
               <div
                 onClick={() => setProfileModalOpen(true)}
                 title="Profile & Settings"
