@@ -417,7 +417,7 @@ function FileDropZone({ value, onChange, placeholder, minHeight = 220, accept = 
 }
 
 // ==================== AUTH SCREEN ====================
-function AuthScreen({ onAuth }) {
+function AuthScreen({ onAuth, authError = "" }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -455,6 +455,11 @@ function AuthScreen({ onAuth }) {
           <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text-1)", letterSpacing: 2, fontFamily: "'Syne', system-ui, sans-serif" }}>CUOTA<span style={{ color: "#6366F1" }}>/</span></div>
           <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4, letterSpacing: 1 }}>GTM Audit Engine</div>
         </div>
+        {authError && (
+          <div style={{ padding: "12px 16px", marginBottom: 16, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, fontSize: 13, color: "#f87171", lineHeight: 1.5 }}>
+            {authError}
+          </div>
+        )}
         <div className="glass-card" style={{ borderRadius: 16, padding: 28 }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 24, background: "var(--surface)", borderRadius: 10, padding: 4 }}>
             {["login", "signup"].map(m => (
@@ -6251,6 +6256,7 @@ export default function CuotaCallReview() {
   const [metricsAssessments, setMetricsAssessments] = useState([]);
   const [gtmReports, setGtmReports] = useState([]);
   const [currentReport, setCurrentReport] = useState(null);
+  const [authError, setAuthError] = useState("");
   const [selectedCall, setSelectedCall] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -6624,23 +6630,39 @@ export default function CuotaCallReview() {
           try { await table.update({ email: user.email }, "id=eq." + user.id); } catch (e) { console.warn("Profile email patch failed:", e.message); }
         }
       } else {
-        // No profile exists — check for invitation to determine org
-        let orgId = "00000000-0000-0000-0000-000000000001";
-        let role = "admin";
-        let clientCompany = null;
+        // No profile — check for a valid invitation
+        let invitation = null;
         try {
           const invTable = await supabase.from("invitations", accessToken);
           const invites = await invTable.selectWhere("*", "email=eq." + encodeURIComponent(user.email) + "&accepted=eq.false");
-          if (Array.isArray(invites) && invites.length > 0) {
-            orgId = invites[0].org_id;
-            role = invites[0].role || "rep";
-            clientCompany = invites[0].client_company || null;
-            // Mark invitation as accepted
-            try { await invTable.update({ accepted: true }, "id=eq." + invites[0].id); } catch (e) { console.error("Invitation accept failed:", e.message); }
-          }
+          if (Array.isArray(invites) && invites.length > 0) invitation = invites[0];
         } catch (e) { console.error("Invitation lookup failed:", e.message); }
-        // Create the profile in Supabase (include email for Gravatar)
-        const newProfile = { id: user.id, org_id: orgId, role, full_name: user.user_metadata?.full_name || user.email, email: user.email || null, ...(clientCompany ? { client_company: clientCompany } : {}) };
+
+        if (!invitation) {
+          // No invitation — block access entirely
+          setSession(null);
+          localStorage.removeItem("cuota_session");
+          localStorage.removeItem("cuota_access_token");
+          localStorage.removeItem("cuota_profile");
+          setAuthError("This app is invite-only. Ask your admin to send you an invitation to " + (user.email || "your email") + ".");
+          return;
+        }
+
+        // Mark invitation as accepted
+        try {
+          const invTable = await supabase.from("invitations", accessToken);
+          await invTable.update({ accepted: true }, "id=eq." + invitation.id);
+        } catch (e) { console.error("Invitation accept failed:", e.message); }
+
+        // Create profile
+        const newProfile = {
+          id: user.id,
+          org_id: invitation.org_id,
+          role: invitation.role || "rep",
+          full_name: user.user_metadata?.full_name || user.email,
+          email: user.email || null,
+          ...(invitation.client_company ? { client_company: invitation.client_company } : {}),
+        };
         try {
           const created = await table.insert(newProfile);
           const profileData = Array.isArray(created) && created[0] ? created[0] : newProfile;
@@ -6648,16 +6670,17 @@ export default function CuotaCallReview() {
           localStorage.setItem("cuota_profile", JSON.stringify(profileData));
         } catch (insertErr) {
           console.error("Profile insert error:", insertErr);
-          // Use local fallback if insert fails
           setProfile(newProfile);
           localStorage.setItem("cuota_profile", JSON.stringify(newProfile));
         }
       }
     } catch (e) {
       console.error("Profile error:", e);
-      const fallback = { id: user.id, role: "admin", org_id: "00000000-0000-0000-0000-000000000001" };
-      setProfile(fallback);
-      localStorage.setItem("cuota_profile", JSON.stringify(fallback));
+      // Don't create a fallback profile — just show an error
+      setSession(null);
+      localStorage.removeItem("cuota_session");
+      localStorage.removeItem("cuota_access_token");
+      setAuthError("Something went wrong during sign-in. Please try again.");
     }
   };
 
@@ -6801,7 +6824,7 @@ export default function CuotaCallReview() {
   };
 
   if (loading && !session) return <div style={{ minHeight: "100vh", background: "var(--bg)" }} />;
-  if (!session) return <AuthScreen onAuth={handleAuth} />;
+  if (!session) return <AuthScreen onAuth={handleAuth} authError={authError} />;
 
   // Client portal — restricted read-only view showing only their company's data
   if (profile?.role === "client" && page !== "review") {
