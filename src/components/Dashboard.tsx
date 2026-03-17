@@ -54,6 +54,7 @@ interface Props {
   onNewReview?: () => void;
   onClientClick?: (client: string) => void;
   onProfileClick?: () => void;
+  onInviteClick?: () => void;
   userEmail?: string;
   profile?: { full_name?: string; role?: string } | null;
   clients?: string[];
@@ -117,7 +118,7 @@ function computeClientRow(client: string, calls: any[]) {
   return { client, calls: clientCalls.length, score, delta, gap, status };
 }
 
-export default function Dashboard({ onNavigate, onNewReview, onClientClick, onProfileClick, userEmail = "", profile, clients = [], savedCalls = [], isLoading = false, callsError, onRetryLoad }: Props) {
+export default function Dashboard({ onNavigate, onNewReview, onClientClick, onProfileClick, onInviteClick, userEmail = "", profile, clients = [], savedCalls = [], isLoading = false, callsError, onRetryLoad }: Props) {
   const hour = new Date().getHours();
   const tod  = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
   const [collapsed, setCollapsed] = useState(getSavedCollapsed);
@@ -266,6 +267,28 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, onPr
             {!collapsed && <span style={{ fontSize: 11, color: FAINT }}>Collapse</span>}
           </button>
         </nav>
+
+        {/* Invite button — admin/manager only */}
+        {(profile?.role === "admin" || profile?.role === "manager") && (
+          <div
+            onClick={onInviteClick}
+            title="Invite team member"
+            style={{
+              margin: collapsed ? "0 8px 4px" : "0 8px 4px",
+              display: "flex", alignItems: "center", gap: 10,
+              padding: collapsed ? "7px 0" : "8px 8px",
+              borderRadius: 10, cursor: "pointer", transition: "background 0.15s",
+              justifyContent: collapsed ? "center" : "flex-start",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(49,206,129,0.09)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(49,206,129,0.12)", border: "1px solid rgba(49,206,129,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10h14" stroke={GREEN} strokeWidth="2" strokeLinecap="round"/></svg>
+            </div>
+            {!collapsed && <span style={{ fontSize: 13, fontWeight: 600, color: GREEN, whiteSpace: "nowrap" }}>Invite Member</span>}
+          </div>
+        )}
 
         {/* User footer — click to open Profile & Settings */}
         <div

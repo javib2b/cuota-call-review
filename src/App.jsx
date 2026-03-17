@@ -6824,6 +6824,7 @@ export default function CuotaCallReview() {
       onNewReview={startNewReview}
       onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}
       onProfileClick={() => setProfileModalOpen(true)}
+      onInviteClick={() => setShowInvite(true)}
     />
   );
 
@@ -6840,6 +6841,7 @@ export default function CuotaCallReview() {
       onArchiveClient={archiveClient}
       onRestoreClient={restoreClient}
       onProfileClick={() => setProfileModalOpen(true)}
+      onInviteClick={() => setShowInvite(true)}
       userEmail={session?.user?.email}
       profile={profile}
       callsError={callsError}
