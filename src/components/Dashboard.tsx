@@ -268,8 +268,8 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, onPr
           </button>
         </nav>
 
-        {/* Invite button — admin/manager only */}
-        {(profile?.role === "admin" || profile?.role === "manager") && (
+        {/* Invite button — super_admin/manager only */}
+        {(profile?.role === "super_admin" || profile?.role === "manager") && (
           <div
             onClick={onInviteClick}
             title="Invite team member"

@@ -1038,6 +1038,7 @@ function InviteModal({ token, profile, onClose }) {
           <input value={email} onChange={e => setEmail(e.target.value)} placeholder="colleague@company.com" style={{ flex: 1, padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit" }} />
           <select value={role} onChange={e => { setRole(e.target.value); setClientCompany(""); }} style={{ padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none" }}>
             <option value="rep" style={{ background: "var(--surface)" }}>Rep</option>
+            <option value="admin" style={{ background: "var(--surface)" }}>Admin</option>
             <option value="manager" style={{ background: "var(--surface)" }}>Manager</option>
             <option value="client" style={{ background: "var(--surface)" }}>Client</option>
           </select>
@@ -6188,7 +6189,7 @@ function ProfileSettingsModal({ session, profile, onClose, getValidToken, repPho
         </div>
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, padding: "12px 20px 0", flexShrink: 0 }}>
-          {["profile", "integrations"].map(t => (
+          {(profile?.role === "super_admin" ? ["profile", "integrations"] : ["profile"]).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: "6px 14px", border: tab === t ? "1.5px solid #31CE81" : "1.5px solid var(--border-subtle)", borderRadius: 20, fontSize: 12, fontWeight: tab === t ? 600 : 400, background: tab === t ? "rgba(49,206,129,0.08)" : "transparent", color: tab === t ? "#31CE81" : "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", textTransform: "capitalize" }}>{t}</button>
           ))}
         </div>
@@ -7020,8 +7021,8 @@ export default function CuotaCallReview() {
             {/* Footer — clickable profile row */}
             <div style={{ padding: sidebarCollapsed ? "10px 8px" : "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: 4 }}>
 
-              {/* Invite button — admin/manager only */}
-              {(profile?.role === "admin" || profile?.role === "manager") && (
+              {/* Invite button — super_admin/manager only */}
+              {(profile?.role === "super_admin" || profile?.role === "manager") && (
                 <div
                   onClick={() => setShowInvite(true)}
                   title="Invite team member"
@@ -7125,9 +7126,9 @@ export default function CuotaCallReview() {
         {/* PRESENTATIONS */}
         {page === "assets" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} />}
 
-        {page === "integrations" && profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
-        {page === "docsync" && profile?.role === "admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
-        {page === "admin" && profile?.role === "admin" && <AdminDashboard allCalls={savedCalls} />}
+        {page === "integrations" && profile?.role === "super_admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
+        {page === "docsync" && profile?.role === "super_admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
+        {page === "admin" && profile?.role === "super_admin" && <AdminDashboard allCalls={savedCalls} />}
 
         {/* SETTINGS PAGE */}
         {page === "settings" && (
@@ -7143,7 +7144,7 @@ export default function CuotaCallReview() {
                 </div>
               </div>
             </div>
-            {profile?.role === "admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
+            {profile?.role === "super_admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
           </div>
         )}
 

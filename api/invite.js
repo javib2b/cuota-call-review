@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   if (!auth) return res.status(401).json({ error: "Unauthorized" });
 
   const { profile } = auth;
-  if (profile.role !== "admin" && profile.role !== "manager") {
-    return res.status(403).json({ error: "Only admins and managers can invite team members" });
+  if (profile.role !== "super_admin" && profile.role !== "manager") {
+    return res.status(403).json({ error: "Only super admins and managers can invite team members" });
   }
 
   const { email, role, client_company } = req.body || {};
