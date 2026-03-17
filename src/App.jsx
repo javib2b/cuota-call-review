@@ -6812,41 +6812,49 @@ export default function CuotaCallReview() {
   }
 
   if (page === "home") return (
-    <Dashboard
-      userEmail={session.user?.email}
-      profile={profile}
-      clients={clients}
-      savedCalls={savedCalls}
-      isLoading={loading}
-      callsError={callsError}
-      onRetryLoad={loadCalls}
-      onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
-      onNewReview={startNewReview}
-      onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}
-      onProfileClick={() => setProfileModalOpen(true)}
-      onInviteClick={() => setShowInvite(true)}
-    />
+    <>
+      {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
+      {profileModalOpen && <ProfileSettingsModal session={session} profile={profile} onClose={() => setProfileModalOpen(false)} getValidToken={getValidToken} repPhotos={repPhotos} apiKey={apiKey} setApiKey={setApiKey} token={token} loadCalls={loadCalls} clients={clients} onSaved={(updated) => { const next = { ...profile, ...updated }; setProfile(next); try { localStorage.setItem("cuota_profile", JSON.stringify(next)); } catch {} }} />}
+      <Dashboard
+        userEmail={session.user?.email}
+        profile={profile}
+        clients={clients}
+        savedCalls={savedCalls}
+        isLoading={loading}
+        callsError={callsError}
+        onRetryLoad={loadCalls}
+        onNavigate={(p) => { setPage(p); if (p === "clients" || p === "calls") { setFolderClient(null); setFolderAE(null); } }}
+        onNewReview={startNewReview}
+        onClientClick={(client) => { setSelectedClientProfile(client); setPage("client"); }}
+        onProfileClick={() => setProfileModalOpen(true)}
+        onInviteClick={() => setShowInvite(true)}
+      />
+    </>
   );
 
   if (page === "clients" || page === "calls" || page === "reviews") return (
-    <ClientsPage
-      clients={clients}
-      pastClients={pastClients}
-      savedCalls={savedCalls}
-      clientProfiles={clientProfiles}
-      onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }}
-      onNewReview={startNewReview}
-      onNavigate={setPage}
-      onAddClient={addClient}
-      onArchiveClient={archiveClient}
-      onRestoreClient={restoreClient}
-      onProfileClick={() => setProfileModalOpen(true)}
-      onInviteClick={() => setShowInvite(true)}
-      userEmail={session?.user?.email}
-      profile={profile}
-      callsError={callsError}
-      onRetryLoadCalls={loadCalls}
-    />
+    <>
+      {showInvite && <InviteModal token={token} profile={profile} onClose={() => setShowInvite(false)} />}
+      {profileModalOpen && <ProfileSettingsModal session={session} profile={profile} onClose={() => setProfileModalOpen(false)} getValidToken={getValidToken} repPhotos={repPhotos} apiKey={apiKey} setApiKey={setApiKey} token={token} loadCalls={loadCalls} clients={clients} onSaved={(updated) => { const next = { ...profile, ...updated }; setProfile(next); try { localStorage.setItem("cuota_profile", JSON.stringify(next)); } catch {} }} />}
+      <ClientsPage
+        clients={clients}
+        pastClients={pastClients}
+        savedCalls={savedCalls}
+        clientProfiles={clientProfiles}
+        onClientClick={(c) => { setSelectedClientProfile(c); setPage("client"); }}
+        onNewReview={startNewReview}
+        onNavigate={setPage}
+        onAddClient={addClient}
+        onArchiveClient={archiveClient}
+        onRestoreClient={restoreClient}
+        onProfileClick={() => setProfileModalOpen(true)}
+        onInviteClick={() => setShowInvite(true)}
+        userEmail={session?.user?.email}
+        profile={profile}
+        callsError={callsError}
+        onRetryLoadCalls={loadCalls}
+      />
+    </>
   );
 
   if (page === "rep" && selectedRep) {
