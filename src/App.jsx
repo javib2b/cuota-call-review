@@ -1009,12 +1009,16 @@ function InviteModal({ token, profile, onClose }) {
     if (role === "client" && !clientCompany.trim()) { setError("Enter the client's company name"); return; }
     setSending(true); setError("");
     try {
-      const t = await supabase.from("invitations", token);
-      const payload = { org_id: profile.org_id, email, role, invited_by: profile.id };
-      if (role === "client") payload.client_company = clientCompany.trim();
-      const result = await t.insert(payload);
-      if (result?.error) throw new Error(result.error.message || "Failed");
-      setSent(true); setEmail(""); setClientCompany(""); setTimeout(() => setSent(false), 3000);
+      const r = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email: email.trim(), role, client_company: clientCompany.trim() || undefined }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed to send invite");
+      setSent(data.emailSent ? "email" : "saved");
+      setEmail(""); setClientCompany("");
+      setTimeout(() => setSent(false), 4000);
     } catch (e) { setError(e.message); } finally { setSending(false); }
   };
 
@@ -1044,7 +1048,8 @@ function InviteModal({ token, profile, onClose }) {
         {role !== "client" && <div style={{ marginBottom: 4 }} />}
         <button onClick={sendInvite} disabled={sending} style={{ width: "100%", padding: "10px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 16 }}>{sending ? "Sending..." : "Send Invite"}</button>
         {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
-        {sent && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>Invite created! They can sign up and will be added to your org.</div>}
+        {sent === "email" && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#31CE81" }}>✓ Invite sent! They'll receive an email with a link to sign up.</div>}
+        {sent === "saved" && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, fontSize: 12, color: "#f59e0b" }}>Invitation saved — email delivery unavailable. Share the app URL manually.</div>}
         {invites.length > 0 && (
           <div>
             <h4 style={{ fontSize: 12, fontWeight: 600, color: "var(--text-2)", margin: "16px 0 8px", textTransform: "uppercase", letterSpacing: 1 }}>Pending Invites</h4>
