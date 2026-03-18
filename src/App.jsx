@@ -5175,6 +5175,14 @@ const SLIDE_TYPE_LABELS = {
   features: "Differentiators", proof: "Social Proof", roi: "ROI", timeline: "Timeline", cta: "CTA", success: "Success Plan",
 };
 
+const BCARD_W = 800;
+const BCARD_H = 1130; // portrait
+const BCARD_THUMB_H = Math.round(THUMB_W * (BCARD_H / BCARD_W)); // ≈ 155px
+const BCARD_TYPE_LABELS = {
+  overview: "Overview", features1: "Features 1/2", features2: "Features 2/2",
+  quotes: "Customer Quotes", objections: "Objections & Wins",
+};
+
 const ROI_TINTS = [
   { bg: "rgba(59,130,246,0.08)", border: "#3b82f6" },
   { bg: "rgba(34,197,94,0.08)",  border: "#22c55e" },
@@ -5427,6 +5435,245 @@ function SlideSuccess({ data, primary, accent }) {
   );
 }
 
+// ==================== BATTLECARD COMPONENTS ====================
+
+function bcHexToRgb(hex) {
+  try {
+    const h = (hex || "#000000").replace("#", "");
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    return `${r},${g},${b}`;
+  } catch { return "0,0,0"; }
+}
+
+function BcardStatusIcon({ status }) {
+  const cfg = status === "yes"
+    ? { bg: "#22c55e", char: "✓" }
+    : status === "partial"
+    ? { bg: "#f59e0b", char: "~" }
+    : { bg: "#ef4444", char: "✗" };
+  return (
+    <span style={{ width: 22, height: 22, borderRadius: "50%", background: cfg.bg, color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+      {cfg.char}
+    </span>
+  );
+}
+
+function BattlecardPage1({ data, primary, accent, logoBase64 }) {
+  const rows = data.comparisonRows || [];
+  const quotes = data.quotes || [];
+  const rgb = bcHexToRgb(primary);
+  return (
+    <div style={{ width: BCARD_W, height: BCARD_H, background: "#fff", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ height: 72, background: primary, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {logoBase64 && <img src={logoBase64} alt="logo" style={{ maxHeight: 38, maxWidth: 120, objectFit: "contain" }} />}
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{data.companyName || "Our Company"}</div>
+        </div>
+        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>vs. {data.competitorName || "Competitor"}</div>
+      </div>
+      {/* Comparison Table */}
+      <div style={{ margin: "20px 32px 14px", background: "#fff", borderRadius: 10, border: "1px solid #e2e8f0", overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+          <div style={{ padding: "10px 16px", fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>Category</div>
+          <div style={{ padding: "10px 16px", fontSize: 10, fontWeight: 700, color: primary, textTransform: "uppercase", letterSpacing: 1, borderLeft: "1px solid #e2e8f0", background: `rgba(${rgb},0.04)` }}>{data.companyName || "Us"}</div>
+          <div style={{ padding: "10px 16px", fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, borderLeft: "1px solid #e2e8f0" }}>{data.competitorName || "Competitor"}</div>
+        </div>
+        {rows.map((row, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderBottom: i < rows.length - 1 ? "1px solid #f1f5f9" : "none", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+            <div style={{ padding: "12px 16px", fontSize: 12, fontWeight: 600, color: "#334155", display: "flex", alignItems: "center" }}>{row.label}</div>
+            <div style={{ padding: "12px 16px", borderLeft: "1px solid #f1f5f9", background: `rgba(${rgb},0.03)`, display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <BcardStatusIcon status={row.us || "yes"} />
+              {row.usText && <span style={{ fontSize: 11, color: "#475569", lineHeight: 1.4 }}>{row.usText}</span>}
+            </div>
+            <div style={{ padding: "12px 16px", borderLeft: "1px solid #f1f5f9", display: "flex", alignItems: "flex-start", gap: 8 }}>
+              <BcardStatusIcon status={row.them || "no"} />
+              {row.themText && <span style={{ fontSize: 11, color: "#475569", lineHeight: 1.4 }}>{row.themText}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Partnership Statement */}
+      {data.partnershipStatement && (
+        <div style={{ margin: "0 32px 14px", background: "#f8fafc", borderRadius: 10, padding: "14px 20px", flexShrink: 0 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#94a3b8", marginBottom: 6 }}>Our Goal as Your Partner</div>
+          <div style={{ fontSize: 12, color: "#334155", lineHeight: 1.65, fontStyle: "italic" }}>{data.partnershipStatement}</div>
+        </div>
+      )}
+      {/* Customer Love */}
+      {quotes.length > 0 && (
+        <div style={{ margin: "0 32px", flexShrink: 0 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#94a3b8", marginBottom: 10 }}>Customer Love</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {quotes.slice(0, 2).map((q, i) => (
+              <div key={i} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "14px 16px" }}>
+                <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6, marginBottom: 10, fontStyle: "italic" }}>"{q.text}"</div>
+                <div style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600 }}>— {q.name}{q.title ? `, ${q.title}` : ""}{q.company ? `, ${q.company}` : ""}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Footer */}
+      <div style={{ marginTop: "auto", flexShrink: 0 }}>
+        <div style={{ height: 8, background: accent }} />
+        <div style={{ height: 28, background: primary }} />
+      </div>
+    </div>
+  );
+}
+
+function BcardFeatureTable({ data, primary, accent, logoBase64, partLabel }) {
+  const sections = data.sections || [];
+  const rgb = bcHexToRgb(primary);
+  return (
+    <div style={{ width: BCARD_W, height: BCARD_H, background: "#fff", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* Subheader */}
+      <div style={{ height: 52, background: primary, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", flexShrink: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Feature Comparison — {partLabel}</div>
+        {logoBase64 && <img src={logoBase64} alt="logo" style={{ maxHeight: 28, maxWidth: 90, objectFit: "contain" }} />}
+      </div>
+      {/* Table Header */}
+      <div style={{ display: "grid", gridTemplateColumns: "170px 1fr 1fr", background: "#f8fafc", borderBottom: "2px solid #e2e8f0", flexShrink: 0 }}>
+        <div style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 1 }}>Capability</div>
+        <div style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: primary, textTransform: "uppercase", letterSpacing: 1, borderLeft: "1px solid #e2e8f0", background: `rgba(${rgb},0.04)` }}>{data.companyName || "Us"}</div>
+        <div style={{ padding: "9px 14px", fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, borderLeft: "1px solid #e2e8f0" }}>{data.competitorName || "Competitor"}</div>
+      </div>
+      {/* Sections */}
+      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {sections.map((section, si) => (
+          <div key={si} style={{ flexShrink: 0 }}>
+            <div style={{ background: primary, padding: "6px 14px" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", letterSpacing: 2, textTransform: "uppercase" }}>{section.label}</span>
+            </div>
+            {(section.rows || []).map((row, ri) => (
+              <div key={ri} style={{ display: "grid", gridTemplateColumns: "170px 1fr 1fr", borderBottom: "1px solid #f1f5f9", background: ri % 2 === 0 ? "#fff" : "rgba(0,0,0,0.01)" }}>
+                <div style={{ padding: "9px 14px", fontSize: 11, fontWeight: 600, color: "#334155", background: "#f1f5f9", display: "flex", alignItems: "flex-start" }}>{row.capability}</div>
+                <div style={{ padding: "9px 14px", borderLeft: "1px solid #e2e8f0", background: `rgba(${rgb},0.03)`, display: "flex", alignItems: "flex-start", gap: 7 }}>
+                  <BcardStatusIcon status={row.usIcon || "yes"} />
+                  <span style={{ fontSize: 11, color: "#475569", lineHeight: 1.4 }}>{row.usDesc}</span>
+                </div>
+                <div style={{ padding: "9px 14px", borderLeft: "1px solid #e2e8f0", display: "flex", alignItems: "flex-start", gap: 7 }}>
+                  <BcardStatusIcon status={row.themIcon || "no"} />
+                  <span style={{ fontSize: 11, color: "#475569", lineHeight: 1.4 }}>{row.themDesc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {/* Enterprise Summary (page 3 only) */}
+      {data.enterpriseSummary && (
+        <div style={{ margin: "12px 24px", padding: "12px 16px", background: `rgba(${bcHexToRgb(accent)},0.08)`, borderLeft: `4px solid ${accent}`, borderRadius: "0 8px 8px 0", flexShrink: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#334155", marginBottom: 5 }}>Enterprise-Grade Advantage</div>
+          <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.55 }}>{data.enterpriseSummary}</div>
+        </div>
+      )}
+      <div style={{ height: 6, background: accent, flexShrink: 0 }} />
+    </div>
+  );
+}
+
+function BattlecardPage2({ data, primary, accent, logoBase64 }) {
+  return <BcardFeatureTable data={data} primary={primary} accent={accent} logoBase64={logoBase64} partLabel="Part 1 of 2" />;
+}
+
+function BattlecardPage3({ data, primary, accent, logoBase64 }) {
+  return <BcardFeatureTable data={data} primary={primary} accent={accent} logoBase64={logoBase64} partLabel="Part 2 of 2" />;
+}
+
+function BattlecardPage4({ data, primary, accent }) {
+  const quotes = data.quotes || [];
+  const is2x2 = quotes.length >= 4;
+  return (
+    <div style={{ width: BCARD_W, height: BCARD_H, background: "#0f172a", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <div style={{ padding: "40px 40px 24px", flexShrink: 0 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", textAlign: "center", lineHeight: 1.35 }}>
+          What Customers Say About {data.competitorName || "Competitor"}
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 8 }}>
+          Real feedback · Use to understand their pain points and position against them
+        </div>
+      </div>
+      {/* Quotes Grid */}
+      <div style={{
+        flex: 1, padding: "0 32px 32px",
+        display: is2x2 ? "grid" : "flex",
+        gridTemplateColumns: is2x2 ? "1fr 1fr" : undefined,
+        flexDirection: is2x2 ? undefined : "column",
+        gap: 16, overflow: "hidden",
+      }}>
+        {quotes.slice(0, 4).map((q, i) => (
+          <div key={i} style={{ background: "#1e293b", borderRadius: 10, padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10, overflow: "hidden" }}>
+            <div style={{ fontSize: 13, color: "#e2e8f0", fontStyle: "italic", lineHeight: 1.6 }}>"{q.text}"</div>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>— {q.name}{q.title ? `, ${q.title}` : ""}</div>
+            {q.source && (
+              <div>
+                <span style={{ padding: "2px 8px", background: "rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 10, color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>{q.source}</span>
+              </div>
+            )}
+            {q.note && (
+              <div style={{ fontSize: 11, color: accent, fontWeight: 600, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
+                Note: {q.note}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BattlecardPage5({ data, primary, accent }) {
+  const objections = data.objections || [];
+  const winThemes = data.winThemes || [];
+  const cols = Math.max(1, Math.min(winThemes.length, 3));
+  return (
+    <div style={{ width: BCARD_W, height: BCARD_H, background: "#fff", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* Top Section — Objections (65%) */}
+      <div style={{ flex: "0 0 65%", display: "flex", flexDirection: "column", padding: "22px 30px 14px", overflow: "hidden" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#94a3b8", marginBottom: 12 }}>Handle Any Objection</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, flex: 1, overflow: "hidden" }}>
+          {objections.slice(0, 6).map((obj, i) => (
+            <div key={i} style={{ background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 7, overflow: "hidden" }}>
+              <div style={{ fontSize: 11, color: primary, fontStyle: "italic", fontWeight: 600, lineHeight: 1.4 }}>"{obj.objection}"</div>
+              <div style={{ fontSize: 11, color: "#334155", lineHeight: 1.5 }}>{obj.rebuttal}</div>
+              {obj.proof && <div style={{ fontSize: 10, color: "#94a3b8", fontStyle: "italic", lineHeight: 1.4 }}>{obj.proof}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Bottom Section — Why We Win (35%) */}
+      <div style={{ flex: "0 0 35%", background: primary, padding: "18px 30px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,0.45)", marginBottom: 14 }}>Why We Win</div>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 12 }}>
+          {winThemes.slice(0, 3).map((theme, i) => (
+            <div key={i} style={{ background: accent, borderRadius: 8, padding: "14px 16px" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 5 }}>{theme.title}</div>
+              {theme.description && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.78)", lineHeight: 1.4 }}>{theme.description}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function renderBattlecard(page, primary, accent, logoBase64) {
+  const props = { data: page, primary, accent, logoBase64 };
+  switch (page.type) {
+    case "overview":   return <BattlecardPage1 {...props} />;
+    case "features1":  return <BattlecardPage2 {...props} />;
+    case "features2":  return <BattlecardPage3 {...props} />;
+    case "quotes":     return <BattlecardPage4 {...props} />;
+    case "objections": return <BattlecardPage5 {...props} />;
+    default: return <div style={{ width: BCARD_W, height: BCARD_H, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "#94a3b8", fontSize: 14 }}>{page.type}</span></div>;
+  }
+}
+
 function renderSlide(slide, primary, accent, prospectCompany, client, companyName, logoBase64) {
   const props = { data: slide, primary, accent };
   switch (slide.type) {
@@ -5488,6 +5735,18 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const [exporting, setExporting] = useState(null); // "pptx" | "pdf" | null
   const [activeSlide, setActiveSlide] = useState(0);
   const [error, setError] = useState("");
+
+  // Battlecard-specific fields
+  const [competitorName, setCompetitorName] = useState(() => loadStored("battlecard_competitor") || "");
+  const [companyFunding, setCompanyFunding] = useState(() => loadStored("battlecard_funding") || "");
+  const [companyG2, setCompanyG2] = useState(() => loadStored("battlecard_g2") || "");
+  const [seriesA, setSeriesA] = useState(() => loadStored("battlecard_seriesA") || "");
+  const [seriesB, setSeriesB] = useState(() => loadStored("battlecard_seriesB") || "");
+  const [competitorFunding, setCompetitorFunding] = useState(() => loadStored("battlecard_comp_funding") || "");
+  const [competitorG2, setCompetitorG2] = useState(() => loadStored("battlecard_comp_g2") || "");
+  const [competitorGaps, setCompetitorGaps] = useState(() => loadStored("battlecard_comp_gaps") || "");
+
+  const isBattlecard = deckType === "Competitor Battle Cards";
 
   const stageRef = useRef(null);
   const [stageWidth, setStageWidth] = useState(700);
@@ -5659,21 +5918,43 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   };
 
   const generateDeck = async () => {
-    if (!client && !prospectCompany) { setError("Enter at least a client or prospect company."); return; }
+    if (isBattlecard) {
+      if (!competitorName.trim()) { setError("Enter a competitor name to generate a battlecard."); return; }
+    } else {
+      if (!client && !prospectCompany) { setError("Enter at least a client or prospect company."); return; }
+    }
     setGenerating(true); setError(""); setSlides(null); setActiveSlide(0);
     try {
       const validToken = await getValidToken();
-      const res = await fetch("/api/generate-deck", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
-        body: JSON.stringify({
-          context: { client, prospectCompany, repName: "", dealStage, callType: deckType, painPoints, companyName, referenceText: refText },
-          apiKey: apiKey || undefined,
-        }),
-      });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Generation failed"); }
-      const data = await res.json();
-      setSlides(data.slides || []);
+      if (isBattlecard) {
+        const res = await fetch("/api/generate-battlecard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
+          body: JSON.stringify({
+            context: {
+              companyName, productName: companyName, companyFunding, companyG2,
+              seriesA, seriesB, competitorName, competitorFunding, competitorG2,
+              competitorGaps, primaryColor, accentColor,
+            },
+            apiKey: apiKey || undefined,
+          }),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Generation failed"); }
+        const data = await res.json();
+        setSlides(data.pages || []);
+      } else {
+        const res = await fetch("/api/generate-deck", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
+          body: JSON.stringify({
+            context: { client, prospectCompany, repName: "", dealStage, callType: deckType, painPoints, companyName, referenceText: refText },
+            apiKey: apiKey || undefined,
+          }),
+        });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Generation failed"); }
+        const data = await res.json();
+        setSlides(data.slides || []);
+      }
     } catch (e) { setError(e.message); }
     finally { setGenerating(false); }
   };
@@ -5741,29 +6022,38 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
         import("jspdf"),
         import("react-dom/client"),
       ]);
-      const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [NATURAL_W, NATURAL_H], hotfixes: ["px_scaling"] });
+      const pageW = NATURAL_W;
+      const pageH = isBattlecard ? BCARD_H : NATURAL_H;
+      const pdfOrientation = isBattlecard ? "portrait" : "landscape";
+      const pdf = new jsPDF({ orientation: pdfOrientation, unit: "px", format: [pageW, pageH], hotfixes: ["px_scaling"] });
       for (let i = 0; i < slides.length; i++) {
         if (i > 0) pdf.addPage();
         const container = document.createElement("div");
-        container.style.cssText = `position:fixed;top:0;left:${-(NATURAL_W + 300)}px;width:${NATURAL_W}px;height:${NATURAL_H}px;overflow:hidden;z-index:9999;background:#fff;`;
+        container.style.cssText = `position:fixed;top:0;left:${-(pageW + 300)}px;width:${pageW}px;height:${pageH}px;overflow:hidden;z-index:9999;background:#fff;`;
         document.body.appendChild(container);
         const root = createRoot(container);
-        root.render(renderSlide(slides[i], primaryColor, accentColor, prospectCompany, client, companyName, logoBase64));
+        root.render(isBattlecard
+          ? renderBattlecard(slides[i], primaryColor, accentColor, logoBase64)
+          : renderSlide(slides[i], primaryColor, accentColor, prospectCompany, client, companyName, logoBase64));
         await new Promise(r => setTimeout(r, 280));
-        const canvas = await html2canvas(container, { width: NATURAL_W, height: NATURAL_H, scale: 1.5, useCORS: true, allowTaint: true, backgroundColor: "#ffffff", logging: false });
+        const canvas = await html2canvas(container, { width: pageW, height: pageH, scale: 1.5, useCORS: true, allowTaint: true, backgroundColor: "#ffffff", logging: false });
         root.unmount();
         document.body.removeChild(container);
-        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, NATURAL_W, NATURAL_H);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, pageW, pageH);
       }
-      pdf.save(`${(client || prospectCompany || "Sales").replace(/\s+/g, "_")}_Deck.pdf`);
+      const suffix = isBattlecard ? "Battlecard" : "Deck";
+      pdf.save(`${(client || prospectCompany || competitorName || "Asset").replace(/\s+/g, "_")}_${suffix}.pdf`);
     } catch (e) { console.error("PDF export error:", e); setError("PDF export failed: " + e.message); }
     finally { setExporting(null); }
   };
 
   const canvasW = Math.min(stageWidth - 80, 860);
-  const canvasH = canvasW * (NATURAL_H / NATURAL_W);
+  const naturalH = isBattlecard ? BCARD_H : NATURAL_H;
+  const canvasH = canvasW * (naturalH / NATURAL_W);
   const scale = canvasW / NATURAL_W;
   const thumbScale = THUMB_W / NATURAL_W;
+  const thumbH = isBattlecard ? BCARD_THUMB_H : THUMB_H;
+  const thumbNaturalH = isBattlecard ? BCARD_H : NATURAL_H;
 
   const inputStyle = { width: "100%", padding: "7px 10px", border: "1px solid var(--border-soft)", borderRadius: 7, fontSize: 12, color: "var(--text-1)", outline: "none", boxSizing: "border-box", fontFamily: "inherit", background: "var(--surface-2)" };
   const labelStyle = { fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", display: "block", marginBottom: 4, fontWeight: 700 };
@@ -5812,13 +6102,15 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
             </div>
           )}
           {slides && slides.map((slide, idx) => {
-            const typeLabel = SLIDE_TYPE_LABELS[slide.type] || slide.type;
+            const typeLabel = isBattlecard ? (BCARD_TYPE_LABELS[slide.type] || slide.type) : (SLIDE_TYPE_LABELS[slide.type] || slide.type);
             const isActive = idx === activeSlide;
             return (
               <div key={idx} onClick={() => setActiveSlide(idx)} style={{ padding: "8px 10px 10px", cursor: "pointer", borderLeft: isActive ? `3px solid ${accentColor}` : "3px solid transparent", background: isActive ? "rgba(49,206,129,0.08)" : "transparent", marginBottom: 1 }}>
-                <div style={{ width: THUMB_W, height: THUMB_H, position: "relative", overflow: "hidden", borderRadius: 4, marginBottom: 5, boxShadow: isActive ? `0 0 0 2px ${accentColor}` : "0 1px 4px rgba(0,0,0,0.3)" }}>
-                  <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: NATURAL_H, transform: `scale(${thumbScale})`, transformOrigin: "top left", pointerEvents: "none" }}>
-                    {renderSlide(slide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
+                <div style={{ width: THUMB_W, height: thumbH, position: "relative", overflow: "hidden", borderRadius: 4, marginBottom: 5, boxShadow: isActive ? `0 0 0 2px ${accentColor}` : "0 1px 4px rgba(0,0,0,0.3)" }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: thumbNaturalH, transform: `scale(${thumbScale})`, transformOrigin: "top left", pointerEvents: "none" }}>
+                    {isBattlecard
+                      ? renderBattlecard(slide, primaryColor, accentColor, logoBase64)
+                      : renderSlide(slide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
                   </div>
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: isActive ? accentColor : "var(--text-3)", textTransform: "uppercase", letterSpacing: 0.7, lineHeight: 1.2 }}>{idx + 1} · {typeLabel}</div>
@@ -5879,8 +6171,10 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                 <button onClick={() => setActiveSlide(i => i + 1)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 18, zIndex: 2, fontFamily: "inherit" }}>›</button>
               )}
               <div style={{ width: canvasW, height: canvasH, position: "relative", overflow: "hidden", borderRadius: 6, boxShadow: "0 8px 48px rgba(0,0,0,0.6)", flexShrink: 0 }}>
-                <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: NATURAL_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-                  {renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
+                <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: naturalH, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+                  {isBattlecard
+                    ? renderBattlecard(currentSlide, primaryColor, accentColor, logoBase64)
+                    : renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
                 </div>
               </div>
               <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "#7a8ba0", fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -5997,54 +6291,99 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
               </div>
             </div>
 
-            {/* CONTEXT */}
-            <div>
-              <div style={sectionLabel}>Context</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div>
-                  <label style={labelStyle}>Client</label>
-                  <select value={client} onChange={e => setClient(e.target.value)} style={{ ...inputStyle, color: client ? "var(--text-1)" : "var(--text-3)" }}>
-                    <option value="">Select…</option>
-                    {clients.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+            {/* CONTEXT — battlecard or standard */}
+            {isBattlecard ? (
+              <div>
+                <div style={sectionLabel}>Your Company</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                  <div>
+                    <label style={labelStyle}>G2 Rating</label>
+                    <input value={companyG2} onChange={e => { setCompanyG2(e.target.value); localStorage.setItem("battlecard_g2", e.target.value); }} placeholder="e.g. 4.8/5.0" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Series A</label>
+                    <input value={seriesA} onChange={e => { setSeriesA(e.target.value); localStorage.setItem("battlecard_seriesA", e.target.value); }} placeholder="e.g. $12M" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Series B</label>
+                    <input value={seriesB} onChange={e => { setSeriesB(e.target.value); localStorage.setItem("battlecard_seriesB", e.target.value); }} placeholder="e.g. $42M" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Total Funding</label>
+                    <input value={companyFunding} onChange={e => { setCompanyFunding(e.target.value); localStorage.setItem("battlecard_funding", e.target.value); }} placeholder="e.g. $54M" style={inputStyle} />
+                  </div>
                 </div>
-                <div>
-                  <label style={labelStyle}>Prospect Company</label>
-                  <input value={prospectCompany} onChange={e => setProspectCompany(e.target.value)} placeholder="e.g. Meijer" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Deal Stage</label>
-                  <select value={dealStage} onChange={e => setDealStage(e.target.value)} style={inputStyle}>
-                    {["Early", "Mid-Pipe", "Late Stage", "Negotiation"].map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Pain Points</label>
-                  <textarea value={painPoints} onChange={e => setPainPoints(e.target.value)} placeholder="Key challenges…" rows={3} style={{ ...inputStyle, resize: "vertical" }} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Brand Voice & Reference{refText ? " ✓" : " (optional)"}</label>
-                  <textarea value={refText} onChange={e => { setRefText(e.target.value); saveBrand("referenceText", e.target.value); }} placeholder="Paste messaging, tone notes, or key language from your deck. Auto-filled when you upload a template above." rows={4} style={{ ...inputStyle, resize: "vertical", fontSize: 11 }} />
+                <div style={sectionLabel}>Competitor</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <label style={labelStyle}>Competitor Name <span style={{ color: "#f04438" }}>*</span></label>
+                    <input value={competitorName} onChange={e => { setCompetitorName(e.target.value); localStorage.setItem("battlecard_competitor", e.target.value); }} placeholder="e.g. Apollo.io" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Competitor G2</label>
+                    <input value={competitorG2} onChange={e => { setCompetitorG2(e.target.value); localStorage.setItem("battlecard_comp_g2", e.target.value); }} placeholder="e.g. 4.2/5.0" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Competitor Funding</label>
+                    <input value={competitorFunding} onChange={e => { setCompetitorFunding(e.target.value); localStorage.setItem("battlecard_comp_funding", e.target.value); }} placeholder="e.g. $250M" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Known Gaps</label>
+                    <textarea value={competitorGaps} onChange={e => { setCompetitorGaps(e.target.value); localStorage.setItem("battlecard_comp_gaps", e.target.value); }} placeholder="Known weaknesses, customer complaints, product gaps…" rows={4} style={{ ...inputStyle, resize: "vertical", fontSize: 11 }} />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div>
+                <div style={sectionLabel}>Context</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div>
+                    <label style={labelStyle}>Client</label>
+                    <select value={client} onChange={e => setClient(e.target.value)} style={{ ...inputStyle, color: client ? "var(--text-1)" : "var(--text-3)" }}>
+                      <option value="">Select…</option>
+                      {clients.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Prospect Company</label>
+                    <input value={prospectCompany} onChange={e => setProspectCompany(e.target.value)} placeholder="e.g. Meijer" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Deal Stage</label>
+                    <select value={dealStage} onChange={e => setDealStage(e.target.value)} style={inputStyle}>
+                      {["Early", "Mid-Pipe", "Late Stage", "Negotiation"].map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Pain Points</label>
+                    <textarea value={painPoints} onChange={e => setPainPoints(e.target.value)} placeholder="Key challenges…" rows={3} style={{ ...inputStyle, resize: "vertical" }} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Brand Voice & Reference{refText ? " ✓" : " (optional)"}</label>
+                    <textarea value={refText} onChange={e => { setRefText(e.target.value); saveBrand("referenceText", e.target.value); }} placeholder="Paste messaging, tone notes, or key language from your deck. Auto-filled when you upload a template above." rows={4} style={{ ...inputStyle, resize: "vertical", fontSize: 11 }} />
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
 
           {/* Actions — pinned at bottom */}
           <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
             <button onClick={generateDeck} disabled={generating || !!exporting} style={{ width: "100%", padding: "12px", background: generating ? "rgba(49,206,129,0.3)" : "#31CE81", border: "none", borderRadius: 10, color: generating ? "rgba(255,255,255,0.5)" : "#fff", fontSize: 13, fontWeight: 700, cursor: (generating || exporting) ? "wait" : "pointer", fontFamily: "inherit" }}>
-              {generating ? "Generating\u2026" : "Generate Deck \u2726"}
+              {generating ? "Generating\u2026" : isBattlecard ? "Generate Battlecard \u2726" : "Generate Deck \u2726"}
             </button>
             {slides && (
               <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={exportToPPTX}
-                  disabled={!!exporting}
-                  style={{ flex: 1, padding: "9px 6px", background: "transparent", border: "1px solid var(--border)", borderRadius: 8, color: exporting === "pptx" ? "var(--text-3)" : "var(--text-1)", fontSize: 11, fontWeight: 600, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}
-                >
-                  {exporting === "pptx" ? "Exporting…" : "\u2193 PPTX"}
-                </button>
+                {!isBattlecard && (
+                  <button
+                    onClick={exportToPPTX}
+                    disabled={!!exporting}
+                    style={{ flex: 1, padding: "9px 6px", background: "transparent", border: "1px solid var(--border)", borderRadius: 8, color: exporting === "pptx" ? "var(--text-3)" : "var(--text-1)", fontSize: 11, fontWeight: 600, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}
+                  >
+                    {exporting === "pptx" ? "Exporting…" : "\u2193 PPTX"}
+                  </button>
+                )}
                 <button
                   onClick={exportToPDF}
                   disabled={!!exporting}
