@@ -5465,6 +5465,8 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const [companyName, setCompanyName] = useState(_stored.companyName || "");
   const [logoBase64, setLogoBase64] = useState(_stored.logoBase64 || null);
   const [logoFileName, setLogoFileName] = useState(_stored.logoFileName || null);
+  const [websiteDomain, setWebsiteDomain] = useState(_stored.websiteDomain || "");
+  const [logoFetching, setLogoFetching] = useState(false);
 
   const [client, setClient] = useState(defaultClient || "");
   const [prospectCompany, setProspectCompany] = useState("");
@@ -5515,6 +5517,8 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
     setCompanyName(stored.companyName || "");
     setLogoBase64(stored.logoBase64 || null);
     setLogoFileName(stored.logoFileName || null);
+    setWebsiteDomain(stored.websiteDomain || "");
+    setLogoFetching(false);
     setRefText(stored.referenceText || "");
     setExtractedFields(null);
     setTemplateFileName(null);
@@ -5523,6 +5527,55 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const handlePrimaryChange = (v) => { setPrimaryColor(v); saveBrand("primaryColor", v); };
   const handleAccentChange = (v) => { setAccentColor(v); saveBrand("accentColor", v); };
   const handleCompanyNameChange = (v) => { setCompanyName(v); saveBrand("companyName", v); };
+
+  const fetchLogoFromDomain = async (raw) => {
+    const normalized = (raw || "").replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0].trim().toLowerCase();
+    if (!normalized) return;
+    setLogoFetching(true);
+    setWebsiteDomain(normalized);
+    saveBrand("websiteDomain", normalized);
+    const url = `https://logo.clearbit.com/${normalized}`;
+    try {
+      // Attempt canvas-based base64 (needed for PPTX export)
+      const base64 = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        const t = setTimeout(() => reject(new Error("timeout")), 7000);
+        img.onload = () => {
+          clearTimeout(t);
+          try {
+            const c = document.createElement("canvas");
+            c.width = img.naturalWidth || 256;
+            c.height = img.naturalHeight || 256;
+            c.getContext("2d").drawImage(img, 0, 0);
+            resolve(c.toDataURL("image/png"));
+          } catch { reject(new Error("canvas taint")); }
+        };
+        img.onerror = () => { clearTimeout(t); reject(new Error("load error")); };
+        img.src = url;
+      });
+      setLogoBase64(base64);
+      setLogoFileName(normalized);
+      saveBrand("logoBase64", base64);
+      saveBrand("logoFileName", normalized);
+    } catch {
+      // CORS/canvas fallback: store URL directly — img tags work; PPTX uses path param
+      const exists = await new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        setTimeout(() => resolve(false), 5000);
+        img.src = url;
+      });
+      if (exists) {
+        setLogoBase64(url);
+        setLogoFileName(normalized);
+        saveBrand("logoBase64", url);
+        saveBrand("logoFileName", normalized);
+      }
+    }
+    setLogoFetching(false);
+  };
 
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -5645,7 +5698,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
           if (prospectCompany || client) s.addText(prospectCompany || client, { x: 5.4, y: 1.7, w: 4.2, h: 0.85, fontSize: 26, bold: true, color: pri, wrap: true });
           s.addText(dealStage || "", { x: 5.4, y: 2.7, w: 4.2, h: 0.45, fontSize: 12, color: "888888" });
           s.addText(new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }), { x: 5.4, y: 3.2, w: 4.2, h: 0.4, fontSize: 12, color: "AAAAAA" });
-          if (logoBase64) { try { s.addImage({ data: logoBase64, x: 5.4, y: 4.85, w: 1.6, h: 0.55, sizing: { type: "contain", w: 1.6, h: 0.55 } }); } catch { /* skip */ } }
+          if (logoBase64) { try { const isUrl = logoBase64.startsWith("http"); s.addImage({ ...(isUrl ? { path: logoBase64 } : { data: logoBase64 }), x: 5.4, y: 4.85, w: 1.6, h: 0.55, sizing: { type: "contain", w: 1.6, h: 0.55 } }); } catch { /* skip */ } }
         } else {
           s.addText(slide.title, { x: 0, y: 0, w: 10, h: 0.72, fontSize: 20, bold: true, color: "FFFFFF", fill: { color: pri }, margin: [0, 0, 0, 0.35], valign: "middle" });
           s.addShape(pptx.ShapeType.rect, { x: 0.35, y: 0.78, w: 0.9, h: 0.04, fill: { color: sec }, line: { color: sec, width: 0 } });
@@ -5669,7 +5722,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
             (slide.points || []).slice(0, 3).forEach((pt, i) => { s.addText(`${i + 1}   ${pt}`, { x: 0.35, y: BY + i * 1.3, w: 9.3, h: 1.1, fontSize: 15, color: "333333", fill: { color: pri, transparency: 92 }, margin: [0, 0, 0, 0.3], valign: "middle", wrap: true }); });
             if (slide.closing) s.addText(slide.closing, { x: 0.35, y: 4.6, w: 9.3, h: 0.7, fontSize: 14, italic: true, color: pri, align: "center", wrap: true });
           }
-          if (logoBase64) { try { s.addImage({ data: logoBase64, x: 8.5, y: 5.1, w: 1.3, h: 0.42, sizing: { type: "contain", w: 1.3, h: 0.42 } }); } catch { /* skip */ } }
+          if (logoBase64) { try { const isUrl = logoBase64.startsWith("http"); s.addImage({ ...(isUrl ? { path: logoBase64 } : { data: logoBase64 }), x: 8.5, y: 5.1, w: 1.3, h: 0.42, sizing: { type: "contain", w: 1.3, h: 0.42 } }); } catch { /* skip */ } }
         }
       }
       const fileName = `${(client || prospectCompany || "Sales").replace(/\s+/g, "_")}_Deck.pptx`;
@@ -5827,34 +5880,35 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                 <input value={companyName} onChange={e => handleCompanyNameChange(e.target.value)} placeholder="e.g. Cuota" style={inputStyle} />
               </div>
 
-              {/* Logo upload */}
+              {/* Logo auto-fetch */}
               <div style={{ marginBottom: 10 }}>
                 <label style={labelStyle}>Logo</label>
-                <div
-                  onClick={() => logoInputRef.current?.click()}
-                  style={{
-                    border: `1px dashed ${logoBase64 ? "rgba(49,206,129,0.5)" : "var(--border-soft)"}`,
-                    borderRadius: 7,
-                    padding: "8px 10px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    background: logoBase64 ? "rgba(49,206,129,0.06)" : "var(--surface-2)",
-                    transition: "border-color 0.15s, background 0.15s",
-                  }}
-                >
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>🖼</span>
-                  <span style={{ fontSize: 11, color: logoBase64 ? "#31CE81" : "var(--text-3)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {logoBase64 ? logoFileName : "Upload logo"}
-                  </span>
-                  {logoBase64 && (
-                    <button
-                      onClick={ev => { ev.stopPropagation(); setLogoBase64(null); setLogoFileName(null); saveBrand("logoBase64", null); saveBrand("logoFileName", null); }}
-                      style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 14, padding: 0, flexShrink: 0, lineHeight: 1 }}
-                      title="Remove"
-                    >×</button>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <input
+                    value={websiteDomain}
+                    onChange={e => setWebsiteDomain(e.target.value)}
+                    onBlur={e => { if (e.target.value.trim()) fetchLogoFromDomain(e.target.value); }}
+                    onKeyDown={e => { if (e.key === "Enter" && websiteDomain.trim()) fetchLogoFromDomain(websiteDomain); }}
+                    placeholder="yourcompany.com"
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  {logoFetching && (
+                    <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0, paddingRight: 2 }}>…</span>
                   )}
+                </div>
+                {logoBase64 && !logoFetching && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "rgba(49,206,129,0.06)", border: "1px solid rgba(49,206,129,0.28)", borderRadius: 7, marginTop: 6 }}>
+                    <img src={logoBase64} alt="logo" style={{ maxHeight: 22, maxWidth: 56, objectFit: "contain", flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: "#31CE81", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{logoFileName}</span>
+                    <button
+                      onClick={() => { setLogoBase64(null); setLogoFileName(null); setWebsiteDomain(""); saveBrand("logoBase64", null); saveBrand("logoFileName", null); saveBrand("websiteDomain", ""); }}
+                      style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 14, padding: 0, flexShrink: 0, lineHeight: 1 }}
+                    >×</button>
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4, lineHeight: 1.5 }}>
+                  Auto-fetched from domain · or{" "}
+                  <span onClick={() => logoInputRef.current?.click()} style={{ color: "var(--text-2)", cursor: "pointer", textDecoration: "underline" }}>upload manually</span>
                 </div>
                 <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
               </div>
