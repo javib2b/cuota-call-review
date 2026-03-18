@@ -5485,7 +5485,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
   const [slides, setSlides] = useState(null);
   const [generating, setGenerating] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState(null); // "pptx" | "pdf" | null
   const [activeSlide, setActiveSlide] = useState(0);
   const [error, setError] = useState("");
 
@@ -5680,7 +5680,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
   const exportToPPTX = async () => {
     if (!slides?.length) return;
-    setExporting(true);
+    setExporting("pptx");
     try {
       const { default: PptxGenJS } = await import("pptxgenjs");
       const pptx = new PptxGenJS();
@@ -5728,7 +5728,36 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       const fileName = `${(client || prospectCompany || "Sales").replace(/\s+/g, "_")}_Deck.pptx`;
       await pptx.writeFile({ fileName });
     } catch (e) { console.error("PPTX export error:", e); setError("Export failed: " + e.message); }
-    finally { setExporting(false); }
+    finally { setExporting(null); }
+  };
+
+  const exportToPDF = async () => {
+    if (!slides?.length) return;
+    setExporting("pdf");
+    setError("");
+    try {
+      const [{ default: html2canvas }, { jsPDF }, { createRoot }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+        import("react-dom/client"),
+      ]);
+      const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [NATURAL_W, NATURAL_H], hotfixes: ["px_scaling"] });
+      for (let i = 0; i < slides.length; i++) {
+        if (i > 0) pdf.addPage();
+        const container = document.createElement("div");
+        container.style.cssText = `position:fixed;top:0;left:${-(NATURAL_W + 300)}px;width:${NATURAL_W}px;height:${NATURAL_H}px;overflow:hidden;z-index:9999;background:#fff;`;
+        document.body.appendChild(container);
+        const root = createRoot(container);
+        root.render(renderSlide(slides[i], primaryColor, accentColor, prospectCompany, client, companyName, logoBase64));
+        await new Promise(r => setTimeout(r, 280));
+        const canvas = await html2canvas(container, { width: NATURAL_W, height: NATURAL_H, scale: 1.5, useCORS: true, allowTaint: true, backgroundColor: "#ffffff", logging: false });
+        root.unmount();
+        document.body.removeChild(container);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, NATURAL_W, NATURAL_H);
+      }
+      pdf.save(`${(client || prospectCompany || "Sales").replace(/\s+/g, "_")}_Deck.pdf`);
+    } catch (e) { console.error("PDF export error:", e); setError("PDF export failed: " + e.message); }
+    finally { setExporting(null); }
   };
 
   const canvasW = Math.min(stageWidth - 80, 860);
@@ -5759,17 +5788,11 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       <div style={{ height: 52, flexShrink: 0, background: "var(--surface-3)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Asset Builder</div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          {/* Live clock */}
+          {error && <span style={{ fontSize: 12, color: "#f04438" }}>{error}</span>}
           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#31CE81", flexShrink: 0, animation: "livePulse 2s ease-in-out infinite" }} />
             <span style={{ fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", color: "var(--text-3)", letterSpacing: 0.3 }}>Live · {nowStr}</span>
           </div>
-          {error && <span style={{ fontSize: 12, color: "#f04438" }}>{error}</span>}
-          {slides && (
-            <button onClick={exportToPPTX} disabled={exporting} style={{ padding: "8px 16px", background: "transparent", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-1)", fontSize: 12, fontWeight: 600, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}>
-              {exporting ? "Exporting..." : "\u2193 Export .pptx"}
-            </button>
-          )}
         </div>
       </div>
 
@@ -6008,11 +6031,29 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
           </div>
 
-          {/* Generate button — pinned at bottom */}
-          <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border)", flexShrink: 0 }}>
-            <button onClick={generateDeck} disabled={generating} style={{ width: "100%", padding: "12px", background: generating ? "rgba(49,206,129,0.3)" : "#31CE81", border: "none", borderRadius: 10, color: generating ? "rgba(255,255,255,0.5)" : "#fff", fontSize: 13, fontWeight: 700, cursor: generating ? "wait" : "pointer", fontFamily: "inherit" }}>
+          {/* Actions — pinned at bottom */}
+          <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            <button onClick={generateDeck} disabled={generating || !!exporting} style={{ width: "100%", padding: "12px", background: generating ? "rgba(49,206,129,0.3)" : "#31CE81", border: "none", borderRadius: 10, color: generating ? "rgba(255,255,255,0.5)" : "#fff", fontSize: 13, fontWeight: 700, cursor: (generating || exporting) ? "wait" : "pointer", fontFamily: "inherit" }}>
               {generating ? "Generating\u2026" : "Generate Deck \u2726"}
             </button>
+            {slides && (
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={exportToPPTX}
+                  disabled={!!exporting}
+                  style={{ flex: 1, padding: "9px 6px", background: "transparent", border: "1px solid var(--border)", borderRadius: 8, color: exporting === "pptx" ? "var(--text-3)" : "var(--text-1)", fontSize: 11, fontWeight: 600, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}
+                >
+                  {exporting === "pptx" ? "Exporting…" : "\u2193 PPTX"}
+                </button>
+                <button
+                  onClick={exportToPDF}
+                  disabled={!!exporting}
+                  style={{ flex: 1, padding: "9px 6px", background: "transparent", border: "1px solid var(--border)", borderRadius: 8, color: exporting === "pdf" ? "var(--text-3)" : "var(--text-1)", fontSize: 11, fontWeight: 600, cursor: exporting ? "wait" : "pointer", fontFamily: "inherit" }}
+                >
+                  {exporting === "pdf" ? "Exporting…" : "\u2193 PDF"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
