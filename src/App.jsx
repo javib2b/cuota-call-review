@@ -5172,19 +5172,32 @@ const THUMB_H = 61.875;
 
 const SLIDE_TYPE_LABELS = {
   title: "Cover", agenda: "Agenda", problem: "Problem", solution: "Solution",
-  features: "Differentiators", proof: "Social Proof", roi: "ROI", timeline: "Timeline", cta: "CTA",
+  features: "Differentiators", proof: "Social Proof", roi: "ROI", timeline: "Timeline", cta: "CTA", success: "Success Plan",
 };
 
-function SlideTitle({ data, primary, accent, prospectCompany, client, companyName }) {
+const ROI_TINTS = [
+  { bg: "rgba(59,130,246,0.08)", border: "#3b82f6" },
+  { bg: "rgba(34,197,94,0.08)",  border: "#22c55e" },
+  { bg: "rgba(245,158,11,0.08)", border: "#f59e0b" },
+  { bg: "rgba(139,92,246,0.08)", border: "#8b5cf6" },
+];
+
+function SlideTitle({ data, primary, accent, prospectCompany, client, companyName, logoBase64 }) {
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, bottom: 0, left: "55%", width: 3, background: accent, zIndex: 1 }} />
       <div style={{ width: "55%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box" }}>
         {companyName && <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 22 }}>{companyName}</div>}
         <div style={{ fontSize: 40, fontWeight: 700, color: "#ffffff", lineHeight: 1.15, marginBottom: 16 }}>{data.title || "Sales Deck"}</div>
         <div style={{ width: 48, height: 4, background: accent, borderRadius: 2, marginBottom: 14 }} />
         {data.subtitle && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{data.subtitle}</div>}
       </div>
-      <div style={{ width: "45%", height: "100%", background: "#f8fafc", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box" }}>
+      <div style={{ width: "45%", height: "100%", background: "radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px) 0 0 / 18px 18px, #f8fafc", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box", position: "relative" }}>
+        {logoBase64 && (
+          <div style={{ position: "absolute", top: 22, right: 24 }}>
+            <img src={logoBase64} alt="logo" style={{ maxHeight: 36, maxWidth: 110, objectFit: "contain" }} />
+          </div>
+        )}
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", marginBottom: 10 }}>Prepared for</div>
         <div style={{ fontSize: 30, fontWeight: 700, color: primary, lineHeight: 1.2, marginBottom: 14 }}>{prospectCompany || client || "Your Prospect"}</div>
         <div style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
@@ -5199,10 +5212,10 @@ function SlideAgenda({ data, primary, accent }) {
     <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "36px 52px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 6 }}>Agenda</div>
       <div style={{ fontSize: 24, fontWeight: 700, color: primary, marginBottom: 22 }}>{data.title || "Today's Agenda"}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ borderLeft: `4px solid ${accent}`, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 14 }}>
         {items.slice(0, 5).map((item, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ fontSize: 40, fontWeight: 700, color: primary, lineHeight: 1, opacity: 0.15, minWidth: 42, textAlign: "right" }}>{String(i + 1).padStart(2, "0")}</div>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: primary, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
             <div style={{ fontSize: 15, color: "#1a1a2e", fontWeight: 500, lineHeight: 1.3 }}>{item}</div>
           </div>
         ))}
@@ -5215,14 +5228,19 @@ function SlideProblem({ data, primary, accent }) {
   const items = data.points || [];
   return (
     <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ width: "42%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
-        <div style={{ fontSize: 34, marginBottom: 14, lineHeight: 1 }}>⚠</div>
+      <div style={{ width: "42%", height: "100%", background: primary, backgroundImage: "radial-gradient(ellipse at 30% 70%, rgba(255,255,255,0.08) 0%, transparent 60%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 14 }}>
+          <path d="M12 2L2 20h20L12 2z" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
+          <line x1="12" y1="9" x2="12" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="12" cy="17" r="1" fill="white"/>
+        </svg>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>The Problem</div>
         <div style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>{data.title || "Current Challenges"}</div>
       </div>
       <div style={{ width: "58%", height: "100%", background: "#ffffff", padding: "30px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
         {items.slice(0, 4).map((item, i) => (
-          <div key={i} style={{ padding: "10px 14px", borderLeft: "3px solid #f04438", background: "rgba(240,68,56,0.04)", borderRadius: "0 6px 6px 0" }}>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: "rgba(240,68,56,0.04)", border: "1px solid rgba(240,68,56,0.12)", borderRadius: 8 }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#f04438", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
             <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>{item}</div>
           </div>
         ))}
@@ -5237,13 +5255,17 @@ function SlideSolution({ data, primary, accent }) {
     <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ width: "58%", height: "100%", background: "#ffffff", padding: "30px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
         {items.slice(0, 4).map((item, i) => (
-          <div key={i} style={{ padding: "10px 14px", borderLeft: `3px solid ${accent}`, background: "rgba(49,206,129,0.04)", borderRadius: "0 6px 6px 0" }}>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: "rgba(49,206,129,0.05)", border: "1px solid rgba(49,206,129,0.18)", borderRadius: 8 }}>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
             <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>{item}</div>
           </div>
         ))}
       </div>
-      <div style={{ width: "42%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
-        <div style={{ fontSize: 34, marginBottom: 14, lineHeight: 1 }}>✓</div>
+      <div style={{ width: "42%", height: "100%", background: primary, backgroundImage: "radial-gradient(ellipse at 70% 30%, rgba(255,255,255,0.08) 0%, transparent 60%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 14 }}>
+          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
+          <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>How It Works</div>
         <div style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>{data.title || "Our Solution"}</div>
       </div>
@@ -5251,25 +5273,48 @@ function SlideSolution({ data, primary, accent }) {
   );
 }
 
+function SlideFeatures({ data, primary, accent }) {
+  const cols = data.columns || [];
+  return (
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "28px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Differentiators</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 14 }}>{data.title || "Key Differentiators"}</div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(cols.length || 1, 3)}, 1fr)`, gap: 12, height: "calc(100% - 68px)" }}>
+        {cols.slice(0, 3).map((col, i) => (
+          <div key={i} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "16px 14px", display: "flex", flexDirection: "column", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, flexShrink: 0 }}>
+              <span style={{ fontSize: 12, color: "#fff", fontWeight: 700 }}>{i + 1}</span>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: primary, marginBottom: 8 }}>{col.heading}</div>
+            <div style={{ fontSize: 11, color: "#555", lineHeight: 1.65 }}>{col.body || ""}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SlideProof({ data, primary, accent }) {
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 60px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", marginBottom: 18 }}>Social Proof</div>
-      {data.quote && (
-        <div style={{ fontSize: 18, fontStyle: "italic", color: "#ffffff", lineHeight: 1.65, marginBottom: 14, borderLeft: `4px solid ${accent}`, paddingLeft: 22 }}>"{data.quote}"</div>
-      )}
-      {data.attribution && (
-        <div style={{ fontSize: 13, color: accent, fontWeight: 600, marginBottom: 24 }}>— {data.attribution}</div>
-      )}
-      {(data.metrics || []).length > 0 && (
-        <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-          {data.metrics.slice(0, 3).map((m, i) => (
-            <div key={i} style={{ flex: 1, background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "#ffffff", fontWeight: 600 }}>{m}</div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
+      <div style={{ width: "60%", height: "100%", background: "#ffffff", padding: "36px 40px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative" }}>
+        <div style={{ position: "absolute", top: 16, left: 28, fontSize: 80, fontWeight: 700, color: accent, opacity: 0.15, lineHeight: 1, fontFamily: "Georgia, serif", userSelect: "none" }}>"</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 16 }}>Social Proof</div>
+        {data.quote && (
+          <div style={{ fontSize: 17, fontStyle: "italic", color: "#1a1a2e", lineHeight: 1.7, marginBottom: 18, zIndex: 1, position: "relative" }}>"{data.quote}"</div>
+        )}
+        {data.attribution && (
+          <div style={{ fontSize: 12, color: primary, fontWeight: 700 }}>— {data.attribution}</div>
+        )}
+      </div>
+      <div style={{ width: "40%", height: "100%", background: primary, padding: "36px 28px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>Results</div>
+        {(data.metrics || []).slice(0, 3).map((m, i) => (
+          <div key={i} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px" }}>
+            <div style={{ fontSize: 14, color: "#fff", fontWeight: 600, lineHeight: 1.4 }}>{m}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -5281,12 +5326,15 @@ function SlideRoi({ data, primary, accent }) {
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Return on Investment</div>
       <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 16 }}>{data.title || "Expected ROI"}</div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, height: 270 }}>
-        {metrics.slice(0, 4).map((m, i) => (
-          <div key={i} style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12 }}>
-            <div style={{ fontSize: 42, fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 6, fontFamily: "'IBM Plex Mono', monospace" }}>{typeof m === "string" ? m : m.value}</div>
-            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", textAlign: "center" }}>{typeof m === "string" ? "" : m.label}</div>
-          </div>
-        ))}
+        {metrics.slice(0, 4).map((m, i) => {
+          const tint = ROI_TINTS[i] || ROI_TINTS[0];
+          return (
+            <div key={i} style={{ background: tint.bg, border: `1px solid ${tint.border}33`, borderTop: `3px solid ${tint.border}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12 }}>
+              <div style={{ fontSize: 48, fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 6, fontFamily: "'IBM Plex Mono', monospace" }}>{typeof m === "string" ? m : m.value}</div>
+              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", textAlign: "center" }}>{typeof m === "string" ? "" : m.label}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -5297,14 +5345,15 @@ function SlideTimeline({ data, primary, accent }) {
   return (
     <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 40px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Timeline</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 28 }}>{data.title || "Implementation Plan"}</div>
-      <div style={{ display: "flex", alignItems: "flex-start", position: "relative" }}>
-        <div style={{ position: "absolute", top: 20, left: 20, right: 20, height: 2, background: `linear-gradient(to right, ${accent}, ${primary})`, zIndex: 0 }} />
+      <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 24 }}>{data.title || "Implementation Plan"}</div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
         {steps.slice(0, 4).map((step, i) => (
-          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, marginBottom: 14, boxShadow: "0 0 0 4px #fff" }}>{i + 1}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: primary, textAlign: "center", marginBottom: 6 }}>{step.phase || `Phase ${i + 1}`}</div>
-            <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", textAlign: "center", lineHeight: 1.5, padding: "0 6px" }}>{step.description || ""}</div>
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: accent, border: `3px solid ${primary}`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, marginBottom: 10, boxSizing: "border-box" }}>{i + 1}</div>
+            <div style={{ width: "100%", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "12px 10px", boxSizing: "border-box" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: primary, textAlign: "center", marginBottom: 6 }}>{step.phase || `Phase ${i + 1}`}</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", textAlign: "center", lineHeight: 1.55, padding: "0 4px" }}>{step.description || ""}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -5314,9 +5363,10 @@ function SlideTimeline({ data, primary, accent }) {
 
 function SlideCta({ data, primary, accent }) {
   const points = data.points || [];
+  const priRgb = (() => { try { return [parseInt(primary.slice(1,3),16),parseInt(primary.slice(3,5),16),parseInt(primary.slice(5,7),16)].join(","); } catch { return "30,58,95"; } })();
   return (
     <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ width: "50%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 40px", boxSizing: "border-box" }}>
+      <div style={{ width: "50%", height: "100%", background: primary, backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12px)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px", boxSizing: "border-box" }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 12 }}>Next Steps</div>
         <div style={{ fontSize: 32, fontWeight: 700, color: "#ffffff", lineHeight: 1.2, marginBottom: 12 }}>{data.title || "Let's build this together"}</div>
         <div style={{ width: 40, height: 3, background: accent, borderRadius: 2 }} />
@@ -5324,41 +5374,63 @@ function SlideCta({ data, primary, accent }) {
       <div style={{ width: "50%", height: "100%", background: "#ffffff", padding: "36px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }}>
         {points.slice(0, 3).map((pt, i) => (
           <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: primary, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
             <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5, paddingTop: 4 }}>{pt}</div>
           </div>
         ))}
         {data.closing && (
-          <div style={{ fontSize: 12, fontStyle: "italic", color: primary, marginTop: 6, borderTop: "1px solid rgba(0,0,0,0.08)", paddingTop: 10 }}>{data.closing}</div>
+          <div style={{ fontSize: 12, fontStyle: "italic", color: primary, marginTop: 6, background: `rgba(${priRgb},0.06)`, borderRadius: 8, padding: "8px 12px" }}>{data.closing}</div>
         )}
       </div>
     </div>
   );
 }
 
-function SlideFeatures({ data, primary, accent }) {
-  const cols = data.columns || [];
+function SlideSuccess({ data, primary, accent }) {
+  const subtype = data.subtype || "goals";
+  const items = data.goals || data.kpis || data.metrics || data.items || data.points || data.steps || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ height: 54, display: "flex", alignItems: "center", background: primary, padding: "0 40px" }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{data.title || "Key Differentiators"}</span>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      <div style={{ height: 54, background: primary, display: "flex", alignItems: "center", padding: "0 36px", flexShrink: 0, gap: 10 }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: accent }} />
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" }}>Mutual Success Plan</span>
+        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", margin: "0 4px" }}>·</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{data.title || "Shared Goals"}</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(cols.length || 1, 3)}, 1fr)`, gap: 12, padding: "16px 24px", height: "calc(100% - 54px)", boxSizing: "border-box" }}>
-        {cols.slice(0, 3).map((col, i) => (
-          <div key={i} style={{ background: "rgba(0,0,0,0.02)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 12px", display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: accent, padding: "5px 8px", borderRadius: 6, marginBottom: 10, textAlign: "center" }}>{col.heading}</div>
-            <div style={{ fontSize: 11, color: "#444", lineHeight: 1.6 }}>{col.body || ""}</div>
+      <div style={{ flex: 1, padding: "18px 32px", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10 }}>
+        {subtype === "kpis" ? (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, flex: 1 }}>
+            {items.slice(0, 6).map((item, i) => (
+              <div key={i} style={{ background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 12px", display: "flex", flexDirection: "column" }}>
+                <div style={{ fontSize: 26, fontWeight: 700, color: primary, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>{typeof item === "object" ? item.value : item}</div>
+                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", lineHeight: 1.5 }}>{typeof item === "object" ? item.label : ""}</div>
+              </div>
+            ))}
           </div>
-        ))}
+        ) : (
+          items.slice(0, 5).map((item, i) => {
+            const label = typeof item === "object" ? (item.milestone || item.goal || item.description || item.phase || item.step || JSON.stringify(item)) : item;
+            const owner = typeof item === "object" ? item.owner : null;
+            const date = typeof item === "object" ? (item.date || item.dueDate || item.deadline) : null;
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", background: i % 2 === 0 ? "rgba(0,0,0,0.025)" : "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, flexShrink: 0 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
+                <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.45, flex: 1 }}>{label}</div>
+                {owner && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{owner}</div>}
+                {date && <div style={{ fontSize: 11, color: primary, fontWeight: 600, flexShrink: 0 }}>{date}</div>}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
 }
 
-function renderSlide(slide, primary, accent, prospectCompany, client, companyName) {
+function renderSlide(slide, primary, accent, prospectCompany, client, companyName, logoBase64) {
   const props = { data: slide, primary, accent };
   switch (slide.type) {
-    case "title": return <SlideTitle {...props} prospectCompany={prospectCompany} client={client} companyName={companyName} />;
+    case "title": return <SlideTitle {...props} prospectCompany={prospectCompany} client={client} companyName={companyName} logoBase64={logoBase64} />;
     case "agenda": return <SlideAgenda {...props} />;
     case "problem": return <SlideProblem {...props} />;
     case "solution": return <SlideSolution {...props} />;
@@ -5367,6 +5439,7 @@ function renderSlide(slide, primary, accent, prospectCompany, client, companyNam
     case "roi": return <SlideRoi {...props} />;
     case "timeline": return <SlideTimeline {...props} />;
     case "cta": return <SlideCta {...props} />;
+    case "success": return <SlideSuccess {...props} />;
     default: return (
       <div style={{ width: NATURAL_W, height: NATURAL_H, background: primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{slide.title}</div>
@@ -5376,11 +5449,12 @@ function renderSlide(slide, primary, accent, prospectCompany, client, companyNam
 }
 
 const ASSET_TYPES = [
-  { id: "Sales Deck",              bg: "#3a3a3a", selectedBg: "rgba(49,206,129,0.15)", border: "#4a4a4a" },
-  { id: "Follow Up Deck",          bg: "#313131", selectedBg: "rgba(49,206,129,0.15)", border: "#414141" },
-  { id: "Proposal",                bg: "#292929", selectedBg: "rgba(49,206,129,0.15)", border: "#393939" },
-  { id: "Case Study",              bg: "#222222", selectedBg: "rgba(49,206,129,0.15)", border: "#323232" },
-  { id: "Competitor Battle Cards", bg: "#1a1a1a", selectedBg: "rgba(49,206,129,0.15)", border: "#2a2a2a" },
+  { id: "Sales Deck",              icon: "📊", description: "9-slide narrative from problem to close" },
+  { id: "Follow Up Deck",          icon: "📧", description: "Post-call recap with next steps & materials" },
+  { id: "Mutual Success Plan",     icon: "🤝", description: "Joint milestones and shared success criteria" },
+  { id: "Proposal",                icon: "📋", description: "Scoped solution with pricing & terms" },
+  { id: "Case Study",              icon: "📖", description: "Customer proof & outcomes story" },
+  { id: "Competitor Battle Cards", icon: "⚔️", description: "Head-to-head competitive positioning" },
 ];
 
 function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient }) {
@@ -5405,6 +5479,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const [extractError, setExtractError] = useState("");
   const [extractedFields, setExtractedFields] = useState(null); // which fields were auto-filled
   const templateInputRef = useRef(null);
+  const logoInputRef = useRef(null);
 
   const [slides, setSlides] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -5667,7 +5742,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
               <div key={idx} onClick={() => setActiveSlide(idx)} style={{ padding: "8px 10px 10px", cursor: "pointer", borderLeft: isActive ? `3px solid ${accentColor}` : "3px solid transparent", background: isActive ? "rgba(49,206,129,0.08)" : "transparent", marginBottom: 1 }}>
                 <div style={{ width: THUMB_W, height: THUMB_H, position: "relative", overflow: "hidden", borderRadius: 4, marginBottom: 5, boxShadow: isActive ? `0 0 0 2px ${accentColor}` : "0 1px 4px rgba(0,0,0,0.3)" }}>
                   <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: NATURAL_H, transform: `scale(${thumbScale})`, transformOrigin: "top left", pointerEvents: "none" }}>
-                    {renderSlide(slide, primaryColor, accentColor, prospectCompany, client, companyName)}
+                    {renderSlide(slide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
                   </div>
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: isActive ? accentColor : "var(--text-3)", textTransform: "uppercase", letterSpacing: 0.7, lineHeight: 1.2 }}>{idx + 1} · {typeLabel}</div>
@@ -5682,15 +5757,13 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
             <div style={{ width: "100%", maxWidth: 640, padding: "0 32px" }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 18, textAlign: "center" }}>Choose an asset type</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {ASSET_TYPES.map((at, i) => {
+                {ASSET_TYPES.map((at) => {
                   const selected = deckType === at.id;
-                  const icons = ["📊", "📧", "📋", "📖", "⚔️"];
                   return (
                     <div
                       key={at.id}
                       onClick={() => setDeckType(at.id)}
                       style={{
-                        gridColumn: i === 4 ? "1 / -1" : undefined,
                         padding: "20px 22px",
                         borderRadius: 10,
                         border: `1px solid ${selected ? "rgba(49,206,129,0.55)" : "rgba(255,255,255,0.07)"}`,
@@ -5702,12 +5775,10 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                         gap: 14,
                       }}
                     >
-                      <span style={{ fontSize: 22, flexShrink: 0 }}>{icons[i]}</span>
+                      <span style={{ fontSize: 22, flexShrink: 0 }}>{at.icon}</span>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#31CE81" : "rgba(255,255,255,0.75)", marginBottom: 3 }}>{at.id}</div>
-                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>
-                          {["Structured sales narrative for new opportunities", "Post-call recap with next steps & materials", "Formal scoped solution with pricing & terms", "Customer proof & outcomes story", "Head-to-head competitive positioning"][i]}
-                        </div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", lineHeight: 1.4 }}>{at.description}</div>
                       </div>
                       {selected && <span style={{ marginLeft: "auto", fontSize: 14, color: "#31CE81", flexShrink: 0 }}>✓</span>}
                     </div>
@@ -5733,7 +5804,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
               )}
               <div style={{ width: canvasW, height: canvasH, position: "relative", overflow: "hidden", borderRadius: 6, boxShadow: "0 8px 48px rgba(0,0,0,0.6)", flexShrink: 0 }}>
                 <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: NATURAL_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-                  {renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName)}
+                  {renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
                 </div>
               </div>
               <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "#7a8ba0", fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -5751,8 +5822,57 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
             <div>
               <div style={sectionLabel}>Brand Guidelines</div>
 
+              <div style={{ marginBottom: 10 }}>
+                <label style={labelStyle}>Company</label>
+                <input value={companyName} onChange={e => handleCompanyNameChange(e.target.value)} placeholder="e.g. Cuota" style={inputStyle} />
+              </div>
+
+              {/* Logo upload */}
+              <div style={{ marginBottom: 10 }}>
+                <label style={labelStyle}>Logo</label>
+                <div
+                  onClick={() => logoInputRef.current?.click()}
+                  style={{
+                    border: `1px dashed ${logoBase64 ? "rgba(49,206,129,0.5)" : "var(--border-soft)"}`,
+                    borderRadius: 7,
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: logoBase64 ? "rgba(49,206,129,0.06)" : "var(--surface-2)",
+                    transition: "border-color 0.15s, background 0.15s",
+                  }}
+                >
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>🖼</span>
+                  <span style={{ fontSize: 11, color: logoBase64 ? "#31CE81" : "var(--text-3)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {logoBase64 ? logoFileName : "Upload logo"}
+                  </span>
+                  {logoBase64 && (
+                    <button
+                      onClick={ev => { ev.stopPropagation(); setLogoBase64(null); setLogoFileName(null); saveBrand("logoBase64", null); saveBrand("logoFileName", null); }}
+                      style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 14, padding: 0, flexShrink: 0, lineHeight: 1 }}
+                      title="Remove"
+                    >×</button>
+                  )}
+                </div>
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+                {[{ label: "Primary Color", value: primaryColor, onChange: handlePrimaryChange }, { label: "Accent Color", value: accentColor, onChange: handleAccentChange }].map(c => (
+                  <div key={c.label}>
+                    <label style={labelStyle}>{c.label}</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <input type="color" value={c.value} onChange={e => c.onChange(e.target.value)} style={{ width: 28, height: 28, border: "1px solid var(--border-soft)", borderRadius: 5, cursor: "pointer", padding: 2, flexShrink: 0, background: "none" }} />
+                      <input value={c.value} onChange={e => c.onChange(e.target.value)} style={{ flex: 1, padding: "5px 6px", border: "1px solid var(--border-soft)", borderRadius: 5, fontSize: 11, color: "var(--text-1)", outline: "none", fontFamily: "monospace", background: "var(--surface-2)", boxSizing: "border-box" }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               {/* Template deck upload */}
-              <div style={{ marginBottom: 12 }}>
+              <div>
                 <label style={labelStyle}>Import from existing deck</label>
                 <div
                   onClick={() => !extracting && templateInputRef.current?.click()}
@@ -5798,22 +5918,6 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                   Extracts colors, messaging & structure. Or fill manually below.
                 </div>
               </div>
-
-              <div style={{ marginBottom: 10 }}>
-                <label style={labelStyle}>Company</label>
-                <input value={companyName} onChange={e => handleCompanyNameChange(e.target.value)} placeholder="e.g. Cuota" style={inputStyle} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {[{ label: "Primary Color", value: primaryColor, onChange: handlePrimaryChange }, { label: "Accent Color", value: accentColor, onChange: handleAccentChange }].map(c => (
-                  <div key={c.label}>
-                    <label style={labelStyle}>{c.label}</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <input type="color" value={c.value} onChange={e => c.onChange(e.target.value)} style={{ width: 28, height: 28, border: "1px solid var(--border-soft)", borderRadius: 5, cursor: "pointer", padding: 2, flexShrink: 0, background: "none" }} />
-                      <input value={c.value} onChange={e => c.onChange(e.target.value)} style={{ flex: 1, padding: "5px 6px", border: "1px solid var(--border-soft)", borderRadius: 5, fontSize: 11, color: "var(--text-1)", outline: "none", fontFamily: "monospace", background: "var(--surface-2)", boxSizing: "border-box" }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* CONTEXT */}
@@ -5830,34 +5934,6 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                 <div>
                   <label style={labelStyle}>Prospect Company</label>
                   <input value={prospectCompany} onChange={e => setProspectCompany(e.target.value)} placeholder="e.g. Meijer" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Asset Type</label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {ASSET_TYPES.map(at => {
-                      const selected = deckType === at.id;
-                      return (
-                        <div
-                          key={at.id}
-                          onClick={() => setDeckType(at.id)}
-                          style={{
-                            padding: "8px 10px",
-                            borderRadius: 7,
-                            border: `1px solid ${selected ? "rgba(49,206,129,0.5)" : at.border}`,
-                            background: selected ? at.selectedBg : at.bg,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            transition: "border-color 0.15s, background 0.15s",
-                          }}
-                        >
-                          <span style={{ fontSize: 11, fontWeight: selected ? 600 : 400, color: selected ? "#31CE81" : "var(--text-2)" }}>{at.id}</span>
-                          {selected && <span style={{ fontSize: 10, color: "#31CE81" }}>✓</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>Deal Stage</label>

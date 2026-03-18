@@ -4,7 +4,7 @@
 
 import { authenticateUser } from "./_lib/supabase.js";
 
-const SYSTEM_PROMPT = `You are an expert B2B enterprise sales deck designer. Generate highly personalized, specific slide content as structured JSON. Never use generic filler — make every line specific to the context provided.`;
+const SYSTEM_PROMPT = `You are an expert B2B enterprise sales deck designer. Generate highly personalized, specific slide content as structured JSON. Be hyper-specific — use real numbers, concrete timelines, and language from the reference material. Never use generic filler. Every line must earn its place.`;
 
 function buildPrompt(ctx) {
   return `Create a 9-slide sales deck for this engagement:
@@ -23,7 +23,7 @@ Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
   "slides": [
     {
       "type": "title",
-      "title": "Compelling value-focused headline (max 8 words)",
+      "title": "Compelling value-focused headline (max 8 words, specific to their situation)",
       "subtitle": "${ctx.prospectCompany || ctx.client || "Prospect"} · ${ctx.callType || "Presentation"} · ${new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}"
     },
     {
@@ -34,28 +34,28 @@ Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
     {
       "type": "problem",
       "title": "The Challenges You're Navigating",
-      "points": ["Specific pain point 1 tied to their context", "Specific pain point 2", "Specific pain point 3", "Specific pain point 4"]
+      "points": ["Specific pain point 1 tied to their context — be concrete", "Specific pain point 2 with a measurable impact", "Specific pain point 3", "Specific pain point 4"]
     },
     {
       "type": "solution",
       "title": "How We Solve It",
-      "points": ["Solution mapped to pain 1", "Solution mapped to pain 2", "Solution mapped to pain 3", "Solution mapped to pain 4"]
+      "points": ["Solution mapped directly to pain 1", "Solution mapped directly to pain 2", "Solution mapped directly to pain 3", "Solution mapped directly to pain 4"]
     },
     {
       "type": "features",
       "title": "What Sets Us Apart",
       "columns": [
-        {"heading": "Capability 1", "body": "2-3 sentence description of why this matters to them"},
-        {"heading": "Capability 2", "body": "2-3 sentence description of why this matters to them"},
-        {"heading": "Capability 3", "body": "2-3 sentence description of why this matters to them"}
+        {"heading": "Capability 1", "body": "2-3 sentences on why this matters specifically to them, not generic benefits"},
+        {"heading": "Capability 2", "body": "2-3 sentences on why this matters specifically to them"},
+        {"heading": "Capability 3", "body": "2-3 sentences on why this matters specifically to them"}
       ]
     },
     {
       "type": "proof",
       "title": "Don't Take Our Word For It",
-      "quote": "Specific customer testimonial that would resonate with this prospect's situation",
+      "quote": "A real, human-sounding testimonial — conversational, not corporate-speak. Should reflect a situation similar to this prospect's.",
       "attribution": "Name, Title at Company Name",
-      "metrics": ["X% outcome improvement", "Y days/weeks to value", "Z ROI achieved"]
+      "metrics": ["X% outcome improvement tied to their specific pain", "Y days to full adoption", "Z ROI in first 90 days"]
     },
     {
       "type": "roi",
@@ -80,8 +80,84 @@ Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
     {
       "type": "cta",
       "title": "The Ask",
-      "points": ["Specific next step 1 (e.g. schedule 2-week pilot, align stakeholders)", "Specific next step 2 (e.g. sign SOW, connect to IT team)"],
-      "closing": "Personalized closing statement tied to their specific situation and the value you discussed"
+      "points": ["Schedule 30-min pilot kick-off this week — no IT work required", "Connect ${ctx.companyName || "us"} with their procurement/IT lead by Friday", "Sign 90-day pilot SOW — we handle the rest"],
+      "closing": "Personalized closing tied to their exact situation and the value you've discussed — make it memorable"
+    }
+  ]
+}
+
+IMPORTANT for roi slide: Derive metrics from the actual pain points provided — use realistic numbers that reflect their industry and situation, not placeholder values.
+IMPORTANT for proof slide: The quote must sound like a real person said it in a conversation, not a press release.
+IMPORTANT for cta slide: Every next step must be time-boxed and concrete (e.g. "this week", "by Friday", "30-min call") — never vague.`;
+}
+
+function buildMSPPrompt(ctx) {
+  return `Create a 6-slide Mutual Success Plan for this engagement:
+
+COMPANY (selling): ${ctx.companyName || "Our Company"}
+PROSPECT/CLIENT: ${ctx.prospectCompany || ctx.client || "the prospect"}
+DEAL STAGE: ${ctx.dealStage || "Late Stage"}
+REP: ${ctx.repName || ""}
+PAIN POINTS / SUCCESS CRITERIA: ${ctx.painPoints || "not specified"}
+${ctx.referenceText ? `\nREFERENCE MATERIAL:\n${ctx.referenceText.substring(0, 2500)}\n` : ""}
+
+Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
+
+{
+  "slides": [
+    {
+      "type": "title",
+      "title": "Mutual Success Plan: [Prospect Name]",
+      "subtitle": "${ctx.companyName || "Our Company"} × ${ctx.prospectCompany || ctx.client || "Prospect"} · ${new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}"
+    },
+    {
+      "type": "success",
+      "subtype": "goals",
+      "title": "Shared Goals",
+      "points": ["Specific shared goal 1 — tie to their business outcome", "Specific shared goal 2", "Specific shared goal 3", "Specific shared goal 4"]
+    },
+    {
+      "type": "success",
+      "subtype": "kpis",
+      "title": "Success KPIs",
+      "kpis": [
+        {"label": "KPI 1 description", "value": "target value"},
+        {"label": "KPI 2 description", "value": "target value"},
+        {"label": "KPI 3 description", "value": "target value"},
+        {"label": "KPI 4 description", "value": "target value"},
+        {"label": "KPI 5 description", "value": "target value"},
+        {"label": "KPI 6 description", "value": "target value"}
+      ]
+    },
+    {
+      "type": "success",
+      "subtype": "milestones",
+      "title": "Key Milestones",
+      "items": [
+        {"milestone": "Milestone 1 description", "date": "Week 1", "owner": "Both"},
+        {"milestone": "Milestone 2 description", "date": "Week 2", "owner": "${ctx.companyName || "Us"}"},
+        {"milestone": "Milestone 3 description", "date": "Week 3-4", "owner": "${ctx.prospectCompany || ctx.client || "Prospect"}"},
+        {"milestone": "Milestone 4 description", "date": "Month 2", "owner": "Both"},
+        {"milestone": "Milestone 5 description", "date": "Month 3", "owner": "Both"}
+      ]
+    },
+    {
+      "type": "success",
+      "subtype": "ownership",
+      "title": "Who Owns What",
+      "items": [
+        {"goal": "Responsibility 1", "owner": "${ctx.companyName || "Us"}"},
+        {"goal": "Responsibility 2", "owner": "${ctx.prospectCompany || ctx.client || "Prospect"}"},
+        {"goal": "Responsibility 3", "owner": "${ctx.companyName || "Us"}"},
+        {"goal": "Responsibility 4", "owner": "${ctx.prospectCompany || ctx.client || "Prospect"}"},
+        {"goal": "Responsibility 5", "owner": "Both"}
+      ]
+    },
+    {
+      "type": "success",
+      "subtype": "signoff",
+      "title": "Commitments & Sign-Off",
+      "points": ["Commitment 1 — specific and time-bound", "Commitment 2 — specific and time-bound", "Commitment 3 — specific and time-bound", "Commitment 4 — specific and time-bound"]
     }
   ]
 }`;
@@ -105,6 +181,9 @@ export default async function handler(req, res) {
     const anthropicKey = process.env.ANTHROPIC_API_KEY || userKey;
     if (!anthropicKey) return res.status(400).json({ error: "No API key configured." });
 
+    const isMSP = context.callType === "Mutual Success Plan";
+    const prompt = isMSP ? buildMSPPrompt(context) : buildPrompt(context);
+
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -116,7 +195,7 @@ export default async function handler(req, res) {
         model: "claude-sonnet-4-20250514",
         max_tokens: 4096,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: buildPrompt(context) }],
+        messages: [{ role: "user", content: prompt }],
       }),
     });
 
