@@ -2586,6 +2586,15 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
     return !best || improvement > best.improvement ? { repName: e.repName, improvement } : best;
   }, null);
 
+  const mostDeclined = repEntries.reduce((worst, e) => {
+    const sorted = [...e.repCalls].sort((a, b) => new Date(a.call_date || a.created_at) - new Date(b.call_date || b.created_at));
+    if (sorted.length < 2) return worst;
+    const improvement = Math.round((sorted[sorted.length - 1].overall_score || 0) - (sorted[0].overall_score || 0));
+    return !worst || improvement < worst.improvement ? { repName: e.repName, improvement } : worst;
+  }, null);
+
+  const repShortName = (name) => { const p = (name || "").split(" "); return p.length > 1 ? `${p[0]} ${p[1][0]}.` : p[0]; };
+
   const repsNeedingAttention = repEntries.filter(e => e.avg < 65).length;
 
   const relTime = (dateStr) => {
@@ -2727,12 +2736,30 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
             );
           })()}
 
-          {/* Most Improved — subtle green */}
-          <div className="stat-card" style={{ position: "relative", background: "linear-gradient(135deg, rgba(49,206,129,0.07) 0%, transparent 100%)", border: "1px solid rgba(49,206,129,0.18)", borderRadius: 12, padding: "14px 16px", borderLeft: "3px solid #31CE81", overflow: "hidden" }}>
-            <div style={{ position: "absolute", bottom: -12, right: -12, width: 64, height: 64, borderRadius: "50%", background: "rgba(49,206,129,0.06)", pointerEvents: "none" }} />
-            <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>Most Improved</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: "var(--text-1)" }}>{mostImproved?.improvement > 0 ? mostImproved.repName.split(" ")[0] : "—"}</div>
-            {mostImproved?.improvement > 0 && <div style={{ fontSize: 11, color: "#31CE81", fontWeight: 600, marginTop: 2 }}>+<CountUp to={mostImproved.improvement} /> pts</div>}
+          {/* Top Mover / At Risk — split card */}
+          <div className="stat-card" style={{ position: "relative", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, overflow: "hidden", display: "flex" }}>
+            {/* Left: Top Mover */}
+            <div style={{ flex: 1, padding: "14px 16px", borderLeft: "3px solid #31CE81" }}>
+              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>Top Mover</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", lineHeight: 1.2 }}>{mostImproved?.improvement > 0 ? repShortName(mostImproved.repName) : "—"}</div>
+              {mostImproved?.improvement > 0 && (
+                <div style={{ display: "inline-flex", alignItems: "center", marginTop: 7, padding: "2px 7px", borderRadius: 20, background: "rgba(49,206,129,0.12)", border: "1px solid rgba(49,206,129,0.25)", fontSize: 11, fontWeight: 700, color: "#31CE81" }}>
+                  ▲ +<CountUp to={mostImproved.improvement} /> pts
+                </div>
+              )}
+            </div>
+            {/* Divider */}
+            <div style={{ width: 1, background: "var(--border-soft)", flexShrink: 0, alignSelf: "stretch" }} />
+            {/* Right: At Risk */}
+            <div style={{ flex: 1, padding: "14px 16px", borderRight: "3px solid #f04438" }}>
+              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", marginBottom: 6 }}>At Risk</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", lineHeight: 1.2 }}>{mostDeclined?.improvement < 0 ? repShortName(mostDeclined.repName) : "—"}</div>
+              {mostDeclined?.improvement < 0 && (
+                <div style={{ display: "inline-flex", alignItems: "center", marginTop: 7, padding: "2px 7px", borderRadius: 20, background: "rgba(240,68,56,0.12)", border: "1px solid rgba(240,68,56,0.25)", fontSize: 11, fontWeight: 700, color: "#f04438" }}>
+                  ▼ <CountUp to={mostDeclined.improvement} /> pts
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Need Attention — red tint + pulsing dot */}
