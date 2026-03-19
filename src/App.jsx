@@ -102,7 +102,7 @@ const RISK_INDICATORS = [
   { id: "no_next_steps", label: "No Clear Next Steps", severity: "high" },
 ];
 
-const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Planimatik", "Xepelin"];
+const DEFAULT_CLIENTS = ["11x", "Arc", "Diio", "Factor", "Nauta", "Paymend", "Planimatik", "Xepelin"];
 const DEFAULT_PAST_CLIENTS = ["Rapido"];
 const CLIENT_DOMAINS = { "11x": "11x.ai", "Arc": "experiencearc.com", "Diio": "diio.com", "Factor": "factor-labs.com", "Nauta": "getnauta.com", "Paymend": "paymend.com", "Planimatik": "planimatik.com", "Rapido": "rapidosaas.com", "Xepelin": "xepelin.com" };
 // Local logo overrides — used instead of Brandfetch when Brandfetch returns the wrong image
