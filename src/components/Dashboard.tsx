@@ -136,6 +136,13 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, onPr
   const allScores = savedCalls.map(c => c.overall_score || 0).filter(Boolean);
   const avgScore = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
 
+  // Trend: recent 30 days vs prior 30 days
+  const recentCalls = savedCalls.filter(c => now - new Date(c.call_date || c.created_at).getTime() < d30);
+  const olderCalls  = savedCalls.filter(c => { const age = now - new Date(c.call_date || c.created_at).getTime(); return age >= d30 && age < 2 * d30; });
+  const recentAvg = recentCalls.length ? Math.round(recentCalls.map(c => c.overall_score || 0).filter(Boolean).reduce((a, b) => a + b, 0) / recentCalls.length) : null;
+  const olderAvg  = olderCalls.length  ? Math.round(olderCalls.map(c => c.overall_score || 0).filter(Boolean).reduce((a, b) => a + b, 0) / olderCalls.length)  : null;
+  const scoreDelta = recentAvg !== null && olderAvg !== null ? recentAvg - olderAvg : null;
+
   // Critical AEs: reps with avg score < 50
   const repScores: Record<string, number[]> = {};
   savedCalls.forEach(c => {
@@ -353,11 +360,18 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, onPr
         {/* KPI Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 32 }}>
           {([
-            { label: "Active Clients",     value: String(clients.length),                              color: TEXT  },
-            { label: "Avg Score",          value: isLoading ? "…" : avgScore !== null ? `${avgScore}%` : "—",  color: avgScore !== null ? scoreColor(avgScore) : TEXT3 },
-            { label: "Reviews This Month", value: isLoading ? "…" : String(reviewsThisMonth),           color: GREEN },
-            { label: "Critical AEs",       value: isLoading ? "…" : String(criticalAEs),                color: criticalAEs > 0 ? RED : GREEN },
-          ] as { label: string; value: string; color: string }[]).map(k => (
+            { label: "Active Clients",     value: String(clients.length),                              color: TEXT,   badge: null },
+            { label: "Avg Score",          value: isLoading ? "…" : avgScore !== null ? `${avgScore}%` : "—",  color: avgScore !== null ? scoreColor(avgScore) : TEXT3,
+              badge: !isLoading && scoreDelta !== null ? {
+                text: `${scoreDelta >= 0 ? "▲" : "▼"} ${scoreDelta >= 0 ? "+" : ""}${scoreDelta} pts`,
+                color: scoreDelta >= 0 ? GREEN : RED,
+                bg:    scoreDelta >= 0 ? "rgba(49,206,129,0.12)" : "rgba(255,77,77,0.12)",
+                border: scoreDelta >= 0 ? "rgba(49,206,129,0.25)" : "rgba(255,77,77,0.25)",
+              } : null,
+            },
+            { label: "Reviews This Month", value: isLoading ? "…" : String(reviewsThisMonth),           color: GREEN,  badge: null },
+            { label: "Critical AEs",       value: isLoading ? "…" : String(criticalAEs),                color: criticalAEs > 0 ? RED : GREEN, badge: null },
+          ] as { label: string; value: string; color: string; badge: { text: string; color: string; bg: string; border: string } | null }[]).map(k => (
             <div key={k.label} style={{
               background: "linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.05) 100%), rgba(6,32,53,0.88)",
               backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" as any,
@@ -371,6 +385,11 @@ export default function Dashboard({ onNavigate, onNewReview, onClientClick, onPr
               <div style={{ fontSize: 34, fontWeight: 800, color: k.color, lineHeight: 1, fontFamily: "'IBM Plex Mono', monospace" }}>
                 {k.value}
               </div>
+              {k.badge && (
+                <div style={{ display: "inline-flex", alignItems: "center", marginTop: 10, padding: "3px 8px", borderRadius: 20, background: k.badge.bg, border: `1px solid ${k.badge.border}`, fontSize: 11, fontWeight: 700, color: k.badge.color, letterSpacing: 0.2 }}>
+                  {k.badge.text}
+                </div>
+              )}
             </div>
           ))}
         </div>
