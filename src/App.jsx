@@ -6946,14 +6946,20 @@ export default function CuotaCallReview() {
       const data = await table.selectWhere(CALLS_LIST_COLS, "limit=10000&order=created_at.desc");
       if (Array.isArray(data)) {
         const enriched = data.map(c => ({ ...c, rep_name: c.category_scores?.rep_name || c.prospect_company }));
+        // Restrict calls to client_company for rep-role users
+        const clientCompany = profile?.client_company;
+        const isRestricted = clientCompany && !["admin", "super_admin", "manager"].includes(profile?.role);
+        const filtered = isRestricted
+          ? enriched.filter(c => c.category_scores?.client === clientCompany || (c.prospect_company || "").toLowerCase().includes(clientCompany.toLowerCase()))
+          : enriched;
         setCallsError("");
-        setSavedCalls(enriched);
+        setSavedCalls(filtered);
       }
     } catch (e) {
       console.error("Load calls error:", e);
       setCallsError("Failed to load calls: " + (e.message || "Unknown error"));
     }
-  }, [getValidToken]);
+  }, [getValidToken, profile]);
 
   // Load enablement docs
   const loadDocs = useCallback(async () => {
@@ -7166,13 +7172,19 @@ export default function CuotaCallReview() {
         } catch (e) { console.error("Invitation accept failed:", e.message); }
 
         // Create profile
+        // Auto-derive client_company from email domain if not set on the invitation
+        let derivedClientCompany = invitation.client_company || null;
+        if (!derivedClientCompany && user.email) {
+          const emailDomain = user.email.split("@")[1] || "";
+          derivedClientCompany = Object.keys(CLIENT_DOMAINS).find(c => CLIENT_DOMAINS[c] === emailDomain) || null;
+        }
         const newProfile = {
           id: user.id,
           org_id: invitation.org_id,
           role: invitation.role || "rep",
           full_name: user.user_metadata?.full_name || user.email,
           email: user.email || null,
-          ...(invitation.client_company ? { client_company: invitation.client_company } : {}),
+          ...(derivedClientCompany ? { client_company: derivedClientCompany } : {}),
         };
         try {
           const created = await table.insert(newProfile);
