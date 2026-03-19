@@ -212,6 +212,18 @@ select option { background: #062035; color: var(--text-1); }
   box-shadow: 0 8px 24px rgba(0,0,0,0.22) !important;
 }
 
+/* ── AI Insight strip fade-drift transitions ───────────────────────────── */
+@keyframes insightIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+@keyframes insightOut {
+  from { opacity: 1; transform: translateY(0);   }
+  to   { opacity: 0; transform: translateY(7px); }
+}
+.insight-in  { animation: insightIn  0.30s cubic-bezier(0.22,1,0.36,1) forwards; }
+.insight-out { animation: insightOut 0.22s ease-in forwards; }
+
 /* ── Need Attention pulsing dot + ripple ───────────────────────────────── */
 .attn-dot {
   position: absolute;

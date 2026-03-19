@@ -2508,6 +2508,30 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
   const [repRoleFilter, setRepRoleFilter] = useState("");
   const [deletingRep, setDeletingRep] = useState(null);
 
+  // AI insight strip rotation
+  const [insightIdx, setInsightIdx] = useState(0);
+  const [insightExiting, setInsightExiting] = useState(false);
+  const pauseUntilRef = useRef(0);
+  const insightTimerRef = useRef(null);
+
+  const jumpToInsight = useCallback((idx) => {
+    pauseUntilRef.current = Date.now() + 8000;
+    setInsightExiting(true);
+    setTimeout(() => { setInsightIdx(idx); setInsightExiting(false); }, 240);
+  }, []);
+
+  useEffect(() => {
+    insightTimerRef.current = setInterval(() => {
+      if (Date.now() < pauseUntilRef.current) return;
+      setInsightExiting(true);
+      setTimeout(() => {
+        setInsightIdx(i => (i + 1) % 4);
+        setInsightExiting(false);
+      }, 240);
+    }, 5000);
+    return () => clearInterval(insightTimerRef.current);
+  }, []);
+
   const handleDeleteRep = async (repName, repCalls) => {
     if (!window.confirm(`Delete all ${repCalls.length} call${repCalls.length !== 1 ? "s" : ""} for ${repName} under ${client}? This cannot be undone.`)) return;
     setDeletingRep(repName);
@@ -2595,29 +2619,49 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
   const repShortName = (name) => { const p = (name || "").split(" "); return p.length > 1 ? `${p[0]} ${p[1][0]}.` : p[0]; };
 
-  // AI insight: find the weakest category with enough data points
-  const _aiInsight = (() => {
-    if (clientCalls.length === 0) return null;
+  // AI insights — 4 rotating messages derived from call data
+  const _aiInsights = (() => {
+    if (clientCalls.length === 0) return [];
     const CAT_LABELS = { pre_call_research: "Pre-Call Research", intro_opening: "Opening", agenda: "Agenda", discovery: "Discovery", pitch: "Pitch", services_product: "Product Overview", pricing: "Pricing", next_steps: "Next Steps", objection_handling: "Objection Handling" };
+    // Category totals
     const totals = {};
     clientCalls.forEach(c => {
       const cs = c.category_scores;
       if (!cs) return;
       Object.keys(CAT_LABELS).forEach(k => {
         if (cs[k] && typeof cs[k].score === "number") {
-          if (!totals[k]) totals[k] = { sum: 0, n: 0 };
+          if (!totals[k]) totals[k] = { sum: 0, n: 0, below5: 0 };
           totals[k].sum += cs[k].score;
           totals[k].n++;
+          if (cs[k].score < 5) totals[k].below5++;
         }
       });
     });
     const ranked = Object.entries(totals).filter(([, v]) => v.n >= 3).sort(([, a], [, b]) => (a.sum / a.n) - (b.sum / b.n));
-    if (ranked.length === 0) return `${clientCalls.length} call${clientCalls.length !== 1 ? "s" : ""} reviewed — team avg ${avgCallScore ?? "—"}%.`;
-    const [weakId, weakData] = ranked[0];
-    const weakAvg = (weakData.sum / weakData.n).toFixed(1);
-    const [strongId, strongData] = ranked[ranked.length - 1];
-    const strongAvg = (strongData.sum / strongData.n).toFixed(1);
-    return `Across ${clientCalls.length} reviewed calls, ${CAT_LABELS[weakId]} scores lowest at ${weakAvg}/10 — this is the highest-leverage coaching area. ${CAT_LABELS[strongId]} is the standout strength at ${strongAvg}/10.`;
+    // Msg 1: weakest vs strongest category
+    const msg1 = ranked.length >= 2
+      ? `Coaching priority: ${CAT_LABELS[ranked[0][0]]} averages ${(ranked[0][1].sum / ranked[0][1].n).toFixed(1)}/10 — the lowest across ${clientCalls.length} reviewed calls. ${CAT_LABELS[ranked[ranked.length - 1][0]]} is the standout at ${(ranked[ranked.length - 1][1].sum / ranked[ranked.length - 1][1].n).toFixed(1)}/10.`
+      : `${clientCalls.length} call${clientCalls.length !== 1 ? "s" : ""} reviewed — team avg ${avgCallScore ?? "—"}%.`;
+    // Msg 2: category where most calls score < 5 (consistency gap)
+    const consistentGap = ranked.filter(([, v]) => v.n >= 5 && (v.below5 / v.n) > 0.5)[0];
+    const msg2 = consistentGap
+      ? `Consistency gap: ${CAT_LABELS[consistentGap[0]]} scores below 5/10 in ${Math.round((consistentGap[1].below5 / consistentGap[1].n) * 100)}% of calls — reps aren't consistently landing this area. Targeted role-play would move the needle fast.`
+      : `Team average sits at ${avgCallScore ?? "—"}% across ${clientCalls.length} reviewed calls. ${repEntries.length} rep${repEntries.length !== 1 ? "s" : ""} actively reviewed.`;
+    // Msg 3: deal stage mix
+    const stageCounts = {};
+    clientCalls.forEach(c => { const s = c.deal_stage || "Unknown"; stageCounts[s] = (stageCounts[s] || 0) + 1; });
+    const topStage = Object.entries(stageCounts).sort(([,a],[,b]) => b - a)[0];
+    const lateCount = (stageCounts["Late Stage"] || 0) + (stageCounts["Negotiation"] || 0);
+    const msg3 = topStage
+      ? `Pipeline mix: ${Math.round((topStage[1] / clientCalls.length) * 100)}% of reviewed calls are ${topStage[0]} deals. ${lateCount > 0 ? `${lateCount} call${lateCount !== 1 ? "s" : ""} (${Math.round((lateCount / clientCalls.length) * 100)}%) are in Late Stage or Negotiation.` : "No Late Stage or Negotiation calls yet — focus on deal progression."}`
+      : msg1;
+    // Msg 4: rep momentum
+    const trendingUp = repEntries.filter(e => { const s = [...e.repCalls].sort((a,b) => new Date(a.call_date||a.created_at)-new Date(b.call_date||b.created_at)); return s.length >= 2 && (s[s.length-1].overall_score||0) > (s[s.length-2].overall_score||0); }).length;
+    const trendingDown = repEntries.filter(e => { const s = [...e.repCalls].sort((a,b) => new Date(a.call_date||a.created_at)-new Date(b.call_date||b.created_at)); return s.length >= 2 && (s[s.length-1].overall_score||0) < (s[s.length-2].overall_score||0); }).length;
+    const msg4 = repEntries.length > 0
+      ? `Rep momentum: ${trendingUp} of ${repEntries.length} rep${repEntries.length !== 1 ? "s" : ""} trending up on their last call.${trendingDown > 0 ? ` ${trendingDown} trending down — review their most recent sessions for early signals.` : " Strong direction across the board."}`
+      : msg1;
+    return [msg1, msg2, msg3, msg4];
   })();
 
   const repsNeedingAttention = repEntries.filter(e => e.avg < 65).length;
@@ -2801,16 +2845,30 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       )}
 
       {/* AI Analysis strip */}
-      {_aiInsight && (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", marginBottom: 16, borderRadius: 10, background: "linear-gradient(90deg, rgba(59,130,246,0.10) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(99,102,241,0.20)", backdropFilter: "blur(12px)" }}>
+      {_aiInsights.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", marginBottom: 16, borderRadius: 10, background: "linear-gradient(90deg, rgba(59,130,246,0.10) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(99,102,241,0.20)", backdropFilter: "blur(12px)", overflow: "hidden" }}>
           {/* Glowing icon */}
           <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 7, background: "linear-gradient(135deg, rgba(99,102,241,0.65) 0%, rgba(59,130,246,0.45) 100%)", boxShadow: "0 0 10px rgba(99,102,241,0.45), 0 0 0 1px rgba(99,102,241,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff" }}>✦</div>
-          {/* Message */}
-          <div style={{ flex: 1, fontSize: 12, color: "rgba(255,255,255,0.72)", lineHeight: 1.55 }}>{_aiInsight}</div>
+          {/* Animated message */}
+          <div style={{ flex: 1, position: "relative", minHeight: 18, overflow: "hidden" }}>
+            <div
+              key={`${insightIdx}-${insightExiting ? "out" : "in"}`}
+              className={insightExiting ? "insight-out" : "insight-in"}
+              style={{ fontSize: 12, color: "rgba(255,255,255,0.72)", lineHeight: 1.55 }}
+            >
+              {_aiInsights[insightIdx % _aiInsights.length]}
+            </div>
+          </div>
           {/* Dot indicators + pill */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
-              {[0.9, 0.45, 0.18].map((op, i) => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: `rgba(129,140,248,${op})` }} />)}
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              {_aiInsights.map((_, i) => (
+                <div
+                  key={i}
+                  onClick={() => jumpToInsight(i)}
+                  style={{ width: i === insightIdx ? 14 : 5, height: 5, borderRadius: 3, background: i === insightIdx ? "#818cf8" : "rgba(129,140,248,0.28)", cursor: "pointer", transition: "width 0.3s ease, background 0.3s ease" }}
+                />
+              ))}
             </div>
             <div style={{ padding: "2px 9px", borderRadius: 20, background: "rgba(99,102,241,0.14)", border: "1px solid rgba(99,102,241,0.28)", fontSize: 10, fontWeight: 700, color: "#a5b4fc", letterSpacing: 0.6, textTransform: "uppercase" }}>AI Analysis</div>
           </div>
