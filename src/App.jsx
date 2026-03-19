@@ -5704,7 +5704,7 @@ const ASSET_TYPES = [
   { id: "Competitor Battle Cards", icon: "⚔️", description: "Head-to-head competitive positioning" },
 ];
 
-function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient }) {
+function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient, savedCalls }) {
   const _initKey = defaultClient ? `cuota_deck_brand_${defaultClient}` : "cuota_deck_brand";
   const _stored = loadStored(_initKey) || {};
   const [primaryColor, setPrimaryColor] = useState(_stored.primaryColor || "#1e3a5f");
@@ -5747,6 +5747,21 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const [competitorGaps, setCompetitorGaps] = useState(() => loadStored("battlecard_comp_gaps") || "");
 
   const isBattlecard = deckType === "Competitor Battle Cards";
+
+  // Mine reviewed calls for real competitive intelligence and objections
+  const _allCalls = savedCalls || [];
+  const _clientCalls = isBattlecard
+    ? _allCalls  // battlecard uses all calls to find top competitor
+    : client
+      ? _allCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()))
+      : [];
+  const callCount = _clientCalls.length;
+  const callIntelligence = _clientCalls.slice(0, 30).map(c => [
+    c.coaching_notes && `Overall: ${c.coaching_notes}`,
+    c.category_scores?.objection_handling?.details && `Objections raised: ${c.category_scores.objection_handling.details}`,
+    c.category_scores?.discovery?.details && `Discovery: ${c.category_scores.discovery.details}`,
+    c.category_scores?.pitch?.details && `Pitch notes: ${c.category_scores.pitch.details}`,
+  ].filter(Boolean).join(" | ")).filter(Boolean).join("\n---\n");
 
   const stageRef = useRef(null);
   const [stageWidth, setStageWidth] = useState(700);
@@ -5919,7 +5934,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
   const generateDeck = async () => {
     if (isBattlecard) {
-      if (!competitorName.trim()) { setError("Enter a competitor name to generate a battlecard."); return; }
+      if (!competitorName.trim() && !callIntelligence) { setError("Enter a competitor name, or select a client with reviewed calls so we can detect one automatically."); return; }
     } else {
       if (!client && !prospectCompany) { setError("Enter at least a client or prospect company."); return; }
     }
@@ -5935,6 +5950,8 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
               companyName, productName: companyName, companyFunding, companyG2,
               seriesA, seriesB, competitorName, competitorFunding, competitorG2,
               competitorGaps, primaryColor, accentColor,
+              callIntelligence: callIntelligence || undefined,
+              callCount: callCount || undefined,
             },
             apiKey: apiKey || undefined,
           }),
@@ -5947,7 +5964,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${validToken}` },
           body: JSON.stringify({
-            context: { client, prospectCompany, repName: "", dealStage, callType: deckType, painPoints, companyName, referenceText: refText },
+            context: { client, prospectCompany, repName: "", dealStage, callType: deckType, painPoints, companyName, referenceText: refText, callIntelligence: callIntelligence || undefined, callCount: callCount || undefined },
             apiKey: apiKey || undefined,
           }),
         });
@@ -6370,6 +6387,12 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
           {/* Actions — pinned at bottom */}
           <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+            {callCount > 0 && (
+              <div style={{ fontSize: 10, color: "#31CE81", background: "rgba(49,206,129,0.08)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 6, padding: "5px 8px", display: "flex", alignItems: "center", gap: 5, lineHeight: 1.4 }}>
+                <span style={{ fontSize: 12 }}>⬡</span>
+                <span>Informed by <strong>{callCount}</strong> reviewed call{callCount !== 1 ? "s" : ""}{isBattlecard ? " — competitor auto-detected" : ""}</span>
+              </div>
+            )}
             <button onClick={generateDeck} disabled={generating || !!exporting} style={{ width: "100%", padding: "12px", background: generating ? "rgba(49,206,129,0.3)" : "#31CE81", border: "none", borderRadius: 10, color: generating ? "rgba(255,255,255,0.5)" : "#fff", fontSize: 13, fontWeight: 700, cursor: (generating || exporting) ? "wait" : "pointer", fontFamily: "inherit" }}>
               {generating ? "Generating\u2026" : isBattlecard ? "Generate Battlecard \u2726" : "Generate Deck \u2726"}
             </button>
@@ -7646,7 +7669,7 @@ export default function CuotaCallReview() {
         {page === "cuotaAgent" && <CuotaAgentPage getValidToken={getValidToken} savedCalls={savedCalls} />}
 
         {/* PRESENTATIONS */}
-        {page === "assets" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} />}
+        {page === "assets" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} savedCalls={savedCalls} />}
 
         {page === "integrations" && profile?.role === "super_admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "super_admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}

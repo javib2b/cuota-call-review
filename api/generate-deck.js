@@ -7,6 +7,7 @@ import { authenticateUser } from "./_lib/supabase.js";
 const SYSTEM_PROMPT = `You are an expert B2B enterprise sales deck designer. Generate highly personalized, specific slide content as structured JSON. Be hyper-specific — use real numbers, concrete timelines, and language from the reference material. Never use generic filler. Every line must earn its place.`;
 
 function buildPrompt(ctx) {
+  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 50;
   return `Create a 9-slide sales deck for this engagement:
 
 COMPANY (selling): ${ctx.companyName || "Our Company"}
@@ -14,8 +15,16 @@ PROSPECT/CLIENT: ${ctx.prospectCompany || ctx.client || "the prospect"}
 DEAL STAGE: ${ctx.dealStage || "Mid-Pipe"}
 DECK TYPE: ${ctx.callType || "Demo"}
 REP: ${ctx.repName || ""}
-PAIN POINTS / KEY THEMES: ${ctx.painPoints || "not specified"}
-${ctx.referenceText ? `\nREFERENCE MATERIAL (match this tone, style, and messaging):\n${ctx.referenceText.substring(0, 3500)}\n` : ""}
+PAIN POINTS / KEY THEMES: ${ctx.painPoints || (hasIntelligence ? "see call intelligence below" : "not specified")}
+${ctx.referenceText ? `\nREFERENCE MATERIAL (match this tone, style, and messaging):\n${ctx.referenceText.substring(0, 3500)}\n` : ""}${hasIntelligence ? `\nREAL CALL INTELLIGENCE (from ${ctx.callCount || "multiple"} reviewed sales calls with this client — use these real patterns):
+${ctx.callIntelligence.substring(0, 3500)}
+
+INSTRUCTIONS FOR CALL INTELLIGENCE:
+- Extract the most common objections and pain points from the calls above and use them to populate the problem and objection slides
+- The proof/testimonial slide should reflect situations actually described in these calls
+- Pain points in the problem slide must match what reps are actually hearing in the field — not generic B2B pains
+- If painPoints above is empty, derive them entirely from the call intelligence
+` : ""}
 
 Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
 
@@ -92,14 +101,18 @@ IMPORTANT for cta slide: Every next step must be time-boxed and concrete (e.g. "
 }
 
 function buildMSPPrompt(ctx) {
+  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 50;
   return `Create a 6-slide Mutual Success Plan for this engagement:
 
 COMPANY (selling): ${ctx.companyName || "Our Company"}
 PROSPECT/CLIENT: ${ctx.prospectCompany || ctx.client || "the prospect"}
 DEAL STAGE: ${ctx.dealStage || "Late Stage"}
 REP: ${ctx.repName || ""}
-PAIN POINTS / SUCCESS CRITERIA: ${ctx.painPoints || "not specified"}
-${ctx.referenceText ? `\nREFERENCE MATERIAL:\n${ctx.referenceText.substring(0, 2500)}\n` : ""}
+PAIN POINTS / SUCCESS CRITERIA: ${ctx.painPoints || (hasIntelligence ? "see call intelligence below" : "not specified")}
+${ctx.referenceText ? `\nREFERENCE MATERIAL:\n${ctx.referenceText.substring(0, 2500)}\n` : ""}${hasIntelligence ? `\nCALL INTELLIGENCE (from ${ctx.callCount || "multiple"} reviewed calls):
+${ctx.callIntelligence.substring(0, 2500)}
+Use the real pain points and patterns from these calls to ground the MSP in actual conversations.
+` : ""}
 
 Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
 

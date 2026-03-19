@@ -10,6 +10,11 @@ import { authenticateUser } from "./_lib/supabase.js";
 const SYSTEM_PROMPT = `You are an expert B2B competitive intelligence specialist. Generate highly specific, accurate competitive battlecard content as structured JSON. Be direct, factual, and sales-ready. Every comparison must be concrete — no vague claims. Write like a seasoned SE who knows both products cold.`;
 
 function buildPrompt(ctx) {
+  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 50;
+  const competitorLine = ctx.competitorName
+    ? `COMPETITOR: ${ctx.competitorName}`
+    : `COMPETITOR: (not specified — you MUST identify the single most frequently mentioned competitor from the call intelligence below and build the entire battlecard around them)`;
+
   return `Create a 5-page competitive battlecard for this matchup:
 
 OUR COMPANY: ${ctx.companyName || "Our Company"}
@@ -24,12 +29,23 @@ CHANNELS: ${ctx.channels || "not provided"}
 SUPPORT MODEL: ${ctx.supportModel || "not provided"}
 TARGET AUDIENCE: ${ctx.targetAudience || "enterprise B2B sales teams"}
 
-COMPETITOR: ${ctx.competitorName || "Competitor"}
+${competitorLine}
 COMPETITOR G2: ${ctx.competitorG2 || "not provided"}
 COMPETITOR SERIES A: ${ctx.competitorSeriesA || "not provided"}
 COMPETITOR SERIES B: ${ctx.competitorSeriesB || "not provided"}
 COMPETITOR FUNDING: ${ctx.competitorFunding || "not provided"}
 KNOWN COMPETITOR GAPS: ${ctx.competitorGaps || "not provided"}
+${hasIntelligence ? `
+REAL CALL INTELLIGENCE (from ${ctx.callCount || "multiple"} reviewed sales calls — this is ground truth):
+${ctx.callIntelligence.substring(0, 4500)}
+
+CRITICAL INSTRUCTIONS FOR USING CALL INTELLIGENCE:
+- If COMPETITOR is not specified above, scan the call intelligence for the most frequently mentioned competitor and use that one throughout the entire battlecard
+- The objections on page 5 MUST be the actual objections that appear in the call intelligence — not generic ones
+- Quotes and customer situations should reflect patterns from these real calls (change names/details to protect identity)
+- Known gaps and competitive weaknesses should be grounded in what the calls reveal
+- Pain points and win themes must match what reps actually encounter in these calls
+` : ""}
 
 Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
 
