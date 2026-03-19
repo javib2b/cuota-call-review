@@ -2595,6 +2595,31 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
   const repShortName = (name) => { const p = (name || "").split(" "); return p.length > 1 ? `${p[0]} ${p[1][0]}.` : p[0]; };
 
+  // AI insight: find the weakest category with enough data points
+  const _aiInsight = (() => {
+    if (clientCalls.length === 0) return null;
+    const CAT_LABELS = { pre_call_research: "Pre-Call Research", intro_opening: "Opening", agenda: "Agenda", discovery: "Discovery", pitch: "Pitch", services_product: "Product Overview", pricing: "Pricing", next_steps: "Next Steps", objection_handling: "Objection Handling" };
+    const totals = {};
+    clientCalls.forEach(c => {
+      const cs = c.category_scores;
+      if (!cs) return;
+      Object.keys(CAT_LABELS).forEach(k => {
+        if (cs[k] && typeof cs[k].score === "number") {
+          if (!totals[k]) totals[k] = { sum: 0, n: 0 };
+          totals[k].sum += cs[k].score;
+          totals[k].n++;
+        }
+      });
+    });
+    const ranked = Object.entries(totals).filter(([, v]) => v.n >= 3).sort(([, a], [, b]) => (a.sum / a.n) - (b.sum / b.n));
+    if (ranked.length === 0) return `${clientCalls.length} call${clientCalls.length !== 1 ? "s" : ""} reviewed — team avg ${avgCallScore ?? "—"}%.`;
+    const [weakId, weakData] = ranked[0];
+    const weakAvg = (weakData.sum / weakData.n).toFixed(1);
+    const [strongId, strongData] = ranked[ranked.length - 1];
+    const strongAvg = (strongData.sum / strongData.n).toFixed(1);
+    return `Across ${clientCalls.length} reviewed calls, ${CAT_LABELS[weakId]} scores lowest at ${weakAvg}/10 — this is the highest-leverage coaching area. ${CAT_LABELS[strongId]} is the standout strength at ${strongAvg}/10.`;
+  })();
+
   const repsNeedingAttention = repEntries.filter(e => e.avg < 65).length;
 
   const relTime = (dateStr) => {
@@ -2772,6 +2797,23 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* AI Analysis strip */}
+      {_aiInsight && (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", marginBottom: 16, borderRadius: 10, background: "linear-gradient(90deg, rgba(59,130,246,0.10) 0%, rgba(99,102,241,0.06) 100%)", border: "1px solid rgba(99,102,241,0.20)", backdropFilter: "blur(12px)" }}>
+          {/* Glowing icon */}
+          <div style={{ width: 28, height: 28, flexShrink: 0, borderRadius: 7, background: "linear-gradient(135deg, rgba(99,102,241,0.65) 0%, rgba(59,130,246,0.45) 100%)", boxShadow: "0 0 10px rgba(99,102,241,0.45), 0 0 0 1px rgba(99,102,241,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#fff" }}>✦</div>
+          {/* Message */}
+          <div style={{ flex: 1, fontSize: 12, color: "rgba(255,255,255,0.72)", lineHeight: 1.55 }}>{_aiInsight}</div>
+          {/* Dot indicators + pill */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+              {[0.9, 0.45, 0.18].map((op, i) => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: `rgba(129,140,248,${op})` }} />)}
+            </div>
+            <div style={{ padding: "2px 9px", borderRadius: 20, background: "rgba(99,102,241,0.14)", border: "1px solid rgba(99,102,241,0.28)", fontSize: 10, fontWeight: 700, color: "#a5b4fc", letterSpacing: 0.6, textTransform: "uppercase" }}>AI Analysis</div>
+          </div>
         </div>
       )}
 
