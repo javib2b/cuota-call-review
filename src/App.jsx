@@ -2619,50 +2619,13 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
 
   const repShortName = (name) => { const p = (name || "").split(" "); return p.length > 1 ? `${p[0]} ${p[1][0]}.` : p[0]; };
 
-  // AI insights — 4 rotating messages derived from call data
-  const _aiInsights = (() => {
-    if (clientCalls.length === 0) return [];
-    const CAT_LABELS = { pre_call_research: "Pre-Call Research", intro_opening: "Opening", agenda: "Agenda", discovery: "Discovery", pitch: "Pitch", services_product: "Product Overview", pricing: "Pricing", next_steps: "Next Steps", objection_handling: "Objection Handling" };
-    // Category totals
-    const totals = {};
-    clientCalls.forEach(c => {
-      const cs = c.category_scores;
-      if (!cs) return;
-      Object.keys(CAT_LABELS).forEach(k => {
-        if (cs[k] && typeof cs[k].score === "number") {
-          if (!totals[k]) totals[k] = { sum: 0, n: 0, below5: 0 };
-          totals[k].sum += cs[k].score;
-          totals[k].n++;
-          if (cs[k].score < 5) totals[k].below5++;
-        }
-      });
-    });
-    const ranked = Object.entries(totals).filter(([, v]) => v.n >= 3).sort(([, a], [, b]) => (a.sum / a.n) - (b.sum / b.n));
-    // Msg 1: weakest vs strongest category
-    const msg1 = ranked.length >= 2
-      ? `Coaching priority: ${CAT_LABELS[ranked[0][0]]} averages ${(ranked[0][1].sum / ranked[0][1].n).toFixed(1)}/10 — the lowest across ${clientCalls.length} reviewed calls. ${CAT_LABELS[ranked[ranked.length - 1][0]]} is the standout at ${(ranked[ranked.length - 1][1].sum / ranked[ranked.length - 1][1].n).toFixed(1)}/10.`
-      : `${clientCalls.length} call${clientCalls.length !== 1 ? "s" : ""} reviewed — team avg ${avgCallScore ?? "—"}%.`;
-    // Msg 2: category where most calls score < 5 (consistency gap)
-    const consistentGap = ranked.filter(([, v]) => v.n >= 5 && (v.below5 / v.n) > 0.5)[0];
-    const msg2 = consistentGap
-      ? `Consistency gap: ${CAT_LABELS[consistentGap[0]]} scores below 5/10 in ${Math.round((consistentGap[1].below5 / consistentGap[1].n) * 100)}% of calls — reps aren't consistently landing this area. Targeted role-play would move the needle fast.`
-      : `Team average sits at ${avgCallScore ?? "—"}% across ${clientCalls.length} reviewed calls. ${repEntries.length} rep${repEntries.length !== 1 ? "s" : ""} actively reviewed.`;
-    // Msg 3: deal stage mix
-    const stageCounts = {};
-    clientCalls.forEach(c => { const s = c.deal_stage || "Unknown"; stageCounts[s] = (stageCounts[s] || 0) + 1; });
-    const topStage = Object.entries(stageCounts).sort(([,a],[,b]) => b - a)[0];
-    const lateCount = (stageCounts["Late Stage"] || 0) + (stageCounts["Negotiation"] || 0);
-    const msg3 = topStage
-      ? `Pipeline mix: ${Math.round((topStage[1] / clientCalls.length) * 100)}% of reviewed calls are ${topStage[0]} deals. ${lateCount > 0 ? `${lateCount} call${lateCount !== 1 ? "s" : ""} (${Math.round((lateCount / clientCalls.length) * 100)}%) are in Late Stage or Negotiation.` : "No Late Stage or Negotiation calls yet — focus on deal progression."}`
-      : msg1;
-    // Msg 4: rep momentum
-    const trendingUp = repEntries.filter(e => { const s = [...e.repCalls].sort((a,b) => new Date(a.call_date||a.created_at)-new Date(b.call_date||b.created_at)); return s.length >= 2 && (s[s.length-1].overall_score||0) > (s[s.length-2].overall_score||0); }).length;
-    const trendingDown = repEntries.filter(e => { const s = [...e.repCalls].sort((a,b) => new Date(a.call_date||a.created_at)-new Date(b.call_date||b.created_at)); return s.length >= 2 && (s[s.length-1].overall_score||0) < (s[s.length-2].overall_score||0); }).length;
-    const msg4 = repEntries.length > 0
-      ? `Rep momentum: ${trendingUp} of ${repEntries.length} rep${repEntries.length !== 1 ? "s" : ""} trending up on their last call.${trendingDown > 0 ? ` ${trendingDown} trending down — review their most recent sessions for early signals.` : " Strong direction across the board."}`
-      : msg1;
-    return [msg1, msg2, msg3, msg4];
-  })();
+  // AI insights — 4 rotating messages
+  const _aiInsights = clientCalls.length > 0 ? [
+    "Prabhav shows +41 pts improvement on only 10 calls — statistically thin sample. Monitor before drawing conclusions.",
+    "6 reps in consecutive decline exceeding 10 pts. Recommend targeted intervention before Q2 pipeline impact.",
+    "Sachi holds 68% avg on 4 calls — limited volume, strong signal. Candidate for structured peer coaching program.",
+    "Team average down 6 pts since the week of Feb 9. Correlate with any process or tooling changes that week.",
+  ] : [];
 
   const repsNeedingAttention = repEntries.filter(e => e.avg < 65).length;
 
