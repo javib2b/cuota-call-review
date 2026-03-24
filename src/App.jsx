@@ -489,6 +489,13 @@ function AuthScreen({ onAuth, authError = "" }) {
   );
 }
 
+// Returns true if a category details string is a non-answer (N/A, not applicable, cannot determine)
+function isNADetail(s) {
+  if (!s) return false;
+  const lower = s.toLowerCase().trim();
+  return lower === "n/a" || lower.startsWith("n/a") || lower.includes("not applicable") || lower.includes("cannot determine") || lower.includes("not applicable") || lower.includes("not discussed") && lower.length < 60;
+}
+
 // ==================== CATEGORY BAR ====================
 function CategoryBar({ category, scores, onScoreChange }) {
   const cs = scores[category.id] || {};
@@ -2508,6 +2515,7 @@ function EnablementPage({ docs, getValidToken, profile, clients, onDocsUpdate })
               <h4 style={{ fontSize: 12, fontWeight: 700, color: "var(--text-1)", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: 1 }}>Category Breakdown</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {Object.entries(analysis.scores).map(([key, val]) => {
+                  if (isNADetail(val.details)) return null;
                   const label = key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
                   const pct = Math.round((val.score / 10) * 100);
                   return (
@@ -6170,12 +6178,12 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       cs.prospect_name && `Prospect: ${cs.prospect_name}`,
       c.prospect_company && `Company: ${c.prospect_company}`,
       c.coaching_notes && `Coaching: ${c.coaching_notes}`,
-      cs.objection_handling?.details && `Objections: ${cs.objection_handling.details}`,
-      cs.discovery?.details && `Discovery: ${cs.discovery.details}`,
-      cs.pitch?.details && `Pitch: ${cs.pitch.details}`,
-      cs.services_product?.details && `Demo/Value: ${cs.services_product.details}`,
-      cs.next_steps?.details && `Next Steps: ${cs.next_steps.details}`,
-      cs.intro_opening?.details && `Opening: ${cs.intro_opening.details}`,
+      cs.objection_handling?.details && !isNADetail(cs.objection_handling.details) && `Objections: ${cs.objection_handling.details}`,
+      cs.discovery?.details && !isNADetail(cs.discovery.details) && `Discovery: ${cs.discovery.details}`,
+      cs.pitch?.details && !isNADetail(cs.pitch.details) && `Pitch: ${cs.pitch.details}`,
+      cs.services_product?.details && !isNADetail(cs.services_product.details) && `Demo/Value: ${cs.services_product.details}`,
+      cs.next_steps?.details && !isNADetail(cs.next_steps.details) && `Next Steps: ${cs.next_steps.details}`,
+      cs.intro_opening?.details && !isNADetail(cs.intro_opening.details) && `Opening: ${cs.intro_opening.details}`,
     ].filter(Boolean);
     return parts.length ? parts.join(" | ") : null;
   }).filter(Boolean).join("\n---\n");
@@ -8301,7 +8309,7 @@ export default function CuotaCallReview() {
               <div>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "var(--text-3)", marginBottom: 8 }}>Category Scores</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {activeCategories.map(cat => (
+                  {activeCategories.filter(cat => !isNADetail(scores[cat.id]?.details)).map(cat => (
                     <CategoryBar key={cat.id} category={cat} scores={scores} onScoreChange={handleScoreChange} />
                   ))}
                 </div>
@@ -8367,7 +8375,7 @@ export default function CuotaCallReview() {
                             <span style={{ fontSize: 11, fontWeight: 700, color: badgeColor, background: badgeBgIcon, borderRadius: 6, padding: "2px 7px", flexShrink: 0, marginTop: 1 }}>{icon}</span>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 13, fontWeight: 600, color: flagged ? "var(--text-1)" : "var(--text-2)", marginBottom: 2 }}>{risk.label}</div>
-                              <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0, lineHeight: 1.5 }}>{data.details}</p>
+                              {!isNADetail(data.details) && <p style={{ fontSize: 12, color: "var(--text-2)", margin: 0, lineHeight: 1.5 }}>{data.details}</p>}
                             </div>
                           </div>
                         );
