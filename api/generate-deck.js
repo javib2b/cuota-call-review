@@ -19,18 +19,15 @@ PAIN POINTS / KEY THEMES: ${ctx.painPoints || (hasIntelligence ? "see call intel
 ${ctx.referenceText ? `\nREFERENCE MATERIAL (match this tone, style, and messaging):\n${ctx.referenceText.substring(0, 3500)}\n` : ""}${hasIntelligence ? `\nREAL CALL INTELLIGENCE (from ${ctx.callCount || "multiple"} reviewed sales calls with this client — use these real patterns):
 ${ctx.callIntelligence.substring(0, 3500)}
 
-INSTRUCTIONS FOR CALL INTELLIGENCE:
-- Extract the most common objections and pain points from the calls above and use them to populate the problem and objection slides
-- The proof/testimonial slide should reflect situations actually described in these calls
-- Pain points in the problem slide must match what reps are actually hearing in the field — not generic B2B pains
-- If painPoints above is empty, derive them entirely from the call intelligence
-
-COMPETITIVE DIFFERENTIATION — REQUIRED:
-- Derive 3 core win themes from the call intelligence patterns (what reps win on, what objections they overcome)
-- Every feature description in the features slide must frame capability as a competitive advantage, not just a product feature
-- If any competitor name appears in call intelligence, address it directly in the problem or features slide
-- The features slide headline and columns must reinforce consistent differentiation — same 3 themes throughout the deck
-- Solution slide: frame each solution point as "we do X, which others can't do because Y"
+MANDATORY INSTRUCTIONS — YOU MUST FOLLOW THESE OR THE OUTPUT IS WRONG:
+- Every slide must contain at least one piece of language, a number, or a concept pulled VERBATIM or PARAPHRASED from the call intelligence above
+- Problem slide: each bullet must name a pain that was explicitly mentioned in calls — no generic phrases like "lack of visibility" unless a rep actually said it
+- Solution slide: each bullet must directly counter a problem from the calls — frame as "we do X, which others can't because Y"
+- Proof slide: the quote must sound like it came from a prospect at ${ctx.prospectCompany || ctx.client || "this company"} — reference their deal stage, their specific pain, or their situation
+- CTA slide: closing line must mention the specific prospect and deal context by name
+- Features slide: columns must be the 3 actual reasons reps are winning or losing on these calls — not generic capabilities
+- If any competitor is mentioned in the calls, address it head-on in the problem or features slide
+- Derive 3 core win themes from the call intelligence and weave them through the entire deck consistently
 ` : ""}
 
 Return ONLY valid JSON — no markdown fences, no explanation, nothing else.

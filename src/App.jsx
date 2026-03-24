@@ -5889,7 +5889,10 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const _clientCalls = isBattlecard
     ? _allCalls  // battlecard uses all calls to find top competitor
     : client
-      ? _allCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()))
+      ? _allCalls.filter(c =>
+          (c.category_scores?.client || "").toLowerCase() === client.toLowerCase() ||
+          (c.prospect_company || "").toLowerCase().includes(client.toLowerCase())
+        )
       : [];
   const callCount = _clientCalls.length;
   const callIntelligence = _clientCalls.slice(0, 30).map(c => {
@@ -5946,7 +5949,11 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
     setRefText(stored.referenceText || "");
     setExtractedFields(null);
     setTemplateFileName(null);
-  }, [client]);
+    // Auto-fetch prospect logo for known clients that have no logo stored yet
+    if (!stored.prospectLogoBase64 && client && CLIENT_DOMAINS[client]) {
+      fetchProspectLogo(CLIENT_DOMAINS[client]);
+    }
+  }, [client]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePrimaryChange = (v) => { setPrimaryColor(v); saveBrand("primaryColor", v); };
   const handleAccentChange = (v) => { setAccentColor(v); saveBrand("accentColor", v); };
