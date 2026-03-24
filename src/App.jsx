@@ -5293,7 +5293,7 @@ function SlideFooter({ logoBase64, companyName, label }) {
   );
 }
 
-function SlideTitle({ data, primary, accent, prospectCompany, client, companyName, logoBase64 }) {
+function SlideTitle({ data, primary, accent, prospectCompany, client, companyName, logoBase64, prospectLogoBase64 }) {
   return (
     <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative", background: "#fff" }}>
       {/* Left — white panel: identity + prepared-for */}
@@ -5304,6 +5304,9 @@ function SlideTitle({ data, primary, accent, prospectCompany, client, companyNam
           {companyName && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase" }}>{companyName}</span>}
         </div>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 10 }}>Prepared for</div>
+        {prospectLogoBase64 && (
+          <img src={prospectLogoBase64} alt="" style={{ maxHeight: 38, maxWidth: 120, objectFit: "contain", opacity: 0.85, marginBottom: 8 }} />
+        )}
         <div style={{ fontSize: 30, fontWeight: 700, color: primary, lineHeight: 1.2, marginBottom: 14 }}>{prospectCompany || client || "Your Prospect"}</div>
         <div style={{ width: 32, height: 1, background: "#e5e7eb", marginBottom: 14 }} />
         <div style={{ fontSize: 11, color: "#94a3b8" }}>{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
@@ -5805,10 +5808,10 @@ function renderBattlecard(page, primary, accent, logoBase64) {
   }
 }
 
-function renderSlide(slide, primary, accent, prospectCompany, client, companyName, logoBase64) {
+function renderSlide(slide, primary, accent, prospectCompany, client, companyName, logoBase64, prospectLogoBase64) {
   const shared = { data: slide, primary, accent, logoBase64, companyName };
   switch (slide.type) {
-    case "title": return <SlideTitle {...shared} prospectCompany={prospectCompany} client={client} />;
+    case "title": return <SlideTitle {...shared} prospectCompany={prospectCompany} client={client} prospectLogoBase64={prospectLogoBase64} />;
     case "agenda": return <SlideAgenda {...shared} />;
     case "problem": return <SlideProblem {...shared} />;
     case "solution": return <SlideSolution {...shared} />;
@@ -5845,6 +5848,15 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   const [logoFileName, setLogoFileName] = useState(_stored.logoFileName || null);
   const [websiteDomain, setWebsiteDomain] = useState(_stored.websiteDomain || "");
   const [logoFetching, setLogoFetching] = useState(false);
+  const [prospectLogoBase64, setProspectLogoBase64] = useState(() => {
+    const k = defaultClient ? `cuota_deck_brand_${defaultClient}` : "cuota_deck_brand";
+    return loadStored(k)?.prospectLogoBase64 || null;
+  });
+  const [prospectLogoFetching, setProspectLogoFetching] = useState(false);
+  const [prospectDomain, setProspectDomain] = useState(() => {
+    const k = defaultClient ? `cuota_deck_brand_${defaultClient}` : "cuota_deck_brand";
+    return loadStored(k)?.prospectDomain || "";
+  });
 
   const [client, setClient] = useState(defaultClient || "");
   const [prospectCompany, setProspectCompany] = useState("");
@@ -5887,12 +5899,21 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       ? _allCalls.filter(c => c.category_scores?.client === client || (c.prospect_company || "").toLowerCase().includes(client.toLowerCase()))
       : [];
   const callCount = _clientCalls.length;
-  const callIntelligence = _clientCalls.slice(0, 30).map(c => [
-    c.coaching_notes && `Overall: ${c.coaching_notes}`,
-    c.category_scores?.objection_handling?.details && `Objections raised: ${c.category_scores.objection_handling.details}`,
-    c.category_scores?.discovery?.details && `Discovery: ${c.category_scores.discovery.details}`,
-    c.category_scores?.pitch?.details && `Pitch notes: ${c.category_scores.pitch.details}`,
-  ].filter(Boolean).join(" | ")).filter(Boolean).join("\n---\n");
+  const callIntelligence = _clientCalls.slice(0, 30).map(c => {
+    const cs = c.category_scores || {};
+    const parts = [
+      c.overall_score && `Score: ${c.overall_score}`,
+      cs.prospect_name && `Prospect: ${cs.prospect_name}`,
+      c.coaching_notes && `Coaching: ${c.coaching_notes}`,
+      cs.objection_handling?.details && `Objections: ${cs.objection_handling.details}`,
+      cs.discovery?.details && `Discovery: ${cs.discovery.details}`,
+      cs.pitch?.details && `Pitch: ${cs.pitch.details}`,
+      cs.demo_value?.details && `Demo/Value: ${cs.demo_value.details}`,
+      cs.next_steps?.details && `Next Steps: ${cs.next_steps.details}`,
+      cs.storytelling?.details && `Storytelling: ${cs.storytelling.details}`,
+    ].filter(Boolean);
+    return parts.length ? parts.join(" | ") : null;
+  }).filter(Boolean).join("\n---\n");
 
   const stageRef = useRef(null);
   const [stageWidth, setStageWidth] = useState(700);
@@ -5924,6 +5945,9 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
     setLogoFileName(stored.logoFileName || null);
     setWebsiteDomain(stored.websiteDomain || "");
     setLogoFetching(false);
+    setProspectLogoBase64(stored.prospectLogoBase64 || null);
+    setProspectDomain(stored.prospectDomain || "");
+    setProspectLogoFetching(false);
     setRefText(stored.referenceText || "");
     setExtractedFields(null);
     setTemplateFileName(null);
@@ -5972,6 +5996,25 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       saveBrand("logoFileName", normalized);
     }
     setLogoFetching(false);
+  };
+
+  const fetchProspectLogo = async (raw) => {
+    const normalized = (raw || "").replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0].trim().toLowerCase();
+    if (!normalized) return;
+    setProspectLogoFetching(true);
+    setProspectDomain(normalized);
+    saveBrand("prospectDomain", normalized);
+    try {
+      const resp = await fetch(`/api/proxy-logo?domain=${encodeURIComponent(normalized)}`);
+      if (resp.ok) {
+        const { dataUri } = await resp.json();
+        if (dataUri) {
+          setProspectLogoBase64(dataUri);
+          saveBrand("prospectLogoBase64", dataUri);
+        }
+      }
+    } catch { /* silent fail */ }
+    finally { setProspectLogoFetching(false); }
   };
 
   const handleLogoUpload = (e) => {
@@ -6062,6 +6105,11 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       if (!client && !prospectCompany) { setError("Enter at least a client or prospect company."); return; }
     }
     setGenerating(true); setError(""); setSlides(null); setActiveSlide(0);
+    // Best-effort prospect logo auto-fetch (non-blocking)
+    if (!prospectLogoBase64 && prospectCompany && prospectCompany.trim()) {
+      const guessedDomain = prospectCompany.toLowerCase().replace(/[^a-z0-9]/g, "") + ".com";
+      fetchProspectLogo(guessedDomain);
+    }
     try {
       const validToken = await getValidToken();
       if (isBattlecard) {
@@ -6174,7 +6222,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
         const root = createRoot(container);
         root.render(isBattlecard
           ? renderBattlecard(slides[i], primaryColor, accentColor, logoBase64)
-          : renderSlide(slides[i], primaryColor, accentColor, prospectCompany, client, companyName, logoBase64));
+          : renderSlide(slides[i], primaryColor, accentColor, prospectCompany, client, companyName, logoBase64, prospectLogoBase64));
         await new Promise(r => setTimeout(r, 280));
         const canvas = await html2canvas(container, { width: pageW, height: pageH, scale: 1.5, useCORS: true, allowTaint: true, backgroundColor: "#ffffff", logging: false });
         root.unmount();
@@ -6250,7 +6298,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                   <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: thumbNaturalH, transform: `scale(${thumbScale})`, transformOrigin: "top left", pointerEvents: "none" }}>
                     {isBattlecard
                       ? renderBattlecard(slide, primaryColor, accentColor, logoBase64)
-                      : renderSlide(slide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
+                      : renderSlide(slide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64, prospectLogoBase64)}
                   </div>
                 </div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: isActive ? accentColor : "var(--text-3)", textTransform: "uppercase", letterSpacing: 0.7, lineHeight: 1.2 }}>{idx + 1} · {typeLabel}</div>
@@ -6314,7 +6362,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                 <div style={{ position: "absolute", top: 0, left: 0, width: NATURAL_W, height: naturalH, transform: `scale(${scale})`, transformOrigin: "top left" }}>
                   {isBattlecard
                     ? renderBattlecard(currentSlide, primaryColor, accentColor, logoBase64)
-                    : renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64)}
+                    : renderSlide(currentSlide, primaryColor, accentColor, prospectCompany, client, companyName, logoBase64, prospectLogoBase64)}
                 </div>
               </div>
               <div style={{ position: "absolute", bottom: 14, fontSize: 11, color: "#7a8ba0", fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -6487,6 +6535,26 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
                   <div>
                     <label style={labelStyle}>Prospect Company</label>
                     <input value={prospectCompany} onChange={e => setProspectCompany(e.target.value)} placeholder="e.g. Meijer" style={inputStyle} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Prospect Domain</label>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        value={prospectDomain}
+                        onChange={e => setProspectDomain(e.target.value)}
+                        onBlur={e => { if (e.target.value.trim()) fetchProspectLogo(e.target.value); }}
+                        onKeyDown={e => { if (e.key === "Enter" && prospectDomain.trim()) fetchProspectLogo(prospectDomain); }}
+                        placeholder="e.g. diio.ai"
+                        style={{ ...inputStyle, flex: 1 }}
+                      />
+                      {prospectLogoFetching && <span style={{ fontSize: 11, color: "var(--text-3)", flexShrink: 0 }}>…</span>}
+                      {prospectLogoBase64 && !prospectLogoFetching && (
+                        <img src={prospectLogoBase64} alt="" style={{ maxHeight: 20, maxWidth: 48, objectFit: "contain", flexShrink: 0, borderRadius: 2, opacity: 0.85 }} />
+                      )}
+                      {prospectLogoBase64 && !prospectLogoFetching && (
+                        <button onClick={() => { setProspectLogoBase64(null); setProspectDomain(""); saveBrand("prospectLogoBase64", null); saveBrand("prospectDomain", ""); }} style={{ background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", fontSize: 13, padding: 0, flexShrink: 0, lineHeight: 1 }}>×</button>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label style={labelStyle}>Deal Stage</label>

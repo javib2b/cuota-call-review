@@ -366,7 +366,10 @@ CRITICAL RULES:
 - Competitor gaps should be factual and defensible, not hyperbolic
 - All quotes must sound like real humans wrote them, not marketing copy
 - Objection rebuttals must be specific and confident — no hedging
-- Replace ALL placeholder text with real, specific content based on the context provided`;
+- Replace ALL placeholder text with real, specific content based on the context provided
+- Win themes on page 5 MUST match patterns from call intelligence (what we're actually winning on in real conversations)
+- Every page reinforces the same 3 win themes — scattered messaging loses deals
+- Objections on page 5 must be the REAL objections from call intelligence, reworded to be actionable`;
 }
 
 export default async function handler(req, res) {

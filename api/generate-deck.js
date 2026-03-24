@@ -24,6 +24,13 @@ INSTRUCTIONS FOR CALL INTELLIGENCE:
 - The proof/testimonial slide should reflect situations actually described in these calls
 - Pain points in the problem slide must match what reps are actually hearing in the field — not generic B2B pains
 - If painPoints above is empty, derive them entirely from the call intelligence
+
+COMPETITIVE DIFFERENTIATION — REQUIRED:
+- Derive 3 core win themes from the call intelligence patterns (what reps win on, what objections they overcome)
+- Every feature description in the features slide must frame capability as a competitive advantage, not just a product feature
+- If any competitor name appears in call intelligence, address it directly in the problem or features slide
+- The features slide headline and columns must reinforce consistent differentiation — same 3 themes throughout the deck
+- Solution slide: frame each solution point as "we do X, which others can't do because Y"
 ` : ""}
 
 Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
@@ -112,6 +119,7 @@ PAIN POINTS / SUCCESS CRITERIA: ${ctx.painPoints || (hasIntelligence ? "see call
 ${ctx.referenceText ? `\nREFERENCE MATERIAL:\n${ctx.referenceText.substring(0, 2500)}\n` : ""}${hasIntelligence ? `\nCALL INTELLIGENCE (from ${ctx.callCount || "multiple"} reviewed calls):
 ${ctx.callIntelligence.substring(0, 2500)}
 Use the real pain points and patterns from these calls to ground the MSP in actual conversations.
+Derive shared goals and success KPIs from the actual outcomes and objections visible in the call intelligence — not generic placeholders.
 ` : ""}
 
 Return ONLY valid JSON — no markdown fences, no explanation, nothing else.
