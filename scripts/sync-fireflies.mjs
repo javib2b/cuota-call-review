@@ -153,7 +153,8 @@ async function processTranscript(ff, transcriptId, orgId, client) {
       reviewData.call_date = new Date(ts).toISOString().split("T")[0];
     }
     if (transcript.duration) {
-      reviewData.call_duration_minutes = Math.round(transcript.duration / 60);
+      // Store in category_scores JSONB — call_duration_minutes column does not exist in call_reviews
+      reviewData.category_scores.call_duration_minutes = Math.round(transcript.duration / 60);
     }
     // Store the Fireflies transcript ID so we can link back
     reviewData.category_scores.fireflies_transcript_id = transcriptId;

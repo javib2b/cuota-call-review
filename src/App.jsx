@@ -1606,23 +1606,247 @@ function DiioSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
   );
 }
 
+// ==================== FIREFLIES SETTINGS MODAL ====================
+function FirefliesSettingsModal({ getValidToken, onClose, client }) {
+  const [apiKey, setApiKey] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [configured, setConfigured] = useState(false);
+  const [apiKeyMasked, setApiKeyMasked] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const t = await getValidToken();
+        const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+        const r = await fetch(`/api/fireflies/settings${qs}`, { headers: { Authorization: `Bearer ${t}` } });
+        if (r.ok) {
+          const data = await r.json();
+          if (data.configured) {
+            setConfigured(true);
+            setApiKeyMasked(data.api_key_masked || "");
+          }
+        }
+      } catch (e) { console.error("Load fireflies settings:", e); }
+      setLoading(false);
+    })();
+  }, [getValidToken, client]);
+
+  const handleSave = async () => {
+    if (!apiKey) { setError("API key is required"); return; }
+    setSaving(true); setError(""); setSuccess("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/fireflies/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ apiKey, client: client || "Other" }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Save failed");
+      setConfigured(true);
+      if (data.keyVerified) {
+        setSuccess("API key saved and verified successfully!");
+      } else {
+        setSuccess(`API key saved. Note: ${data.verifyError || "Could not verify — check your key."}`);
+      }
+      setApiKey("");
+      setTimeout(() => setSuccess(""), 6000);
+    } catch (e) { setError(e.message); } finally { setSaving(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Remove Fireflies integration${client ? ` for ${client}` : ""}? This won't delete already-processed calls.`)) return;
+    try {
+      const t = await getValidToken();
+      const qs = client ? `?client=${encodeURIComponent(client)}` : "";
+      await fetch(`/api/fireflies/settings${qs}`, { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
+      setConfigured(false); setApiKeyMasked("");
+      setSuccess("Integration removed."); setTimeout(() => setSuccess(""), 3000);
+    } catch (e) { setError(e.message); }
+  };
+
+  const inputStyle = { width: "100%", padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-1)", fontSize: 13, outline: "none", fontFamily: "inherit", boxSizing: "border-box" };
+  const labelStyle = { fontSize: 10, textTransform: "uppercase", letterSpacing: 1.2, color: "var(--text-3)", display: "block", marginBottom: 6 };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 28, width: 460, maxHeight: "85vh", overflow: "auto", boxShadow: "0 20px 60px var(--text-3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", margin: 0 }}>Fireflies Integration{client ? ` \u2014 ${client}` : ""}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-2)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
+        </div>
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "var(--text-2)", padding: 20 }}>Loading...</p>
+        ) : (
+          <>
+            {configured && (
+              <div style={{ padding: "10px 14px", marginBottom: 16, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 13, color: "#1a7a42" }}>
+                Fireflies is connected ({apiKeyMasked}). Enter a new key below to update.
+              </div>
+            )}
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Fireflies API Key</label>
+              <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder={configured ? "****  (enter new to update)" : "Your Fireflies API key"} style={inputStyle} />
+              <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 4 }}>
+                Find your API key at <span style={{ color: "#31CE81" }}>app.fireflies.ai → Settings → API</span>
+              </div>
+            </div>
+
+            {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+            {success && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(49,206,129,0.1)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 8, fontSize: 12, color: "#1a7a42" }}>{success}</div>}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{saving ? "Saving..." : "Save API Key"}</button>
+            </div>
+            {configured && (
+              <button onClick={handleDelete} style={{ width: "100%", marginTop: 12, padding: "8px", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, background: "rgba(239,68,68,0.06)", color: "#ef4444", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Remove Integration</button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==================== FIREFLIES SYNC MODAL ====================
+function FirefliesSyncModal({ getValidToken, onClose, onCallProcessed, client }) {
+  const [transcripts, setTranscripts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(null);
+  const [error, setError] = useState("");
+
+  const loadTranscripts = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const t = await getValidToken();
+      const qs = client ? `?client=${encodeURIComponent(client)}&days=90` : "?days=90";
+      const r = await fetch(`/api/fireflies/sync${qs}`, { headers: { Authorization: `Bearer ${t}` } });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Failed to load transcripts");
+      setTranscripts(data.transcripts || []);
+    } catch (e) { setError(e.message); } finally { setLoading(false); }
+  }, [getValidToken, client]);
+
+  useEffect(() => { loadTranscripts(); }, [loadTranscripts]);
+
+  const processTranscript = async (transcriptId) => {
+    setProcessing(transcriptId); setError("");
+    try {
+      const t = await getValidToken();
+      const r = await fetch("/api/fireflies/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ transcriptId, client: client || "Other" }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || "Processing failed");
+      setTranscripts(prev => prev.map(tr => tr.transcriptId === transcriptId ? { ...tr, status: "completed", overallScore: data.overallScore } : tr));
+      if (onCallProcessed) onCallProcessed();
+    } catch (e) {
+      setError(e.message);
+      setTranscripts(prev => prev.map(tr => tr.transcriptId === transcriptId ? { ...tr, status: "failed", errorMessage: e.message } : tr));
+    } finally { setProcessing(null); }
+  };
+
+  const processAll = async () => {
+    const toProcess = transcripts.filter(tr => tr.status === "new" || tr.status === "failed");
+    for (const tr of toProcess) {
+      await processTranscript(tr.transcriptId);
+    }
+  };
+
+  const statusBadge = (status) => {
+    const s = { new: { bg: "rgba(59,130,246,0.1)", color: "#3b82f6", text: "New" }, processing: { bg: "rgba(234,179,8,0.1)", color: "#eab308", text: "Processing..." }, completed: { bg: "rgba(49,206,129,0.1)", color: "#31CE81", text: "Reviewed" }, failed: { bg: "rgba(239,68,68,0.1)", color: "#ef4444", text: "Failed" } }[status] || { bg: "rgba(59,130,246,0.1)", color: "#3b82f6", text: "New" };
+    return <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 10, background: s.bg, color: s.color, fontWeight: 600 }}>{s.text}</span>;
+  };
+
+  const newCount = transcripts.filter(tr => tr.status === "new" || tr.status === "failed").length;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 28, width: 600, maxHeight: "80vh", overflow: "auto", boxShadow: "0 20px 60px var(--text-3)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", margin: 0 }}>Sync Fireflies Calls{client ? ` \u2014 ${client}` : ""}</h3>
+          <div style={{ display: "flex", gap: 8 }}>
+            {newCount > 0 && !loading && (
+              <button onClick={processAll} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                Review All ({newCount})
+              </button>
+            )}
+            <button onClick={loadTranscripts} disabled={loading} style={{ padding: "6px 12px", border: "1px solid var(--border-soft)", borderRadius: 8, background: "transparent", color: "var(--text-2)", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{loading ? "..." : "Refresh"}</button>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-2)", fontSize: 20, cursor: "pointer" }}>{"\u2715"}</button>
+          </div>
+        </div>
+
+        {error && <div style={{ padding: "8px 12px", marginBottom: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+
+        {loading ? (
+          <p style={{ textAlign: "center", color: "var(--text-2)", padding: 20 }}>Loading Fireflies transcripts...</p>
+        ) : transcripts.length === 0 ? (
+          <p style={{ textAlign: "center", color: "var(--text-2)", padding: 20 }}>No transcripts found in the last 90 days.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ fontSize: 11, color: "var(--text-2)", marginBottom: 4 }}>
+              {transcripts.length} transcript{transcripts.length !== 1 ? "s" : ""} &middot; {transcripts.filter(tr => tr.status === "completed").length} reviewed &middot; {newCount} pending
+            </div>
+            {transcripts.map(tr => (
+              <div key={tr.transcriptId} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: tr.status === "completed" ? "rgba(49,206,129,0.03)" : "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tr.title}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 2 }}>
+                    {tr.date ? new Date(tr.date).toLocaleDateString() : ""}
+                    {tr.duration ? ` \u00B7 ${tr.duration} min` : ""}
+                  </div>
+                  {(tr.repName || tr.prospectName) && (
+                    <div style={{ fontSize: 11, color: "var(--text-2)", marginTop: 3 }}>
+                      {tr.repName && <span style={{ fontWeight: 600 }}>Rep: {tr.repName}</span>}
+                      {tr.repName && tr.prospectName && <span> &middot; </span>}
+                      {tr.prospectName && <span>Prospect: {tr.prospectName}</span>}
+                    </div>
+                  )}
+                  {tr.errorMessage && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 2 }}>{tr.errorMessage}</div>}
+                </div>
+                {statusBadge(tr.status)}
+                {(tr.status === "new" || tr.status === "failed") && (
+                  <button onClick={() => processTranscript(tr.transcriptId)} disabled={!!processing} style={{ padding: "6px 14px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 11, fontWeight: 600, cursor: processing ? "wait" : "pointer", fontFamily: "inherit", opacity: processing && processing !== tr.transcriptId ? 0.4 : 1, whiteSpace: "nowrap" }}>
+                    {processing === tr.transcriptId ? "Processing..." : tr.status === "failed" ? "Retry" : "Review"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ==================== INTEGRATIONS PAGE ====================
 function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
   const [gongConfigs, setGongConfigs] = useState([]);
   const [diioConfigs, setDiioConfigs] = useState([]);
+  const [firefliesConfigs, setFirefliesConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState(null);
   const [gongSettingsClient, setGongSettingsClient] = useState(null);
   const [gongSyncClient, setGongSyncClient] = useState(null);
   const [diioSettingsClient, setDiioSettingsClient] = useState(null);
   const [diioSyncClient, setDiioSyncClient] = useState(null);
+  const [firefliesSettingsClient, setFirefliesSettingsClient] = useState(null);
+  const [firefliesSyncClient, setFirefliesSyncClient] = useState(null);
 
   const loadConfigs = useCallback(async () => {
     try {
       const t = await getValidToken();
-      const [gongRes, diioRes] = await Promise.all([
+      const [gongRes, diioRes, ffRes] = await Promise.all([
         fetch("/api/gong/settings", { headers: { Authorization: `Bearer ${t}` } }),
         fetch("/api/diio/settings", { headers: { Authorization: `Bearer ${t}` } }),
+        fetch("/api/fireflies/settings", { headers: { Authorization: `Bearer ${t}` } }),
       ]);
       if (gongRes.ok) {
         const data = await gongRes.json();
@@ -1631,6 +1855,10 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
       if (diioRes.ok) {
         const data = await diioRes.json();
         setDiioConfigs(data.configs || []);
+      }
+      if (ffRes.ok) {
+        const data = await ffRes.json();
+        setFirefliesConfigs(data.configs || []);
       }
     } catch (e) { console.error("Load integrations:", e); }
     setLoading(false);
@@ -1642,17 +1870,22 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
   gongConfigs.forEach(c => { gongMap[c.client] = c; });
   const diioMap = {};
   diioConfigs.forEach(c => { diioMap[c.client] = c; });
+  const firefliesMap = {};
+  firefliesConfigs.forEach(c => { firefliesMap[c.client] = c; });
 
   // Detail view for a specific client
   if (selectedClient) {
     const gongCfg = gongMap[selectedClient];
     const diioCfg = diioMap[selectedClient];
+    const ffCfg = firefliesMap[selectedClient];
     return (
       <div>
         {gongSettingsClient && <GongSettingsModal token={token} getValidToken={getValidToken} client={gongSettingsClient} onClose={() => { setGongSettingsClient(null); loadConfigs(); }} />}
         {gongSyncClient && <GongSyncModal getValidToken={getValidToken} client={gongSyncClient} onClose={() => setGongSyncClient(null)} onCallProcessed={loadCalls} />}
         {diioSettingsClient && <DiioSettingsModal getValidToken={getValidToken} client={diioSettingsClient} onClose={() => { setDiioSettingsClient(null); loadConfigs(); }} />}
         {diioSyncClient && <DiioSyncModal getValidToken={getValidToken} client={diioSyncClient} onClose={() => setDiioSyncClient(null)} onCallProcessed={loadCalls} />}
+        {firefliesSettingsClient && <FirefliesSettingsModal getValidToken={getValidToken} client={firefliesSettingsClient} onClose={() => { setFirefliesSettingsClient(null); loadConfigs(); }} />}
+        {firefliesSyncClient && <FirefliesSyncModal getValidToken={getValidToken} client={firefliesSyncClient} onClose={() => setFirefliesSyncClient(null)} onCallProcessed={loadCalls} />}
 
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: 13 }}>
           <span onClick={() => setSelectedClient(null)} style={{ color: "#31CE81", cursor: "pointer", fontWeight: 600 }}>Integrations</span>
@@ -1716,6 +1949,31 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
               )}
             </div>
           </div>
+
+          {/* Fireflies card */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 24 }}>{"🔥"}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text-1)" }}>Fireflies.ai</div>
+                <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}>
+                  {ffCfg ? `Connected · ${ffCfg.api_key_masked || "****"}` : "Not connected"}
+                  {ffCfg?.created_at ? ` \u00B7 Added ${new Date(ffCfg.created_at).toLocaleDateString()}` : ""}
+                </div>
+              </div>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: ffCfg ? "#31CE81" : "var(--text-3)", display: "inline-block" }} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setFirefliesSettingsClient(selectedClient)} style={{ padding: "9px 18px", border: "none", borderRadius: 8, background: "#31CE81", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                {ffCfg ? "Edit API Key" : "Connect Fireflies"}
+              </button>
+              {ffCfg && (
+                <button onClick={() => setFirefliesSyncClient(selectedClient)} style={{ padding: "9px 18px", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, background: "rgba(139,92,246,0.08)", color: "#8b5cf6", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  Sync Calls
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1729,12 +1987,13 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
       ) : (
         <>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--text-1)", margin: "0 0 20px" }}>Integrations</h2>
-          <p style={{ fontSize: 13, color: "var(--text-2)", margin: "-12px 0 20px" }}>Configure Gong or Diio credentials per client to automatically import and review recorded calls.</p>
+          <p style={{ fontSize: 13, color: "var(--text-2)", margin: "-12px 0 20px" }}>Configure Gong, Diio, or Fireflies credentials per client to automatically import and review recorded calls.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12 }}>
             {clients.map(name => {
               const gongCfg = gongMap[name];
               const diioCfg = diioMap[name];
-              const connectedCount = (gongCfg ? 1 : 0) + (diioCfg ? 1 : 0);
+              const ffCfg = firefliesMap[name];
+              const connectedCount = (gongCfg ? 1 : 0) + (diioCfg ? 1 : 0) + (ffCfg ? 1 : 0);
               return (
                 <div key={name} onClick={() => setSelectedClient(name)} style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 12, padding: 20, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>{"\u2699\uFE0F"}</div>
@@ -1751,6 +2010,12 @@ function IntegrationsPage({ getValidToken, token, loadCalls, clients }) {
                         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
                           <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>Diio</span>
+                        </div>
+                      )}
+                      {ffCfg && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#31CE81", display: "inline-block" }} />
+                          <span style={{ fontSize: 11, color: "#31CE81", fontWeight: 600 }}>Fireflies</span>
                         </div>
                       )}
                     </div>

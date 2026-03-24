@@ -12,7 +12,9 @@
     "api/gtm-profile.js": { "maxDuration": 60 },
     "api/generate-deck.js": { "maxDuration": 60 },
     "api/extract-brand.js": { "maxDuration": 60 },
-    "api/invite.js": { "maxDuration": 15 }
+    "api/invite.js": { "maxDuration": 15 },
+    "api/fireflies/settings.js": { "maxDuration": 30 },
+    "api/fireflies/sync.js": { "maxDuration": 60 }
   },
   "crons": [
     { "path": "/api/diio/cron", "schedule": "0 0 * * *" }
