@@ -2841,7 +2841,7 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
       {/* Pill tab switcher */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20 }}>
         {[{ id: "calls", label: "Reviews", count: clientCalls.length }, { id: "assets", label: "Assets" }, { id: "gtm", label: "GTM Profile" }, { id: "audit", label: "GTM Audit" }].map(tab => (
-          <button key={tab.id} onClick={() => onTabChange && onTabChange(tab.id)} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
+          <button key={tab.id} onClick={() => tab.id === "assets" ? onNavigate("assets") : (onTabChange && onTabChange(tab.id))} style={{ padding: "8px 18px", border: activeTab === tab.id ? "1.5px solid #31CE81" : "1.5px solid var(--border)", borderRadius: 24, cursor: "pointer", fontSize: 13, fontWeight: activeTab === tab.id ? 600 : 400, background: activeTab === tab.id ? "rgba(49,206,129,0.08)" : "transparent", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)", fontFamily: "'DM Sans', system-ui, sans-serif", display: "flex", alignItems: "center", gap: 6 }}>
             {tab.label}
             {tab.count > 0 && <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 8, background: activeTab === tab.id ? "rgba(49,206,129,0.15)" : "var(--border-soft)", color: activeTab === tab.id ? "#31CE81" : "var(--text-2)" }}>{tab.count}</span>}
           </button>
@@ -2938,16 +2938,6 @@ function ClientProfilePage({ client, savedCalls, enablementDocs, onBack, onViewC
             </div>
           </div>
         )
-      )}
-
-      {/* ASSETS TAB */}
-      {activeTab === "assets" && (
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border-soft)", borderRadius: 16, padding: "40px 32px", textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>🗂</div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-1)", marginBottom: 8 }}>Create assets for {client}</h3>
-          <p style={{ fontSize: 13, color: "var(--text-2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>Build a customized presentation for {client} using AI-generated slides and your call data.</p>
-          <button onClick={() => onNavigate("assets")} style={{ padding: "12px 28px", background: "#31CE81", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Open Asset Builder</button>
-        </div>
       )}
 
       {/* GTM PROFILE TAB */}
