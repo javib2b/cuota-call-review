@@ -160,16 +160,6 @@ body {
 /* App content above the canvas */
 #root { position: relative; z-index: 1; }
 
-/* ── Global frosted glass ──────────────────────────────────────────────── */
-#root div[style*="border-radius"],
-#root aside[style*="border-radius"],
-#root section[style*="border-radius"],
-#root nav[style*="border-radius"] {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11);
-}
-
 /* ── Explicit glass card class (legacy/opt-in) ─────────────────────────── */
 .glass-card {
   background:
