@@ -5830,7 +5830,10 @@ const ASSET_TYPES = [
 
 function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient, savedCalls }) {
   const _initKey = defaultClient ? `cuota_deck_brand_${defaultClient}` : "cuota_deck_brand";
-  const _stored = loadStored(_initKey) || {};
+  // Company-level brand fields fall back to the global store so the logo/name are always present
+  const _globalStored = loadStored("cuota_deck_brand") || {};
+  const _clientStored = loadStored(_initKey) || {};
+  const _stored = { ..._globalStored, ..._clientStored };
   const [primaryColor, setPrimaryColor] = useState(_stored.primaryColor || "#1e3a5f");
   const [accentColor, setAccentColor] = useState(_stored.accentColor || "#31CE81");
   const [companyName, setCompanyName] = useState(_stored.companyName || "");
@@ -5898,9 +5901,9 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       cs.objection_handling?.details && `Objections: ${cs.objection_handling.details}`,
       cs.discovery?.details && `Discovery: ${cs.discovery.details}`,
       cs.pitch?.details && `Pitch: ${cs.pitch.details}`,
-      cs.demo_value?.details && `Demo/Value: ${cs.demo_value.details}`,
+      cs.services_product?.details && `Demo/Value: ${cs.services_product.details}`,
       cs.next_steps?.details && `Next Steps: ${cs.next_steps.details}`,
-      cs.storytelling?.details && `Storytelling: ${cs.storytelling.details}`,
+      cs.intro_opening?.details && `Opening: ${cs.intro_opening.details}`,
     ].filter(Boolean);
     return parts.length ? parts.join(" | ") : null;
   }).filter(Boolean).join("\n---\n");
@@ -5927,7 +5930,9 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
   // Reload brand when client selection changes
   useEffect(() => {
     const k = client ? `cuota_deck_brand_${client}` : "cuota_deck_brand";
-    const stored = loadStored(k) || {};
+    const globalStored = loadStored("cuota_deck_brand") || {};
+    const clientStored = loadStored(k) || {};
+    const stored = { ...globalStored, ...clientStored };
     setPrimaryColor(stored.primaryColor || "#1e3a5f");
     setAccentColor(stored.accentColor || "#31CE81");
     setCompanyName(stored.companyName || "");
