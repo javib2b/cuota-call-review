@@ -5280,228 +5280,268 @@ const ROI_TINTS = [
   { bg: "rgba(139,92,246,0.08)", border: "#8b5cf6" },
 ];
 
+// ─── Shared footer for all deck slides ───────────────────────────────────────
+function SlideFooter({ logoBase64, companyName, label }) {
+  return (
+    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 26, borderTop: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px", background: "#fff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {logoBase64 && <img src={logoBase64} alt="" style={{ maxHeight: 13, maxWidth: 44, objectFit: "contain", opacity: 0.55 }} />}
+        {companyName && <span style={{ fontSize: 8, color: "#94a3b8", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>{companyName}</span>}
+      </div>
+      <span style={{ fontSize: 8, color: "#d1d5db", fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</span>
+    </div>
+  );
+}
+
 function SlideTitle({ data, primary, accent, prospectCompany, client, companyName, logoBase64 }) {
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
-      <div style={{ position: "absolute", top: 0, bottom: 0, left: "55%", width: 3, background: accent, zIndex: 1 }} />
-      <div style={{ width: "55%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box" }}>
-        {companyName && <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 3, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 22 }}>{companyName}</div>}
-        <div style={{ fontSize: 40, fontWeight: 700, color: "#ffffff", lineHeight: 1.15, marginBottom: 16 }}>{data.title || "Sales Deck"}</div>
-        <div style={{ width: 48, height: 4, background: accent, borderRadius: 2, marginBottom: 14 }} />
-        {data.subtitle && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{data.subtitle}</div>}
-      </div>
-      <div style={{ width: "45%", height: "100%", background: "radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px) 0 0 / 18px 18px, #f8fafc", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box", position: "relative" }}>
-        {logoBase64 && (
-          <div style={{ position: "absolute", top: 22, right: 24 }}>
-            <img src={logoBase64} alt="logo" style={{ maxHeight: 36, maxWidth: 110, objectFit: "contain" }} />
-          </div>
-        )}
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.35)", textTransform: "uppercase", marginBottom: 10 }}>Prepared for</div>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative", background: "#fff" }}>
+      {/* Left — white panel: identity + prepared-for */}
+      <div style={{ width: "56%", height: "100%", background: "#fff", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 44px", boxSizing: "border-box", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 44 }}>
+          {logoBase64 && <img src={logoBase64} alt="" style={{ maxHeight: 24, maxWidth: 76, objectFit: "contain" }} />}
+          {companyName && <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase" }}>{companyName}</span>}
+        </div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 10 }}>Prepared for</div>
         <div style={{ fontSize: 30, fontWeight: 700, color: primary, lineHeight: 1.2, marginBottom: 14 }}>{prospectCompany || client || "Your Prospect"}</div>
-        <div style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
+        <div style={{ width: 32, height: 1, background: "#e5e7eb", marginBottom: 14 }} />
+        <div style={{ fontSize: 11, color: "#94a3b8" }}>{new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
+      </div>
+      {/* Divider */}
+      <div style={{ width: 1, background: "#e5e7eb", alignSelf: "stretch", flexShrink: 0 }} />
+      {/* Right — primary bg: presentation title */}
+      <div style={{ width: "44%", height: "100%", background: primary, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 36px", boxSizing: "border-box", position: "relative" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.18)" }} />
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 14 }}>Presentation</div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: "#ffffff", lineHeight: 1.25, marginBottom: 14 }}>{data.title || "Sales Deck"}</div>
+        <div style={{ width: 28, height: 2, background: accent, marginBottom: 14 }} />
+        {data.subtitle && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.52)", lineHeight: 1.6 }}>{data.subtitle}</div>}
       </div>
     </div>
   );
 }
 
-function SlideAgenda({ data, primary, accent }) {
+function SlideAgenda({ data, primary, accent, logoBase64, companyName }) {
   const items = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "36px 52px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 6 }}>Agenda</div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: primary, marginBottom: 22 }}>{data.title || "Today's Agenda"}</div>
-      <div style={{ borderLeft: `4px solid ${accent}`, paddingLeft: 20, display: "flex", flexDirection: "column", gap: 14 }}>
-        {items.slice(0, 5).map((item, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: primary, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
-            <div style={{ fontSize: 15, color: "#1a1a2e", fontWeight: 500, lineHeight: 1.3 }}>{item}</div>
-          </div>
-        ))}
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 44px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 6 }}>Agenda</div>
+        <div style={{ fontSize: 21, fontWeight: 700, color: "#0d1117", marginBottom: 16 }}>{data.title || "Today's Agenda"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 14 }} />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          {items.slice(0, 5).map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: accent, fontFamily: "'IBM Plex Mono', monospace", minWidth: 24, flexShrink: 0 }}>0{i + 1}</span>
+              <span style={{ fontSize: 14, color: "#1e293b", fontWeight: 500, lineHeight: 1.4 }}>{item}</span>
+            </div>
+          ))}
+        </div>
       </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Agenda" />
     </div>
   );
 }
 
-function SlideProblem({ data, primary, accent }) {
+function SlideProblem({ data, primary, accent, logoBase64, companyName }) {
   const items = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ width: "42%", height: "100%", background: primary, backgroundImage: "radial-gradient(ellipse at 30% 70%, rgba(255,255,255,0.08) 0%, transparent 60%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 14 }}>
-          <path d="M12 2L2 20h20L12 2z" stroke="white" strokeWidth="2" strokeLinejoin="round"/>
-          <line x1="12" y1="9" x2="12" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-          <circle cx="12" cy="17" r="1" fill="white"/>
-        </svg>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>The Problem</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>{data.title || "Current Challenges"}</div>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "#ef4444" }} />
+      <div style={{ padding: "26px 44px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 6 }}>Challenge</div>
+        <div style={{ fontSize: 21, fontWeight: 700, color: "#0d1117", marginBottom: 16 }}>{data.title || "Current Challenges"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 14 }} />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}>
+          {items.slice(0, 4).map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "11px 0", borderBottom: "1px solid #f9fafb" }}>
+              <div style={{ width: 3, alignSelf: "stretch", background: "#ef4444", flexShrink: 0 }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", fontFamily: "'IBM Plex Mono', monospace", minWidth: 20, paddingTop: 2, flexShrink: 0 }}>0{i + 1}</span>
+              <span style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{item}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ width: "58%", height: "100%", background: "#ffffff", padding: "30px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
-        {items.slice(0, 4).map((item, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: "rgba(240,68,56,0.04)", border: "1px solid rgba(240,68,56,0.12)", borderRadius: 8 }}>
-            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#f04438", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
-            <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>{item}</div>
-          </div>
-        ))}
-      </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Challenge" />
     </div>
   );
 }
 
-function SlideSolution({ data, primary, accent }) {
+function SlideSolution({ data, primary, accent, logoBase64, companyName }) {
   const items = data.points || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ width: "58%", height: "100%", background: "#ffffff", padding: "30px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
-        {items.slice(0, 4).map((item, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", background: "rgba(49,206,129,0.05)", border: "1px solid rgba(49,206,129,0.18)", borderRadius: 8 }}>
-            <div style={{ width: 20, height: 20, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
-            <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5 }}>{item}</div>
-          </div>
-        ))}
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 44px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 6 }}>Our Approach</div>
+        <div style={{ fontSize: 21, fontWeight: 700, color: "#0d1117", marginBottom: 16 }}>{data.title || "How We Solve It"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 14 }} />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}>
+          {items.slice(0, 4).map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "11px 0", borderBottom: "1px solid #f9fafb" }}>
+              <div style={{ width: 3, alignSelf: "stretch", background: accent, flexShrink: 0 }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: accent, fontFamily: "'IBM Plex Mono', monospace", minWidth: 20, paddingTop: 2, flexShrink: 0 }}>0{i + 1}</span>
+              <span style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{item}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ width: "42%", height: "100%", background: primary, backgroundImage: "radial-gradient(ellipse at 70% 30%, rgba(255,255,255,0.08) 0%, transparent 60%)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "36px", boxSizing: "border-box" }}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 14 }}>
-          <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2"/>
-          <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>How It Works</div>
-        <div style={{ fontSize: 22, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>{data.title || "Our Solution"}</div>
-      </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Our Approach" />
     </div>
   );
 }
 
-function SlideFeatures({ data, primary, accent }) {
+function SlideFeatures({ data, primary, accent, logoBase64, companyName }) {
   const cols = data.columns || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "28px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Differentiators</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 14 }}>{data.title || "Key Differentiators"}</div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(cols.length || 1, 3)}, 1fr)`, gap: 12, height: "calc(100% - 68px)" }}>
-        {cols.slice(0, 3).map((col, i) => (
-          <div key={i} style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.08)", borderRadius: 12, padding: "16px 14px", display: "flex", flexDirection: "column", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            <div style={{ width: 32, height: 32, borderRadius: "50%", background: accent, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12, flexShrink: 0 }}>
-              <span style={{ fontSize: 12, color: "#fff", fontWeight: 700 }}>{i + 1}</span>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 36px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 6 }}>Differentiators</div>
+        <div style={{ fontSize: 21, fontWeight: 700, color: "#0d1117", marginBottom: 16 }}>{data.title || "What Sets Us Apart"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 14 }} />
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(cols.length || 1, 3)}, 1fr)`, gap: 14, flex: 1 }}>
+          {cols.slice(0, 3).map((col, i) => (
+            <div key={i} style={{ border: "1px solid #e5e7eb", borderTop: `3px solid ${i === 0 ? accent : i === 1 ? primary : "#94a3b8"}`, padding: "18px 16px", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", letterSpacing: 1, marginBottom: 10 }}>{String(i + 1).padStart(2, "0")}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0d1117", marginBottom: 8, lineHeight: 1.3 }}>{col.heading}</div>
+              <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.65, flex: 1 }}>{col.body || ""}</div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: primary, marginBottom: 8 }}>{col.heading}</div>
-            <div style={{ fontSize: 11, color: "#555", lineHeight: 1.65 }}>{col.body || ""}</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Differentiators" />
     </div>
   );
 }
 
-function SlideProof({ data, primary, accent }) {
+function SlideProof({ data, primary, accent, logoBase64, companyName }) {
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ width: "60%", height: "100%", background: "#ffffff", padding: "36px 40px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", position: "relative" }}>
-        <div style={{ position: "absolute", top: 16, left: 28, fontSize: 80, fontWeight: 700, color: accent, opacity: 0.15, lineHeight: 1, fontFamily: "Georgia, serif", userSelect: "none" }}>"</div>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 16 }}>Social Proof</div>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 52px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 20 }}>Client Results</div>
+        <div style={{ fontSize: 68, fontWeight: 700, color: accent, opacity: 0.1, lineHeight: 1, fontFamily: "Georgia, serif", marginBottom: -18, userSelect: "none" }}>"</div>
         {data.quote && (
-          <div style={{ fontSize: 17, fontStyle: "italic", color: "#1a1a2e", lineHeight: 1.7, marginBottom: 18, zIndex: 1, position: "relative" }}>"{data.quote}"</div>
+          <div style={{ fontSize: 17, fontStyle: "italic", color: "#1e293b", lineHeight: 1.75, marginBottom: 16, position: "relative", zIndex: 1 }}>{data.quote}</div>
         )}
         {data.attribution && (
-          <div style={{ fontSize: 12, color: primary, fontWeight: 700 }}>— {data.attribution}</div>
+          <div style={{ fontSize: 11, color: primary, fontWeight: 700, marginBottom: 22 }}>— {data.attribution}</div>
+        )}
+        {(data.metrics || []).length > 0 && (
+          <div style={{ display: "flex", gap: 0, borderTop: "1px solid #e5e7eb", paddingTop: 18 }}>
+            {(data.metrics || []).slice(0, 3).map((m, i) => (
+              <div key={i} style={{ flex: 1, borderLeft: `3px solid ${i === 0 ? accent : "#e5e7eb"}`, paddingLeft: 14, marginLeft: i > 0 ? 16 : 0 }}>
+                <div style={{ fontSize: 11, color: "#475569", lineHeight: 1.55 }}>{m}</div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
-      <div style={{ width: "40%", height: "100%", background: primary, padding: "36px 28px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 12 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 8 }}>Results</div>
-        {(data.metrics || []).slice(0, 3).map((m, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px" }}>
-            <div style={{ fontSize: 14, color: "#fff", fontWeight: 600, lineHeight: 1.4 }}>{m}</div>
-          </div>
-        ))}
-      </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Client Results" />
     </div>
   );
 }
 
-function SlideRoi({ data, primary, accent }) {
+function SlideRoi({ data, primary, accent, logoBase64, companyName }) {
   const metrics = data.metrics || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 48px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Return on Investment</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 16 }}>{data.title || "Expected ROI"}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, height: 270 }}>
-        {metrics.slice(0, 4).map((m, i) => {
-          const tint = ROI_TINTS[i] || ROI_TINTS[0];
-          return (
-            <div key={i} style={{ background: tint.bg, border: `1px solid ${tint.border}33`, borderTop: `3px solid ${tint.border}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 12 }}>
-              <div style={{ fontSize: 48, fontWeight: 700, color: primary, lineHeight: 1, marginBottom: 6, fontFamily: "'IBM Plex Mono', monospace" }}>{typeof m === "string" ? m : m.value}</div>
-              <div style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", textAlign: "center" }}>{typeof m === "string" ? "" : m.label}</div>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 44px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 6 }}>Business Case</div>
+        <div style={{ fontSize: 21, fontWeight: 700, color: "#0d1117", marginBottom: 16 }}>{data.title || "Expected ROI"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 14 }} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, flex: 1 }}>
+          {metrics.slice(0, 4).map((m, i) => (
+            <div key={i} style={{ border: "1px solid #e5e7eb", borderTop: `3px solid ${i < 2 ? accent : primary}`, padding: "18px 22px", display: "flex", flexDirection: "column", justifyContent: "center", boxSizing: "border-box" }}>
+              <div style={{ fontSize: 44, fontWeight: 700, color: primary, lineHeight: 1, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 6 }}>{typeof m === "string" ? m : m.value}</div>
+              <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>{typeof m === "string" ? "" : m.label}</div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Business Case" />
     </div>
   );
 }
 
-function SlideTimeline({ data, primary, accent }) {
+function SlideTimeline({ data, primary, accent, logoBase64, companyName }) {
   const steps = data.steps || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#ffffff", padding: "32px 40px", boxSizing: "border-box", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, color: "rgba(0,0,0,0.3)", textTransform: "uppercase", marginBottom: 4 }}>Timeline</div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: primary, marginBottom: 24 }}>{data.title || "Implementation Plan"}</div>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        {steps.slice(0, 4).map((step, i) => (
-          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: accent, border: `3px solid ${primary}`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, marginBottom: 10, boxSizing: "border-box" }}>{i + 1}</div>
-            <div style={{ width: "100%", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 10, padding: "12px 10px", boxSizing: "border-box" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: primary, textAlign: "center", marginBottom: 6 }}>{step.phase || `Phase ${i + 1}`}</div>
-              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", textAlign: "center", lineHeight: 1.55, padding: "0 4px" }}>{step.description || ""}</div>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 44px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 6 }}>Implementation</div>
+        <div style={{ fontSize: 21, fontWeight: 700, color: "#0d1117", marginBottom: 16 }}>{data.title || "Getting Started"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 20 }} />
+        <div style={{ display: "flex", gap: 0, flex: 1, position: "relative" }}>
+          <div style={{ position: "absolute", top: 16, left: 40, right: 40, height: 1, background: "#e5e7eb", zIndex: 0 }} />
+          {steps.slice(0, 4).map((step, i) => (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
+              <div style={{ width: 32, height: 32, background: i === 0 ? primary : "#fff", border: `1px solid ${i === 0 ? primary : "#e5e7eb"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i === 0 ? "#fff" : primary, marginBottom: 12, flexShrink: 0 }}>{i + 1}</div>
+              <div style={{ width: "100%", padding: "0 10px", boxSizing: "border-box", textAlign: "center" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: primary, marginBottom: 6 }}>{step.phase || `Phase ${i + 1}`}</div>
+                <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.55 }}>{step.description || ""}</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Implementation" />
     </div>
   );
 }
 
-function SlideCta({ data, primary, accent }) {
+function SlideCta({ data, primary, accent, logoBase64, companyName }) {
   const points = data.points || [];
-  const priRgb = (() => { try { return [parseInt(primary.slice(1,3),16),parseInt(primary.slice(3,5),16),parseInt(primary.slice(5,7),16)].join(","); } catch { return "30,58,95"; } })();
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, display: "flex", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden" }}>
-      <div style={{ width: "50%", height: "100%", background: primary, backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 12px)", display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px", boxSizing: "border-box" }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", marginBottom: 12 }}>Next Steps</div>
-        <div style={{ fontSize: 32, fontWeight: 700, color: "#ffffff", lineHeight: 1.2, marginBottom: 12 }}>{data.title || "Let's build this together"}</div>
-        <div style={{ width: 40, height: 3, background: accent, borderRadius: 2 }} />
-      </div>
-      <div style={{ width: "50%", height: "100%", background: "#ffffff", padding: "36px 32px", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", gap: 14 }}>
-        {points.slice(0, 3).map((pt, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <div style={{ width: 26, height: 26, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
-            <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.5, paddingTop: 4 }}>{pt}</div>
-          </div>
-        ))}
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ padding: "26px 52px 32px", height: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, color: "#94a3b8", textTransform: "uppercase", marginBottom: 10 }}>Next Steps</div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: primary, lineHeight: 1.2, marginBottom: 18 }}>{data.title || "The Ask"}</div>
+        <div style={{ height: 1, background: "#e5e7eb", marginBottom: 18 }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 18 }}>
+          {points.slice(0, 3).map((pt, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: accent, fontFamily: "'IBM Plex Mono', monospace", minWidth: 24, paddingTop: 2, flexShrink: 0 }}>0{i + 1}</span>
+              <div style={{ width: 1, background: "#e5e7eb", alignSelf: "stretch", flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: "#334155", lineHeight: 1.6 }}>{pt}</span>
+            </div>
+          ))}
+        </div>
         {data.closing && (
-          <div style={{ fontSize: 12, fontStyle: "italic", color: primary, marginTop: 6, background: `rgba(${priRgb},0.06)`, borderRadius: 8, padding: "8px 12px" }}>{data.closing}</div>
+          <div style={{ fontSize: 12, fontStyle: "italic", color: "#64748b", borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>{data.closing}</div>
         )}
       </div>
+      <SlideFooter logoBase64={logoBase64} companyName={companyName} label="Next Steps" />
     </div>
   );
 }
 
-function SlideSuccess({ data, primary, accent }) {
+function SlideSuccess({ data, primary, accent, logoBase64, companyName }) {
   const subtype = data.subtype || "goals";
   const items = data.goals || data.kpis || data.metrics || data.items || data.points || data.steps || [];
   return (
-    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <div style={{ height: 54, background: primary, display: "flex", alignItems: "center", padding: "0 36px", flexShrink: 0, gap: 10 }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: accent }} />
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" }}>Mutual Success Plan</span>
-        <span style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", margin: "0 4px" }}>·</span>
-        <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{data.title || "Shared Goals"}</span>
+    <div style={{ width: NATURAL_W, height: NATURAL_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />
+      <div style={{ height: 50, background: primary, display: "flex", alignItems: "center", padding: "0 36px", flexShrink: 0, gap: 12, marginTop: 3 }}>
+        <div style={{ width: 5, height: 5, background: accent, flexShrink: 0 }} />
+        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: "rgba(255,255,255,0.5)", textTransform: "uppercase" }}>Mutual Success Plan</span>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", margin: "0 4px" }}>·</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{data.title || "Shared Goals"}</span>
+        {logoBase64 && <img src={logoBase64} alt="" style={{ maxHeight: 16, maxWidth: 50, objectFit: "contain", marginLeft: "auto", opacity: 0.65 }} />}
       </div>
-      <div style={{ flex: 1, padding: "18px 32px", overflow: "hidden", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ flex: 1, padding: "14px 32px 28px", overflow: "hidden", display: "flex", flexDirection: "column", gap: 7 }}>
         {subtype === "kpis" ? (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, flex: 1 }}>
             {items.slice(0, 6).map((item, i) => (
-              <div key={i} style={{ background: "rgba(0,0,0,0.025)", border: "1px solid rgba(0,0,0,0.07)", borderRadius: 10, padding: "14px 12px", display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 26, fontWeight: 700, color: primary, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>{typeof item === "object" ? item.value : item}</div>
-                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.45)", lineHeight: 1.5 }}>{typeof item === "object" ? item.label : ""}</div>
+              <div key={i} style={{ border: "1px solid #e5e7eb", borderTop: `3px solid ${i < 3 ? accent : primary}`, padding: "14px 16px", display: "flex", flexDirection: "column", boxSizing: "border-box" }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: primary, fontFamily: "'IBM Plex Mono', monospace", marginBottom: 4 }}>{typeof item === "object" ? item.value : item}</div>
+                <div style={{ fontSize: 11, color: "#64748b", lineHeight: 1.5 }}>{typeof item === "object" ? item.label : ""}</div>
               </div>
             ))}
           </div>
@@ -5511,11 +5551,11 @@ function SlideSuccess({ data, primary, accent }) {
             const owner = typeof item === "object" ? item.owner : null;
             const date = typeof item === "object" ? (item.date || item.dueDate || item.deadline) : null;
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", background: i % 2 === 0 ? "rgba(0,0,0,0.025)" : "#fff", border: "1px solid rgba(0,0,0,0.06)", borderRadius: 8, flexShrink: 0 }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
-                <div style={{ fontSize: 13, color: "#1a1a2e", lineHeight: 1.45, flex: 1 }}>{label}</div>
-                {owner && <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", flexShrink: 0 }}>{owner}</div>}
-                {date && <div style={{ fontSize: 11, color: primary, fontWeight: 600, flexShrink: 0 }}>{date}</div>}
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 14px", background: i % 2 === 0 ? "#f9fafb" : "#fff", borderLeft: `3px solid ${i % 2 === 0 ? accent : "#e5e7eb"}`, flexShrink: 0 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#94a3b8", fontFamily: "'IBM Plex Mono', monospace", flexShrink: 0 }}>{String(i + 1).padStart(2, "0")}</span>
+                <span style={{ fontSize: 12, color: "#1e293b", lineHeight: 1.45, flex: 1 }}>{label}</span>
+                {owner && <span style={{ fontSize: 10, color: "#94a3b8", flexShrink: 0 }}>{owner}</span>}
+                {date && <span style={{ fontSize: 10, color: primary, fontWeight: 600, flexShrink: 0 }}>{date}</span>}
               </div>
             );
           })
@@ -5674,17 +5714,18 @@ function BattlecardPage3({ data, primary, accent, logoBase64 }) {
   return <BcardFeatureTable data={data} primary={primary} accent={accent} logoBase64={logoBase64} partLabel="Part 2 of 2" />;
 }
 
-function BattlecardPage4({ data, primary, accent }) {
+function BattlecardPage4({ data, primary, accent, logoBase64 }) {
   const quotes = data.quotes || [];
   const is2x2 = quotes.length >= 4;
   return (
-    <div style={{ width: BCARD_W, height: BCARD_H, background: "#0f172a", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <div style={{ width: BCARD_W, height: BCARD_H, background: "#0f172a", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* Header */}
-      <div style={{ padding: "40px 40px 24px", flexShrink: 0 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", textAlign: "center", lineHeight: 1.35 }}>
+      <div style={{ padding: "36px 40px 20px", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        {logoBase64 && <img src={logoBase64} alt="" style={{ maxHeight: 22, maxWidth: 70, objectFit: "contain", opacity: 0.5, marginBottom: 16 }} />}
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", textAlign: "center", lineHeight: 1.35 }}>
           What Customers Say About {data.competitorName || "Competitor"}
         </div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textAlign: "center", marginTop: 8 }}>
+        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", textAlign: "center", marginTop: 8 }}>
           Real feedback · Use to understand their pain points and position against them
         </div>
       </div>
@@ -5717,12 +5758,12 @@ function BattlecardPage4({ data, primary, accent }) {
   );
 }
 
-function BattlecardPage5({ data, primary, accent }) {
+function BattlecardPage5({ data, primary, accent, logoBase64 }) {
   const objections = data.objections || [];
   const winThemes = data.winThemes || [];
   const cols = Math.max(1, Math.min(winThemes.length, 3));
   return (
-    <div style={{ width: BCARD_W, height: BCARD_H, background: "#fff", fontFamily: "'Syne', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <div style={{ width: BCARD_W, height: BCARD_H, background: "#fff", fontFamily: "'Geist', system-ui, sans-serif", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* Top Section — Objections (65%) */}
       <div style={{ flex: "0 0 65%", display: "flex", flexDirection: "column", padding: "22px 30px 14px", overflow: "hidden" }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color: "#94a3b8", marginBottom: 12 }}>Handle Any Objection</div>
@@ -5765,18 +5806,18 @@ function renderBattlecard(page, primary, accent, logoBase64) {
 }
 
 function renderSlide(slide, primary, accent, prospectCompany, client, companyName, logoBase64) {
-  const props = { data: slide, primary, accent };
+  const shared = { data: slide, primary, accent, logoBase64, companyName };
   switch (slide.type) {
-    case "title": return <SlideTitle {...props} prospectCompany={prospectCompany} client={client} companyName={companyName} logoBase64={logoBase64} />;
-    case "agenda": return <SlideAgenda {...props} />;
-    case "problem": return <SlideProblem {...props} />;
-    case "solution": return <SlideSolution {...props} />;
-    case "features": return <SlideFeatures {...props} />;
-    case "proof": return <SlideProof {...props} />;
-    case "roi": return <SlideRoi {...props} />;
-    case "timeline": return <SlideTimeline {...props} />;
-    case "cta": return <SlideCta {...props} />;
-    case "success": return <SlideSuccess {...props} />;
+    case "title": return <SlideTitle {...shared} prospectCompany={prospectCompany} client={client} />;
+    case "agenda": return <SlideAgenda {...shared} />;
+    case "problem": return <SlideProblem {...shared} />;
+    case "solution": return <SlideSolution {...shared} />;
+    case "features": return <SlideFeatures {...shared} />;
+    case "proof": return <SlideProof {...shared} />;
+    case "roi": return <SlideRoi {...shared} />;
+    case "timeline": return <SlideTimeline {...shared} />;
+    case "cta": return <SlideCta {...shared} />;
+    case "success": return <SlideSuccess {...shared} />;
     default: return (
       <div style={{ width: NATURAL_W, height: NATURAL_H, background: primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: "#fff" }}>{slide.title}</div>
@@ -5898,45 +5939,37 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
     setLogoFetching(true);
     setWebsiteDomain(normalized);
     saveBrand("websiteDomain", normalized);
-    const url = `https://logo.clearbit.com/${normalized}`;
+
+    // Server-side proxy returns real base64 — works in all contexts (preview, PDF, PPTX).
+    // Clearbit blocks canvas/CORS from the browser, so we fetch via our own API.
     try {
-      // Attempt canvas-based base64 (needed for PPTX export)
-      const base64 = await new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        const t = setTimeout(() => reject(new Error("timeout")), 7000);
-        img.onload = () => {
-          clearTimeout(t);
-          try {
-            const c = document.createElement("canvas");
-            c.width = img.naturalWidth || 256;
-            c.height = img.naturalHeight || 256;
-            c.getContext("2d").drawImage(img, 0, 0);
-            resolve(c.toDataURL("image/png"));
-          } catch { reject(new Error("canvas taint")); }
-        };
-        img.onerror = () => { clearTimeout(t); reject(new Error("load error")); };
-        img.src = url;
-      });
-      setLogoBase64(base64);
-      setLogoFileName(normalized);
-      saveBrand("logoBase64", base64);
-      saveBrand("logoFileName", normalized);
-    } catch {
-      // CORS/canvas fallback: store URL directly — img tags work; PPTX uses path param
-      const exists = await new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(false);
-        setTimeout(() => resolve(false), 5000);
-        img.src = url;
-      });
-      if (exists) {
-        setLogoBase64(url);
-        setLogoFileName(normalized);
-        saveBrand("logoBase64", url);
-        saveBrand("logoFileName", normalized);
+      const resp = await fetch(`/api/proxy-logo?domain=${encodeURIComponent(normalized)}`);
+      if (resp.ok) {
+        const { dataUri } = await resp.json();
+        if (dataUri) {
+          setLogoBase64(dataUri);
+          setLogoFileName(normalized);
+          saveBrand("logoBase64", dataUri);
+          saveBrand("logoFileName", normalized);
+          setLogoFetching(false);
+          return;
+        }
       }
+    } catch { /* fall through to URL fallback */ }
+
+    // Fallback: store raw URL — works in <img> tags but not canvas/PDF export
+    const loaded = await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      setTimeout(() => resolve(false), 5000);
+      img.src = `https://logo.clearbit.com/${normalized}`;
+    });
+    if (loaded) {
+      setLogoBase64(`https://logo.clearbit.com/${normalized}`);
+      setLogoFileName(normalized);
+      saveBrand("logoBase64", `https://logo.clearbit.com/${normalized}`);
+      saveBrand("logoFileName", normalized);
     }
     setLogoFetching(false);
   };
