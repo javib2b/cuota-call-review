@@ -7,7 +7,7 @@ import { authenticateUser } from "./_lib/supabase.js";
 const SYSTEM_PROMPT = `You are an expert B2B enterprise sales deck designer. Generate highly personalized, specific slide content as structured JSON. Be hyper-specific — use real numbers, concrete timelines, and language from the reference material. Never use generic filler. Every line must earn its place.`;
 
 function buildPrompt(ctx) {
-  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 50;
+  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 10;
   return `Create a 9-slide sales deck for this engagement:
 
 COMPANY (selling): ${ctx.companyName || "Our Company"}
@@ -105,7 +105,7 @@ IMPORTANT for cta slide: Every next step must be time-boxed and concrete (e.g. "
 }
 
 function buildMSPPrompt(ctx) {
-  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 50;
+  const hasIntelligence = ctx.callIntelligence && ctx.callIntelligence.trim().length > 10;
   return `Create a 6-slide Mutual Success Plan for this engagement:
 
 COMPANY (selling): ${ctx.companyName || "Our Company"}

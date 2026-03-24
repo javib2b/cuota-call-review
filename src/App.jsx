@@ -5899,7 +5899,11 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
     const cs = c.category_scores || {};
     const parts = [
       c.overall_score && `Score: ${c.overall_score}`,
+      c.call_type && `Type: ${c.call_type}`,
+      c.deal_stage && `Stage: ${c.deal_stage}`,
+      c.deal_value && `Value: ${c.deal_value}`,
       cs.prospect_name && `Prospect: ${cs.prospect_name}`,
+      c.prospect_company && `Company: ${c.prospect_company}`,
       c.coaching_notes && `Coaching: ${c.coaching_notes}`,
       cs.objection_handling?.details && `Objections: ${cs.objection_handling.details}`,
       cs.discovery?.details && `Discovery: ${cs.discovery.details}`,
@@ -6013,10 +6017,25 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
         if (dataUri) {
           setProspectLogoBase64(dataUri);
           saveBrand("prospectLogoBase64", dataUri);
+          setProspectLogoFetching(false);
+          return;
         }
       }
-    } catch { /* silent fail */ }
-    finally { setProspectLogoFetching(false); }
+    } catch { /* fall through */ }
+    // Fallback: Clearbit URL (works in <img> tags, may not work in canvas/PDF)
+    const loaded = await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      setTimeout(() => resolve(false), 4000);
+      img.src = `https://logo.clearbit.com/${normalized}`;
+    });
+    if (loaded) {
+      const url = `https://logo.clearbit.com/${normalized}`;
+      setProspectLogoBase64(url);
+      saveBrand("prospectLogoBase64", url);
+    }
+    setProspectLogoFetching(false);
   };
 
   const handleLogoUpload = (e) => {
@@ -6107,6 +6126,7 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
       if (!client && !prospectCompany) { setError("Enter at least a client or prospect company."); return; }
     }
     setGenerating(true); setError(""); setSlides(null); setActiveSlide(0);
+    console.log("[AssetBuilder] generating", { client, callCount, intelligenceLength: callIntelligence.length, intelligencePreview: callIntelligence.substring(0, 300), hasLogo: !!logoBase64, companyName });
     // Best-effort prospect logo auto-fetch (non-blocking)
     if (!prospectLogoBase64 && prospectCompany && prospectCompany.trim()) {
       const guessedDomain = prospectCompany.toLowerCase().replace(/[^a-z0-9]/g, "") + ".com";
@@ -6580,12 +6600,23 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
           {/* Actions — pinned at bottom */}
           <div style={{ padding: "12px 14px", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-            {callCount > 0 && (
-              <div style={{ fontSize: 10, color: "#31CE81", background: "rgba(49,206,129,0.08)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 6, padding: "5px 8px", display: "flex", alignItems: "center", gap: 5, lineHeight: 1.4 }}>
-                <span style={{ fontSize: 12 }}>⬡</span>
-                <span>Informed by <strong>{callCount}</strong> reviewed call{callCount !== 1 ? "s" : ""}{isBattlecard ? " — competitor auto-detected" : ""}</span>
+            {callCount > 0 ? (
+              <div style={{ fontSize: 10, color: "#31CE81", background: "rgba(49,206,129,0.08)", border: "1px solid rgba(49,206,129,0.2)", borderRadius: 6, padding: "6px 8px", lineHeight: 1.4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: callIntelligence ? 4 : 0 }}>
+                  <span style={{ fontSize: 12 }}>⬡</span>
+                  <span>Informed by <strong>{callCount}</strong> reviewed call{callCount !== 1 ? "s" : ""}{isBattlecard ? " — competitor auto-detected" : ""}</span>
+                </div>
+                {callIntelligence && (
+                  <div style={{ fontSize: 9, color: "rgba(49,206,129,0.7)", lineHeight: 1.5, borderTop: "1px solid rgba(49,206,129,0.15)", paddingTop: 4, wordBreak: "break-word" }}>
+                    {callIntelligence.split("\n---\n")[0].substring(0, 120)}{callIntelligence.length > 120 ? "…" : ""}
+                  </div>
+                )}
               </div>
-            )}
+            ) : client ? (
+              <div style={{ fontSize: 10, color: "#f59e0b", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 6, padding: "5px 8px", lineHeight: 1.4 }}>
+                No reviewed calls found for <strong>{client}</strong>. Deck will be generated without call data.
+              </div>
+            ) : null}
             <button onClick={generateDeck} disabled={generating || !!exporting} style={{ width: "100%", padding: "12px", background: generating ? "rgba(49,206,129,0.3)" : "#31CE81", border: "none", borderRadius: 10, color: generating ? "rgba(255,255,255,0.5)" : "#fff", fontSize: 13, fontWeight: 700, cursor: (generating || exporting) ? "wait" : "pointer", fontFamily: "inherit" }}>
               {generating ? "Generating\u2026" : isBattlecard ? "Generate Battlecard \u2726" : "Generate Deck \u2726"}
             </button>
