@@ -6093,7 +6093,7 @@ const ASSET_TYPES = [
   { id: "Competitor Battle Cards", icon: "⚔️", description: "Head-to-head competitive positioning" },
 ];
 
-function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient, savedCalls }) {
+function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient, savedCalls, onBack }) {
   const _initKey = defaultClient ? `cuota_deck_brand_${defaultClient}` : "cuota_deck_brand";
   // Company-level brand fields fall back to the global store so the logo/name are always present
   const _globalStored = loadStored("cuota_deck_brand") || {};
@@ -6551,7 +6551,15 @@ function PresentationBuilderPage({ clients, apiKey, getValidToken, defaultClient
 
       {/* TOPBAR */}
       <div style={{ height: 52, flexShrink: 0, background: "var(--surface-3)", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px" }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Asset Builder</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {onBack && (
+            <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: "var(--text-3)", padding: "4px 0", fontSize: 13 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              Back
+            </button>
+          )}
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)" }}>Asset Builder</div>
+        </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           {error && <span style={{ fontSize: 12, color: "#f04438" }}>{error}</span>}
           <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
@@ -8158,7 +8166,7 @@ export default function CuotaCallReview() {
         {page === "cuotaAgent" && <CuotaAgentPage getValidToken={getValidToken} savedCalls={savedCalls} />}
 
         {/* PRESENTATIONS */}
-        {page === "assets" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} savedCalls={savedCalls} />}
+        {page === "assets" && <PresentationBuilderPage clients={clients} apiKey={apiKey} getValidToken={getValidToken} defaultClient={selectedClientProfile} savedCalls={savedCalls} onBack={() => setPage("calls")} />}
 
         {page === "integrations" && profile?.role === "super_admin" && <IntegrationsPage getValidToken={getValidToken} token={token} loadCalls={loadCalls} clients={clients} />}
         {page === "docsync" && profile?.role === "super_admin" && <DocSyncPage getValidToken={getValidToken} clients={[...clients, ...pastClients, ...archivedClients]} onDocsUpdate={loadDocs} />}
